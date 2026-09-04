@@ -1,0 +1,176 @@
+<!--
+  Coach Claude — Confirm signup (welcome) email.
+
+  WHERE THIS GOES
+  - Supabase Auth: paste into
+    Supabase → Authentication → Email Templates → "Confirm signup".
+    {{ .ConfirmationURL }} is a Supabase variable, filled in automatically.
+  - Direct Resend API send: swap {{ .ConfirmationURL }} for your own variable.
+
+  Suggested subject:  Confirm your email — welcome to Coach Claude
+
+  Notes: 560px table layout, inline styles, system-font stack, bulletproof
+  button (VML fallback for Outlook), dark-first with color-scheme hints.
+  Shares its visual language with magic-link.html.
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>Welcome to Coach Claude</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style>
+    body { margin:0; padding:0; width:100% !important; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
+    table { border-collapse:collapse !important; }
+    a { text-decoration:none; }
+    img { border:0; line-height:100%; outline:none; -ms-interpolation-mode:bicubic; }
+    .hover-btn:hover { background-color:#c9663f !important; }
+    @media only screen and (max-width:600px) {
+      .container { width:100% !important; }
+      .card-pad { padding:32px 24px !important; }
+      .h1 { font-size:25px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#0a0a0a;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
+    Confirm your email to activate Coach Claude and get your first weekly plan.&#8199;&#8203;&#8199;&#8203;&#8199;&#8203;&#8199;&#8203;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0a0a0a;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" class="container" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px; max-width:560px;">
+
+          <!-- Logo lockup -->
+          <tr>
+            <td align="center" style="padding-bottom:28px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:20px; font-weight:700; letter-spacing:-0.2px; color:#f5f5f0;">
+              Coach&nbsp;<span style="color:#d97756;">Claude</span>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background-color:#141414; border:1px solid #262626; border-radius:24px;">
+              <!-- Sweatband: three full-width stripes (cream / terracotta / cream) -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="height:5px; background-color:#fbf7f0; border-radius:24px 24px 0 0; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td></tr>
+                <tr><td style="height:6px; background-color:#d97756; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td></tr>
+                <tr><td style="height:5px; background-color:#fbf7f0; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td></tr>
+              </table>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="card-pad" style="padding:44px 48px;">
+
+                    <p style="margin:0 0 14px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:12px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#d97756;">
+                      Welcome aboard
+                    </p>
+
+                    <h1 class="h1" style="margin:0 0 16px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:29px; line-height:1.22; font-weight:700; letter-spacing:-0.4px; color:#f5f5f0;">
+                      One tap to start training smarter
+                    </h1>
+
+                    <p style="margin:0 0 28px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:1.65; color:#a3a3a3;">
+                      Confirm your email to activate your Coach Claude account. Here's what's waiting for you:
+                    </p>
+
+                    <!-- Value list -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 32px 0;">
+                      <tr>
+                        <td style="padding:0 0 14px 0; vertical-align:top; width:28px;">
+                          <span style="display:inline-block; width:20px; height:20px; background-color:rgba(217,119,86,0.15); border-radius:6px; color:#d97756; font-family:Arial,sans-serif; font-size:12px; font-weight:700; text-align:center; line-height:20px;">✓</span>
+                        </td>
+                        <td style="padding:0 0 14px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:1.5; color:#d4d4d4;">
+                          <strong style="color:#f5f5f0; font-weight:600;">Personalised weekly plans</strong> built around your goals and schedule.
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:0 0 14px 0; vertical-align:top; width:28px;">
+                          <span style="display:inline-block; width:20px; height:20px; background-color:rgba(217,119,86,0.15); border-radius:6px; color:#d97756; font-family:Arial,sans-serif; font-size:12px; font-weight:700; text-align:center; line-height:20px;">✓</span>
+                        </td>
+                        <td style="padding:0 0 14px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:1.5; color:#d4d4d4;">
+                          <strong style="color:#f5f5f0; font-weight:600;">Log every set, rep and PR</strong> with a clean, gym-ready interface.
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="vertical-align:top; width:28px;">
+                          <span style="display:inline-block; width:20px; height:20px; background-color:rgba(217,119,86,0.15); border-radius:6px; color:#d97756; font-family:Arial,sans-serif; font-size:12px; font-weight:700; text-align:center; line-height:20px;">✓</span>
+                        </td>
+                        <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:1.5; color:#d4d4d4;">
+                          <strong style="color:#f5f5f0; font-weight:600;">Trains around your injuries</strong> so every session is safe.
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- CTA -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="left">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:200px;" arcsize="24%" stroke="f" fillcolor="#d97756">
+                          <w:anchorlock/>
+                          <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">Confirm my email</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-- -->
+                          <a class="hover-btn" href="{{ .ConfirmationURL }}" target="_blank"
+                             style="display:inline-block; padding:16px 32px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; font-weight:600; letter-spacing:0.2px; color:#ffffff; background-color:#d97756; border-radius:12px;">
+                            Confirm my email
+                          </a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Copy link -->
+                    <p style="margin:32px 0 8px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:1.5; color:#6a6a6a;">
+                      Button not working? Paste this link into your browser:
+                    </p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background-color:#0f0f0f; border:1px solid #262626; border-radius:10px; padding:12px 14px;">
+                          <a href="{{ .ConfirmationURL }}" target="_blank" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace; font-size:12px; line-height:1.5; color:#d97756; word-break:break-all;">{{ .ConfirmationURL }}</a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Divider -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr><td style="padding:32px 0 0 0;"><div style="height:1px; background-color:#262626; font-size:0; line-height:0;">&nbsp;</div></td></tr>
+                    </table>
+
+                    <p style="margin:24px 0 0 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:1.6; color:#6a6a6a;">
+                      If you didn't create a Coach Claude account, you can safely ignore this email.
+                    </p>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:28px 24px 8px 24px;">
+              <p style="margin:0 0 4px 0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; font-weight:600; color:#8a8a8a;">
+                Coach Claude
+              </p>
+              <p style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:12px; line-height:1.6; color:#4a4a4a;">
+                Your AI strength &amp; conditioning coach.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

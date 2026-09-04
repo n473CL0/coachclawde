@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+:root {
+  --sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  margin: 0;
+  background: #0a0a0a;
+  color: #f5f5f0;
+  overscroll-behavior: none;
+  /* Never allow horizontal scrolling/bleed. `clip` (not `hidden`) keeps the
+     sticky page headers working while preventing any stray-width descendant
+     from pushing the centred app shell — and its right padding — off-screen. */
+  overflow-x: clip;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Safe area for iOS notch/home bar */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+/* Smooth scrolling */
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 2px;
+}
+
+/* Animated gradient for active timer */
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.timer-pulse {
+  animation: timer-pulse 1s ease-in-out infinite;
+}
+
+/* Slide up modal animation */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Fade in */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* Ripple for buttons */
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* --- Claude mark micro-animations --- */
+
+/* Idle breathing bob — the sweatband Claude is never quite still */
+@keyframes claude-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-1.4px) rotate(-1.4deg); }
+}
+.claude-bob {
+  animation: claude-bob 3.2s ease-in-out infinite;
+}
+
+/* One-shot cheer/squash when the user scrolls up */
+@keyframes claude-cheer {
+  0%   { transform: translateY(0) scale(1, 1) rotate(0deg); }
+  25%  { transform: translateY(-4px) scale(0.96, 1.06) rotate(4deg); }
+  55%  { transform: translateY(1px) scale(1.05, 0.95) rotate(-4deg); }
+  80%  { transform: translateY(0) scale(0.99, 1.01) rotate(1.5deg); }
+  100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+}
+.claude-cheer {
+  animation: claude-cheer 0.62s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Sweat bead forming then dripping away — then a beat before the next drop */
+@keyframes claude-sweat {
+  0%       { transform: translateY(-2px) scale(0.4); opacity: 0; }
+  8%       { transform: translateY(0) scale(1); opacity: 1; }
+  22%      { transform: translateY(10px) scale(0.9); opacity: 1; }
+  30%      { transform: translateY(22px) scale(0.5); opacity: 0; }
+  100%     { transform: translateY(22px) scale(0.5); opacity: 0; }
+}
+.claude-sweat {
+  animation: claude-sweat 3s ease-in infinite;
+}
+
+/* Clawde grinding out press-ups — a brisk up/down dip with a forward tip */
+@keyframes claude-pushup {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  45%      { transform: translateY(9px) rotate(3deg); }
+  55%      { transform: translateY(9px) rotate(3deg); }
+}
+.claude-pushup {
+  animation: claude-pushup 0.9s ease-in-out infinite;
+}
+
+/* Clawde out for a run — a bouncy lateral scuttle */
+@keyframes claude-run {
+  0%, 100% { transform: translateX(-5px) translateY(0) rotate(-3deg); }
+  25%      { transform: translateX(-2px) translateY(-5px) rotate(2deg); }
+  50%      { transform: translateX(5px) translateY(0) rotate(3deg); }
+  75%      { transform: translateX(2px) translateY(-5px) rotate(-2deg); }
+}
+.claude-run {
+  animation: claude-run 0.7s ease-in-out infinite;
+}
+
+/* Clawde "flying" from the finish screen up to where it lives on the home
+   header — a one-shot transition driven by inline top/left/scale. */
+.claude-flight {
+  transition: top 0.8s cubic-bezier(0.5, 0, 0.2, 1),
+    left 0.8s cubic-bezier(0.5, 0, 0.2, 1),
+    transform 0.8s cubic-bezier(0.5, 0, 0.2, 1),
+    opacity 0.3s ease-out 0.6s;
+}
+
+/* --- Scroll reveal --- */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claude-bob,
+  .claude-cheer,
+  .claude-sweat,
+  .claude-pushup,
+  .claude-run { animation: none; }
+  .claude-flight { transition: opacity 0.3s ease-out; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}

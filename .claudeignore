@@ -1,0 +1,11 @@
+# Keep large / generated files out of Claude's searches and context so they
+# don't burn tokens. These are never worth reading directly.
+node_modules/
+dist/
+dist-ssr/
+package-lock.json
+*.log
+
+# Generated PWA assets / icons (regenerated via `npm run gen:icons`)
+public/icons/
+dev-dist/

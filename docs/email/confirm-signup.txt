@@ -1,0 +1,18 @@
+Coach Claude — confirm your email
+
+Welcome aboard! Confirm your email to activate your account. Here's what's
+waiting for you:
+
+  - Personalised weekly plans built around your goals and schedule
+  - Log every set, rep and PR with a clean, gym-ready interface
+  - Trains around your injuries so every session is safe
+
+Confirm your email:
+
+{{ .ConfirmationURL }}
+
+If you didn't create a Coach Claude account, you can safely ignore this email.
+
+—
+Coach Claude
+Your AI strength & conditioning coach.
