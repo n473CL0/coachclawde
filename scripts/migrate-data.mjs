@@ -1,6 +1,13 @@
 // One-time import of the legacy single-user JSON files (data/profile.json,
 // data/sessions.json, data/plans.json) into the Supabase database for one user.
 //
+// Those files were removed from the repo once the app went database-only. To
+// run this against them, restore them from git history first:
+//
+//   git show v0.2.0-final-data:data/profile.json  > data/profile.json
+//   git show v0.2.0-final-data:data/sessions.json > data/sessions.json
+//   git show v0.2.0-final-data:data/plans.json    > data/plans.json
+//
 // This bypasses Row-Level Security using the SERVICE ROLE key, so run it locally
 // and never ship the service-role key to the client.
 //
@@ -52,6 +59,10 @@ async function main() {
       gym_access: profile.gymAccess ?? true,
       dietary_notes: profile.dietaryNotes ?? [],
       program: profile.program ?? null,
+      experience_level: profile.experienceLevel ?? null,
+      // Imported athletes have a real profile already, so don't send them
+      // through the first-run slideshow.
+      onboarded: profile.onboarded ?? true,
       updated_at: profile.updatedAt ?? new Date().toISOString(),
     })
     if (error) throw error
