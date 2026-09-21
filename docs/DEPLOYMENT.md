@@ -22,6 +22,11 @@ There are six phases:
 
 ---
 
+> **Running this from Claude Code?** `/go-live` walks these steps in order,
+> verifies each one as it goes, and refuses to create beta accounts before
+> migration 0003 is applied. `node --env-file=.env.local scripts/check-setup.mjs`
+> reports the current state of the project on its own.
+
 ## 1. Add Supabase via the Vercel Marketplace
 
 1. In the [Vercel dashboard](https://vercel.com), open your **coach-claude**

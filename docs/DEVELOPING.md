@@ -73,7 +73,11 @@ work out of the box.
 - `scripts/create-beta-user.mjs` — provisions beta accounts (email + password,
   pre-confirmed) with the service-role key. `scripts/migrate-data.mjs` imports
   the legacy `data/*.json` files into an account; restore them from the
-  `v0.2.0-final-data` tag first.
+  `v0.2.0-final-data` tag first. `scripts/check-setup.mjs` is a read-only status
+  report (env vars, table row counts, accounts, whether the legacy import ran).
+- `.claude/commands/go-live.md` — the `/go-live` slash command: the ordered
+  cutover-and-beta-launch checklist, with gates on the steps that are unsafe to
+  do out of order.
 
 ## Conventions & gotchas
 
