@@ -8,20 +8,27 @@ tailored to your profile, injuries and history.
 
 1. In the app, pick your training days and add any notes, then **Generate & Copy
    Prompt**. The prompt bundles your profile and a summarised recent history.
-2. Paste it into Claude (with this repo available). Claude applies the programming
-   rules and `WeekPlan` schema from [`CLAUDE.md`](CLAUDE.md) and returns a plan.
+2. Paste it into Claude (with this repo available). The prompt is self-contained,
+   so Claude applies the programming rules and `WeekPlan` schema from
+   [`CLAUDE.md`](CLAUDE.md) to the profile and history embedded in it.
 3. **Import** the JSON back into the app and train. Logged sessions sync to your
    account automatically.
 
-## v0.2.0 — multiple users
+## Multiple users
 
-The app is multi-user: sign in with an email magic-link, and your data lives in a
-per-user [Supabase](https://supabase.com) database (Postgres + auth + Row-Level
-Security) instead of repo JSON files. Deploy on Vercel. (Google/social login can
-be enabled later — the plumbing is already in place; see `docs/DEPLOYMENT.md`.)
+The app is multi-user and **database-only**: every athlete's profile, plans and
+logged sessions live in their own rows in a [Supabase](https://supabase.com)
+database (Postgres + auth + Row-Level Security). Nothing is stored in this repo.
+Deploy on Vercel.
 
-- **Setup / migration guide:** [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
-- **Database schema:** [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql)
+Sign in with an **email and password** — accounts are provisioned with
+[`scripts/create-beta-user.mjs`](scripts/create-beta-user.mjs), so a closed beta
+needs no email delivery at all. A magic-link fallback is available when SMTP is
+configured. (Google/social login can be enabled later — the plumbing is already
+in place; see `docs/DEPLOYMENT.md`.)
+
+- **Setup guide, incl. creating beta accounts:** [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- **Database schema:** [`supabase/migrations/`](supabase/migrations/)
 
 ## Development
 

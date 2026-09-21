@@ -50,14 +50,18 @@ You now also have a Supabase project dashboard at https://supabase.com/dashboard
 
 1. Open your project in the **Supabase dashboard** → **SQL Editor** → **New
    query**.
-2. Paste the entire contents of [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql)
-   and click **Run**.
+2. Run **every file in [`supabase/migrations/`](../supabase/migrations/) in
+   numerical order** — paste each one's contents and click **Run**:
+   `0001_init.sql`, `0002_onboarding.sql`, `0003_fix_new_user_onboarding.sql`.
 3. Confirm under **Table Editor** that `profiles`, `week_plans` and
    `logged_sessions` exist, and under **Authentication → Policies** that each has
    an "owner-only" RLS policy.
 
-This migration also installs a trigger that auto-creates an empty `profiles` row
-whenever someone signs up, so the app always has a profile to read.
+`0001` installs a trigger that auto-creates a `profiles` row whenever someone
+signs up, so the app always has a profile to read. **`0003` is not optional** —
+without it that row is marked as already-onboarded, and every new account skips
+the onboarding slideshow and lands in the app with an empty profile (no
+injuries, no goals), which the plan generator depends on.
 
 *(Optional, if you prefer the CLI: `npm i -g supabase`, `supabase link
 --project-ref <ref>`, then `supabase db push`.)*
@@ -95,16 +99,25 @@ In Supabase → **Authentication → URL Configuration**:
 > preview URL (`…-git-<branch>-…`) is far less painful than the per-deploy hash
 > URLs, since it doesn't change every push.
 
-### 3b. Email magic-link
+### 3b. Sign-in methods
 
-1. In Supabase → **Authentication → Providers → Email** → ensure **Email** is
-   enabled. "Confirm email" / magic link is on by default.
-2. For low volume, Supabase's built-in email works out of the box. For reliable
-   production delivery, set up **custom SMTP** under **Project Settings → Auth →
-   SMTP Settings** (e.g. Resend, Postmark, SendGrid). Otherwise links can land in
-   spam or be rate-limited.
+The login screen offers two paths against the same Supabase **Email** provider
+(Supabase → **Authentication → Providers → Email**, enabled by default):
 
-That's the only provider the app ships with for now.
+- **Email + password** — the primary path, and what the beta runs on. You create
+  each account yourself (see [§7](#7-create-beta-accounts)) and hand out the
+  credentials, so **no email is sent and nothing can be rate-limited or
+  spam-filtered**. Accounts are created pre-confirmed.
+- **Magic link** — the "email me a sign-in link instead" fallback. This *does*
+  need working email, so it is only as reliable as your SMTP setup.
+
+For magic links at low volume Supabase's built-in mailer works out of the box,
+but it is heavily rate-limited (a handful an hour) and often lands in spam. For
+anything beyond a few testers, set up **custom SMTP** under **Project Settings →
+Auth → SMTP Settings** (Brevo, Resend, Postmark, SendGrid…).
+
+> **If you're only running the closed beta, you can skip SMTP entirely** — password
+> accounts don't touch email at all.
 
 ### 3c. Branded email templates
 
@@ -177,10 +190,20 @@ single-user "local mode".
 
 ---
 
-## 5. Migrate your existing data
+## 5. Migrate the legacy single-user data
 
-Your current data lives in `data/profile.json`, `data/sessions.json` and
-`data/plans.json`. Import it into your new account once:
+> Only relevant if you're carrying over the original file-based data. The
+> `data/*.json` files were removed from the repo when the app went
+> database-only; restore them from the `v0.2.0-final-data` tag first:
+>
+> ```bash
+> mkdir -p data
+> git show v0.2.0-final-data:data/profile.json  > data/profile.json
+> git show v0.2.0-final-data:data/sessions.json > data/sessions.json
+> git show v0.2.0-final-data:data/plans.json    > data/plans.json
+> ```
+
+Import them into an account once:
 
 1. **Sign in to the deployed app once** with the account that should own the data.
    This creates your user row.
@@ -221,16 +244,17 @@ Your current data lives in `data/profile.json`, `data/sessions.json` and
 5. Reload the app (or Settings → **Restore from cloud**) — your profile, plans
    and history should appear.
 
-The legacy `data/*.json` files stay in the repo for now as a backup; they're no
-longer read by the app and can be deleted in a later release.
+Once the data is in and the app shows it, delete the restored `data/` directory
+again — it isn't tracked any more, and the tag keeps the originals safe.
 
 ---
 
 ## 6. Smoke-test
 
 - [ ] Visit the production URL → you're redirected to the login screen.
-- [ ] Sign in with **email magic-link** → receive the email, link signs you in,
-      and you land on Home with your data.
+- [ ] Sign in with **email + password** → you land on Home with your data.
+- [ ] (Only if you set up SMTP) "Email me a sign-in link instead" → the link
+      arrives and signs you in.
 - [ ] Sign out → redirected back to login; local data cleared.
 - [ ] Plan → **Generate & Copy Prompt** → the prompt now contains your profile +
       a summarised history block (not an empty stub).
@@ -238,7 +262,58 @@ longer read by the app and can be deleted in a later release.
       Supabase `logged_sessions`.
 - [ ] Sign in on a second device/browser → same data loads.
 - [ ] Create a **second test account** → it sees an empty app, proving RLS
-      isolation. (Delete the test user afterwards.)
+      isolation, **and it starts on the onboarding slideshow** rather than
+      dropping straight into Home with a blank profile. (Delete the test user
+      afterwards.)
+
+---
+
+## 7. Create beta accounts
+
+Beta testers get an email + password you generate for them. Nothing is emailed by
+Supabase, so there's no SMTP dependency and no rate limit to hit.
+
+1. Get the **service role key** from **Project Settings → API**. It bypasses RLS
+   — keep it out of the client, out of git, and off any `VITE_` variable.
+2. From the repo root, create the accounts:
+
+   ```bash
+   SUPABASE_URL=https://<ref>.supabase.co \
+   SUPABASE_SERVICE_ROLE_KEY=<service-role-key> \
+   node scripts/create-beta-user.mjs alice@example.com bob@example.com
+   ```
+
+   Or, with the values in `.env.local`:
+
+   ```bash
+   node --env-file=.env.local scripts/create-beta-user.mjs alice@example.com
+   ```
+
+3. The script prints one line per account with its generated password:
+
+   ```
+   Beta accounts
+
+     alice@example.com   k7Qm2vXpR4wL   created
+     bob@example.com     9fTbN3sZyH8c   created
+   ```
+
+   **Passwords are shown once and are not stored anywhere** — copy them before
+   closing the terminal. Send each tester their own email + password.
+
+Useful flags:
+
+| Flag | Effect |
+| --- | --- |
+| `--password <pw>` | Use one password you choose for every account listed, instead of generating them. |
+| `--reset` | The account already exists → set its password rather than skipping it. Use when a tester loses theirs. |
+
+Each new account starts on the **onboarding slideshow**, which is what collects
+their injuries, goals and program preferences — the inputs the plan generator
+depends on. Tell testers to complete it before asking for their first plan.
+
+To remove a tester afterwards, delete the user in Supabase → **Authentication →
+Users**; their profile, plans and sessions cascade away with them.
 
 ---
 

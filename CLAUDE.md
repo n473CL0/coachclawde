@@ -43,15 +43,13 @@ for cardio), so set them thoughtfully.
 
 When the user pastes a prompt from the app (generated via Home → Plan → Generate & Copy Prompt), create a `WeekPlan` JSON matching the schema below and paste it back. The user will import it via Plan → Import Plan from Claude.
 
-As of **v0.2.0 the app is multi-user** and each athlete's data lives in a per-user database (not in this repo), so the pasted prompt is now **self-contained**: it embeds the athlete's profile, injuries, goals, program preferences and a *summarised* recent training history. Read those straight from the pasted prompt:
+The app is **multi-user** and each athlete's data lives in a per-user database (not in this repo), so the pasted prompt is **self-contained**: it embeds the athlete's profile, injuries, goals, program preferences and a *summarised* recent training history. Read those straight from the pasted prompt:
 
 - **Athlete profile, injuries, goals, program preferences** → the prompt's "Athlete profile" section
 - **Recent training history & current working weights** → the prompt's "Training history (summary)" section
 - **Programming rules & the WeekPlan schema** → this file (`CLAUDE.md`)
 
 Always apply the Critical Programming Rules below and progressive overload against the current working weights given in the prompt.
-
-> The `/data/*.json` files referenced later in this doc are a **pre-v0.2.0 backup** for the original single user. They are no longer the source of truth — prefer the data embedded in the prompt. Only fall back to `/data/` if a prompt is missing the embedded data (e.g. an older app build).
 
 ### WeekPlan JSON Schema
 
@@ -125,18 +123,18 @@ the split itself, so you don't need to pre-calculate pace — just give sensible
 
 ## Athlete Data
 
-The athlete's data is embedded in the pasted prompt (see above). The files below
-are a **pre-v0.2.0 backup** of the original single user's data, kept only as a
-fallback:
+Everything you need is embedded in the pasted prompt — there is no athlete data
+in this repo. Each athlete's profile, plans and logged sessions live in their own
+database account.
 
-- Profile: `/data/profile.json`
-- Past sessions: `/data/sessions.json`
-- Past plans: `/data/plans.json`
+If a prompt arrives *without* an embedded profile it came from an old build of
+the app; ask the athlete to update and regenerate it rather than guessing at
+their injuries or working weights.
 
 ### Program preferences (`profile.program`)
 
 The athlete sets standing preferences in-app (Progress → 12-Week Program tile).
-They live under `program` in `/data/profile.json` and should shape every plan:
+They arrive under `program` in the pasted prompt and should shape every plan:
 
 - `goals` — any of `get-fit`, `get-strong`, `look-great`. Bias the week's
   emphasis accordingly (conditioning vs. heavy strength vs. hypertrophy/aesthetics).
@@ -175,9 +173,9 @@ rather than assuming any particular injury.
 
 ## Session Export
 
-Logged sessions sync automatically to each user's database account (Supabase). The
-`/data/*.json` export flow was the pre-v0.2.0 mechanism and is retained only for
-the original user's backup; new data is no longer committed to the repo.
+Logged sessions sync automatically to each athlete's database account (Supabase).
+Nothing is committed to this repo — there is no export step to run, and no
+workout data should ever be added here.
 
 ---
 

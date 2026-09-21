@@ -17,9 +17,9 @@ export type CoachingStyle = 'supportive' | 'balanced' | 'intense';
 export type ExperienceLevel = 'beginner' | 'returning' | 'intermediate' | 'advanced';
 
 /**
- * The athlete's standing program preferences. Synced to `data/profile.json` so
- * Claude Code can read them when generating plans. Optional on `UserProfile` so
- * profiles synced before this feature still load.
+ * The athlete's standing program preferences. Embedded in the generated plan
+ * prompt so Claude can apply them. Optional on `UserProfile` so profiles synced
+ * before this feature still load.
  */
 export interface ProgramConfig {
   goals: ProgramGoal[];
