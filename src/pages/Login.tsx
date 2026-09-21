@@ -23,11 +23,19 @@ function authErrorMessage(e: unknown, fallback: string): string {
   return fallback
 }
 
+/**
+ * Magic-link sign-in is hidden unless VITE_ENABLE_MAGIC_LINK is 'true'. The
+ * code below stays wired up either way — flipping the variable brings the
+ * option back with no code change. It is off by default because magic links
+ * need working SMTP, and Supabase's built-in mailer allows only a couple of
+ * messages an hour, so the button would mostly promise an email that never
+ * shows up. Beta accounts are provisioned with a password instead (see
+ * scripts/create-beta-user.mjs).
+ */
+const MAGIC_LINK_ENABLED = import.meta.env.VITE_ENABLE_MAGIC_LINK === 'true'
+
 export function Login() {
   const { signInWithPassword, signInWithEmail } = useAuth()
-  // Beta accounts are provisioned with a password by an operator, so password
-  // is the primary path; the magic link stays available for anyone who'd
-  // rather not keep one (and needs working SMTP on the Supabase project).
   const [mode, setMode] = useState<'password' | 'magic-link'>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -142,13 +150,15 @@ export function Login() {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => switchMode(mode === 'password' ? 'magic-link' : 'password')}
-              className="text-xs text-[#6a6a6a] hover:text-[#a8a29e] transition-colors mt-2 py-1"
-            >
-              {mode === 'password' ? 'Email me a sign-in link instead' : 'Sign in with a password instead'}
-            </button>
+            {MAGIC_LINK_ENABLED && (
+              <button
+                type="button"
+                onClick={() => switchMode(mode === 'password' ? 'magic-link' : 'password')}
+                className="text-xs text-[#6a6a6a] hover:text-[#a8a29e] transition-colors mt-2 py-1"
+              >
+                {mode === 'password' ? 'Email me a sign-in link instead' : 'Sign in with a password instead'}
+              </button>
+            )}
           </div>
         )}
 

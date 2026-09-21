@@ -49,6 +49,10 @@ SUPABASE_SERVICE_ROLE_KEY   # the Node scripts — bypasses RLS, keep it secret
 TARGET_USER_ID              # only for the legacy import, filled in at step 4
 ```
 
+`VITE_ENABLE_MAGIC_LINK` should stay unset. Magic-link sign-in is hidden unless
+it is exactly `'true'`, which is deliberate — passwords are handed out directly,
+and Supabase's built-in mailer only allows a couple of emails an hour.
+
 All are in Supabase → **Project Settings → API**. If the file is missing, create
 it from `.env.example` and ask the operator to paste the values in themselves —
 do not ask them to send you a key.
@@ -122,8 +126,9 @@ passwords are shown once and stored nowhere** — tell the operator to copy them
 out of their terminal now. Do not repeat them back in your replies, and do not
 write them to a file in the repo.
 
-`--reset` re-passwords an account that already exists, for a tester who is
-locked out.
+Testers get their password directly from the operator; there is no self-service
+password reset while magic links are hidden. When someone is locked out, the
+operator re-runs the script with `--reset` and sends them the new one.
 
 Verify with `scripts/check-setup.mjs`: each new account should appear as
 "will onboard on first sign-in".
@@ -133,7 +138,8 @@ Verify with `scripts/check-setup.mjs`: each new account should appear as
 Confirm the Vercel project has `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
 set, then redeploy. Smoke-test against §6 of `docs/DEPLOYMENT.md` — in
 particular, that a fresh account lands on the **onboarding slideshow** rather
-than dropping into Home with a blank profile.
+than dropping into Home with a blank profile, and that the login screen shows
+only the password fields (no "email me a sign-in link" option).
 
 ## 7. Tag the legacy data and restore `main`
 
@@ -165,7 +171,8 @@ Mention these once, at the end — don't act on them without being asked:
   `claude/iphone-timer-notifications-8m7aon` (rest-timer push) land, renumber
   their `0003`/`0004` migrations to `0004`/`0005`.
 - `claude/smtp-resend-to-brevo-1jn9ng` has a finished Brevo SMTP guide. Not
-  needed for a password-based beta; needed before magic links are reliable.
+  needed for a password-based beta. Land it, then set
+  `VITE_ENABLE_MAGIC_LINK=true`, when magic-link sign-in is wanted.
 - `docs/DEVELOPING.md` still says "never weaken the shoulder/knee safety
   semantics", a leftover from before the programming rules went
   injury-agnostic.

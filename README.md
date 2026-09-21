@@ -23,9 +23,10 @@ Deploy on Vercel.
 
 Sign in with an **email and password** — accounts are provisioned with
 [`scripts/create-beta-user.mjs`](scripts/create-beta-user.mjs), so a closed beta
-needs no email delivery at all. A magic-link fallback is available when SMTP is
-configured. (Google/social login can be enabled later — the plumbing is already
-in place; see `docs/DEPLOYMENT.md`.)
+needs no email delivery at all. Magic-link sign-in is implemented but hidden
+behind `VITE_ENABLE_MAGIC_LINK`, since it needs SMTP that a free Supabase
+project can't provide. (Google/social login can be enabled later — the plumbing
+is already in place; see `docs/DEPLOYMENT.md`.)
 
 - **Setup guide, incl. creating beta accounts:** [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 - **Database schema:** [`supabase/migrations/`](supabase/migrations/)

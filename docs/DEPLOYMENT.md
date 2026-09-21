@@ -113,16 +113,20 @@ The login screen offers two paths against the same Supabase **Email** provider
   each account yourself (see [§7](#7-create-beta-accounts)) and hand out the
   credentials, so **no email is sent and nothing can be rate-limited or
   spam-filtered**. Accounts are created pre-confirmed.
-- **Magic link** — the "email me a sign-in link instead" fallback. This *does*
-  need working email, so it is only as reliable as your SMTP setup.
+- **Magic link** — **hidden by default.** The code is wired up, but the option
+  only appears when `VITE_ENABLE_MAGIC_LINK` is exactly `true`. Supabase's
+  built-in mailer allows only a couple of messages an hour, so offering the
+  button without real SMTP behind it mostly promises testers an email that
+  never arrives.
 
-For magic links at low volume Supabase's built-in mailer works out of the box,
-but it is heavily rate-limited (a handful an hour) and often lands in spam. For
-anything beyond a few testers, set up **custom SMTP** under **Project Settings →
-Auth → SMTP Settings** (Brevo, Resend, Postmark, SendGrid…).
+**The closed beta needs no email setup at all** — password accounts never send
+one, so there is nothing to rate-limit and no SMTP bill.
 
-> **If you're only running the closed beta, you can skip SMTP entirely** — password
-> accounts don't touch email at all.
+To turn magic links on later: configure **custom SMTP** under **Project Settings
+→ Auth → SMTP Settings** (Brevo, Resend, Postmark, SendGrid…), then set
+`VITE_ENABLE_MAGIC_LINK=true` in Vercel (and `.env.local` for dev) and redeploy.
+`docs/email/` holds the branded templates, and the
+`claude/smtp-resend-to-brevo-1jn9ng` branch has a full Brevo walkthrough.
 
 ### 3c. Branded email templates
 
@@ -258,8 +262,9 @@ again — it isn't tracked any more, and the tag keeps the originals safe.
 
 - [ ] Visit the production URL → you're redirected to the login screen.
 - [ ] Sign in with **email + password** → you land on Home with your data.
-- [ ] (Only if you set up SMTP) "Email me a sign-in link instead" → the link
-      arrives and signs you in.
+- [ ] The login screen shows **only** the password fields — no "email me a
+      sign-in link" option — unless you deliberately set
+      `VITE_ENABLE_MAGIC_LINK=true`.
 - [ ] Sign out → redirected back to login; local data cleared.
 - [ ] Plan → **Generate & Copy Prompt** → the prompt now contains your profile +
       a summarised history block (not an empty stub).

@@ -22,9 +22,13 @@ backend. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for setup and the DB schema in
 `supabase/migrations/`.
 
 **Accounts:** Supabase is the only backend. Testers sign in with an email and
-password provisioned by an operator via `scripts/create-beta-user.mjs`; the
-magic-link path is still there for anyone who prefers it, but it needs working
-SMTP on the Supabase project (see `DEPLOYMENT.md`).
+password provisioned by an operator via `scripts/create-beta-user.mjs`.
+Magic-link sign-in is fully wired (`signInWithEmail`, and the `magic-link` mode
+in `Login.tsx`) but **hidden unless `VITE_ENABLE_MAGIC_LINK` is `'true'`** — it
+needs working SMTP, which a free Supabase project doesn't have. The flag is
+resolved in `vite.config.ts` alongside the Supabase credentials and typed in
+`src/vite-env.d.ts`; with it unset the whole branch is dead code and drops out
+of the bundle.
 
 > **Removed in the database-only change:** the `admin` login and its
 > GitHub-storage backend (`src/lib/githubSync.ts`, `src/auth/adminMode.ts`),
