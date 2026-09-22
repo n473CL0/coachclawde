@@ -87,6 +87,8 @@ export interface PlannedExercise {
   name: string;
   sets: PlannedSet[];
   coachNotes?: string;
+  /** Legacy (pre-multi-user) flag from the original athlete's plans. Kept so
+   *  old plans still type-check; no longer requested in the prompt. */
   shoulderSafe?: boolean;
 }
 

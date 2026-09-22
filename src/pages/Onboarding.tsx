@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { Button } from '../components/shared/Button'
 import { ClaudeMark } from '../components/shared/ClaudeMark'
+import { OpenClaudeButton } from '../components/shared/OpenClaudeButton'
 import {
   buildOnboardingPrompt,
   parseAthleteBackground,
@@ -13,7 +14,7 @@ import type { ExperienceLevel, AthleteBackground, ProgramConfig, UserProfile } f
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
 import { DEFAULT_PROGRAM_LENGTH_WEEKS } from '../lib/programProgress'
 import {
-  ArrowRight, ChevronLeft, Copy, Check, ExternalLink, ShieldAlert,
+  ArrowRight, ChevronLeft, Copy, Check, ShieldAlert,
   Dumbbell, Footprints, Share, Smartphone, MoreVertical, Sparkles, ClipboardPaste, CalendarRange,
 } from 'lucide-react'
 
@@ -176,11 +177,6 @@ export function Onboarding() {
     setTimeout(() => navigate('/', { replace: true }), 950)
   }
 
-  async function openClaude() {
-    try { await navigator.clipboard.writeText(promptText) } catch { /* still visible */ }
-    window.open('https://claude.ai', '_blank', 'noopener,noreferrer')
-  }
-
   async function copyPrompt() {
     try {
       await navigator.clipboard.writeText(promptText)
@@ -238,7 +234,6 @@ export function Onboarding() {
             promptText={promptText}
             copied={copied}
             onCopy={copyPrompt}
-            onOpenClaude={openClaude}
           />
         )}
         {step === 'paste' && (
@@ -504,9 +499,9 @@ function InjuriesStep({ value, onChange }: { value: string; onChange: (v: string
 }
 
 function PromptStep({
-  promptText, copied, onCopy, onOpenClaude,
+  promptText, copied, onCopy,
 }: {
-  promptText: string; copied: boolean; onCopy: () => void; onOpenClaude: () => void
+  promptText: string; copied: boolean; onCopy: () => void
 }) {
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -520,10 +515,7 @@ function PromptStep({
         </pre>
       </div>
       <div className="flex flex-col gap-2">
-        <Button onClick={onOpenClaude} size="lg" fullWidth>
-          <ExternalLink size={18} />
-          Open Claude
-        </Button>
+        <OpenClaudeButton text={promptText} />
         <Button variant="ghost" onClick={onCopy} fullWidth>
           {copied ? <Check size={16} /> : <Copy size={16} />}
           {copied ? 'Copied to clipboard' : 'Copy prompt again'}

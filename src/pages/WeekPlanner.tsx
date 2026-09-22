@@ -16,8 +16,11 @@ import {
   toLocalISODate,
 } from '../lib/weekUtils'
 import type { DayOfWeek } from '../types'
-import { Copy, Check, Download, AlertCircle, X, CalendarClock, ExternalLink } from 'lucide-react'
+import { Copy, Check, Download, AlertCircle, X, CalendarClock } from 'lucide-react'
+import { OpenClaudeButton } from '../components/shared/OpenClaudeButton'
 import { format } from 'date-fns'
+
+const SESSION_LENGTH_OPTIONS = [30, 45, 60, 75, 90] as const
 
 export function WeekPlanner() {
   const navigate = useNavigate()
@@ -28,6 +31,14 @@ export function WeekPlanner() {
 
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(seedPlan?.availableDays ?? [])
   const [notes, setNotes] = useState(seedPlan?.userNotes ?? '')
+  // Target minutes per session, seeded from the current plan's average so a
+  // replan keeps the same length by default.
+  const [sessionMinutes, setSessionMinutes] = useState<number>(() => {
+    const mins = seedPlan?.sessions.map((s) => s.estimatedMinutes).filter((m) => m > 0) ?? []
+    if (!mins.length) return 60
+    const avg = mins.reduce((a, b) => a + b, 0) / mins.length
+    return SESSION_LENGTH_OPTIONS.reduce<number>((best, o) => (Math.abs(o - avg) < Math.abs(best - avg) ? o : best), 60)
+  })
   // Whether the athlete has explicitly opted to plan next week (e.g. they want
   // to train on a weekday that has already passed this week).
   const [planNextWeek, setPlanNextWeek] = useState(
@@ -80,10 +91,10 @@ export function WeekPlanner() {
   }
 
   async function handleGeneratePrompt() {
-    const prompt = buildWeekPlanPrompt(selectedDays, notes, existingPlan, weekStart, profile, loggedSessions)
+    const prompt = buildWeekPlanPrompt(selectedDays, notes, sessionMinutes, existingPlan, weekStart, profile, loggedSessions)
     setPromptText(prompt)
     setShowPrompt(true)
-    // Auto-copy to clipboard so the user can paste straight into Claude Code.
+    // Auto-copy to clipboard so the user can paste straight into Claude.
     try {
       await navigator.clipboard.writeText(prompt)
       setCopied(true)
@@ -101,17 +112,9 @@ export function WeekPlanner() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Copy the prompt (so it's fresh on the clipboard) and jump straight to
-  // Claude Code, where the athlete pastes it against their repo.
-  async function handleOpenClaude() {
-    try {
-      await navigator.clipboard.writeText(promptText)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // Clipboard may be unavailable — the prompt is still visible to copy by hand.
-    }
-    window.open('https://claude.ai', '_blank', 'noopener,noreferrer')
+  function flashCopied() {
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   function handleImport() {
@@ -215,6 +218,31 @@ export function WeekPlanner() {
           </CardSection>
         </Card>
 
+        {/* Session length */}
+        <Card>
+          <CardSection>
+            <p className="text-sm font-medium text-[#a8a29e] mb-3">How long per session?</p>
+            <div className="flex gap-1.5">
+              {SESSION_LENGTH_OPTIONS.map((mins) => (
+                <button
+                  key={mins}
+                  onClick={() => setSessionMinutes(mins)}
+                  aria-pressed={sessionMinutes === mins}
+                  className={`
+                    flex-1 rounded-xl py-2 text-sm font-semibold transition-all duration-150
+                    ${sessionMinutes === mins
+                      ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/25'
+                      : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
+                    }
+                  `}
+                >
+                  {mins}m
+                </button>
+              ))}
+            </div>
+          </CardSection>
+        </Card>
+
         {/* Notes */}
         <Card>
           <CardSection>
@@ -262,7 +290,7 @@ export function WeekPlanner() {
           <div className="flex flex-col gap-2.5">
             {[
               ['1', 'Select your training days above'],
-              ['2', 'Add any notes (injuries, events, energy)'],
+              ['2', 'Pick a session length and add any notes (injuries, events, energy)'],
               ['3', 'Generate prompt — your profile & recent history are bundled in and it’s copied to your clipboard automatically'],
               ['4', 'Paste into Claude (the prompt includes everything it needs — rules, schema and your history)'],
               ['5', 'Copy the JSON back here to import your week'],
@@ -307,10 +335,7 @@ export function WeekPlanner() {
               </pre>
             </div>
             <div className="px-4 pb-6 pt-2 flex flex-col gap-2">
-              <Button onClick={handleOpenClaude} fullWidth size="lg">
-                <ExternalLink size={18} />
-                Open Claude
-              </Button>
+              <OpenClaudeButton text={promptText} onCopied={flashCopied} />
               <Button variant="ghost" onClick={handleCopy} fullWidth>
                 {copied ? <Check size={16} /> : <Copy size={16} />}
                 {copied ? 'Copied!' : 'Copy again'}
