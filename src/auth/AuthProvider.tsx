@@ -2,10 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { validateConfig } from '../lib/githubSync'
-import type { GitHubConfig } from '../lib/githubSync'
-import { useSettingsStore } from '../store/useSettingsStore'
-import { ADMIN_FLAG_KEY } from './adminMode'
 
 interface AuthContextValue {
   user: User | null
@@ -14,27 +10,31 @@ interface AuthContextValue {
   loading: boolean
   /** False when Supabase env vars are absent — app runs in local single-user mode. */
   configured: boolean
-  /** True when signed in via `ADMIN_EMAIL` — storage is GitHub, not Supabase. */
-  adminMode: boolean
   signInWithGoogle: () => Promise<void>
+  /** Password sign-in, for accounts provisioned by an operator (see scripts/create-beta-user.mjs). */
+  signInWithPassword: (email: string, password: string) => Promise<void>
+  /** Magic-link sign-in. Needs working SMTP on the Supabase project. */
   signInWithEmail: (email: string) => Promise<void>
-  /** Validates the token, persists the config, and enters GitHub storage mode. */
-  signInAsAdmin: (config: GitHubConfig) => Promise<void>
+  /** Sets a new password for the signed-in user. */
+  updatePassword: (password: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+/**
+ * Sign-in has no meaning without a backend, and returning silently would leave
+ * the caller showing a spinner that stops with nothing to say. Fail loudly
+ * instead — the login screen redirects away in local mode, so reaching this is
+ * a bug rather than a state a user can get into.
+ */
+function requireClient() {
+  if (!supabase) throw new Error('Not connected to a backend — running in local mode.')
+  return supabase
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
-  const github = useSettingsStore((s) => s.github)
-  const setGitHub = useSettingsStore((s) => s.setGitHub)
-  // Admin mode survives a reload, but only while a GitHub config is still
-  // persisted alongside it — the flag alone can't reach any storage.
-  const [adminFlag, setAdminFlag] = useState(
-    () => localStorage.getItem(ADMIN_FLAG_KEY) === '1'
-  )
-  const adminMode = adminFlag && !!github
   // Only "loading" when there's a backend session to resolve; in local mode
   // (no Supabase) there's nothing to wait for.
   const [loading, setLoading] = useState(isSupabaseConfigured)
@@ -52,44 +52,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signInWithGoogle = useCallback(async () => {
-    if (!supabase) return
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await requireClient().auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
     })
     if (error) throw error
   }, [])
 
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const { error } = await requireClient().auth.signInWithPassword({ email, password })
+    if (error) throw error
+  }, [])
+
   const signInWithEmail = useCallback(async (email: string) => {
-    if (!supabase) return
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await requireClient().auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin },
     })
     if (error) throw error
   }, [])
 
-  const signInAsAdmin = useCallback(
-    async (config: GitHubConfig) => {
-      // Fail before we persist anything, so a bad token can't leave the app
-      // stuck in an admin mode that can't actually reach storage.
-      await validateConfig(config)
-      setGitHub(config)
-      localStorage.setItem(ADMIN_FLAG_KEY, '1')
-      setAdminFlag(true)
-    },
-    [setGitHub]
-  )
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await requireClient().auth.updateUser({ password })
+    if (error) throw error
+  }, [])
 
   const signOut = useCallback(async () => {
-    // Clear admin mode and its token regardless of which mode we're in, so
-    // signing out never leaves a repo credential behind on the device.
-    localStorage.removeItem(ADMIN_FLAG_KEY)
-    setAdminFlag(false)
-    setGitHub(null)
     if (!supabase) return
     await supabase.auth.signOut()
-  }, [setGitHub])
+  }, [])
 
   return (
     <AuthContext.Provider
@@ -98,10 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         loading,
         configured: isSupabaseConfigured,
-        adminMode,
         signInWithGoogle,
+        signInWithPassword,
         signInWithEmail,
-        signInAsAdmin,
+        updatePassword,
         signOut,
       }}
     >

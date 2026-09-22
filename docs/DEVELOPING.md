@@ -12,24 +12,29 @@ React 19 + TypeScript + Vite 8, Tailwind CSS v4 (config is CSS-first in
 for state, React Router 7, `lucide-react` icons, `date-fns`. Ships as an
 installable PWA via `vite-plugin-pwa` (`registerType: 'autoUpdate'`).
 
-**Backend (v0.2.0):** Supabase provides Postgres + auth (email magic-link; Google
-is wired in `AuthProvider` but not yet surfaced in the UI) + Row-Level Security. The app talks to it directly with
+**Backend:** Supabase provides Postgres + auth (email + password and magic-link;
+Google is wired in `AuthProvider` but not yet surfaced in the UI) + Row-Level
+Security. The app talks to it directly with
 `@supabase/supabase-js` from the browser — there is no custom server. Requires
 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`; when those are absent the app runs
 in offline single-user "local mode" (no login), so `npm run dev` works without a
 backend. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for setup and the DB schema in
 `supabase/migrations/`.
 
-**Admin mode (GitHub storage):** entering `admin` (`ADMIN_EMAIL` in
-`src/auth/adminMode.ts`) as the login email swaps the whole storage backend from
-Supabase to the repo's `data/*.json`, via the pre-v0.2.0 Contents-API mechanism
-in `src/lib/githubSync.ts`. The operator pastes a GitHub PAT at sign-in; it is
-persisted to `localStorage` on that device and deliberately **not** read from a
-`VITE_` env var, since those are inlined into the client bundle and would leak
-repo write access to anyone loading the deployed site. The magic string is not a
-credential — without a working token it grants nothing. Every push is a commit,
-so the in-workout autosave (which fires per completed set) is debounced into a
-single trailing write in this mode.
+**Accounts:** Supabase is the only backend. Testers sign in with an email and
+password provisioned by an operator via `scripts/create-beta-user.mjs`.
+Magic-link sign-in is fully wired (`signInWithEmail`, and the `magic-link` mode
+in `Login.tsx`) but **hidden unless `VITE_ENABLE_MAGIC_LINK` is `'true'`** — it
+needs working SMTP, which a free Supabase project doesn't have. The flag is
+resolved in `vite.config.ts` alongside the Supabase credentials and typed in
+`src/vite-env.d.ts`; with it unset the whole branch is dead code and drops out
+of the bundle.
+
+> **Removed in the database-only change:** the `admin` login and its
+> GitHub-storage backend (`src/lib/githubSync.ts`, `src/auth/adminMode.ts`),
+> which read and wrote `data/*.json` through the Contents API and committed on
+> every sync. All data now lives in Supabase. The legacy JSON files are
+> recoverable from the `v0.2.0-final-data` tag if ever needed.
 
 ## Commands
 
@@ -54,11 +59,9 @@ work out of the box.
   `coach-claude-store` via `partialize` (timer/active session are intentionally
   not persisted) — this is the offline working cache; Supabase is the source of
   truth. `src/store/useSettingsStore.ts` — sync status only.
-- `src/auth/` — `AuthProvider` (Supabase session + admin mode + `useAuth()`),
-  `RequireAuth` (route guard that pulls the signed-in identity's data on sign-in
-  and resets the store on sign-out), `adminMode.ts` (the `ADMIN_EMAIL` constant,
-  kept out of `AuthProvider` so Fast Refresh keeps working).
-  `src/pages/Login.tsx` is the sign-in screen.
+- `src/auth/` — `AuthProvider` (Supabase session + `useAuth()`), `RequireAuth`
+  (route guard that pulls the signed-in user's data on sign-in and resets the
+  store on sign-out). `src/pages/Login.tsx` is the sign-in screen.
 - `src/pages/` — one component per tab (`Home`, `WeekPlanner`, `Session`,
   `Progress`, `History`, `Settings`), wired in `src/App.tsx` with `BottomNav`.
 - `src/components/session/` — the live-workout UI (exercise tiles, set rows, rest
@@ -69,15 +72,16 @@ work out of the box.
 - `src/lib/` — pure helpers: `promptBuilder` (builds the **self-contained** plan
   prompt — embeds profile + summarised history), `historySummary` (bounds that
   history so the prompt isn't overloaded), `supabase` (client) + `supabaseSync`
-  (push/pull rows), `githubSync` (the admin-mode `data/*.json` backend),
-  `weekUtils`/`dateUtils`, `cardioUtils`, `export`, `nanoid`.
-  `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages — it
-  routes to Supabase or GitHub depending on `adminMode`, so pages don't care
-  which backend is live.
-- `data/*.json` — the **original single user's** profile/sessions/plans, kept as a
-  pre-v0.2.0 backup. No longer read by the app at runtime (data now lives in
-  Supabase per user); see `scripts/migrate-data.mjs` to import them into an
-  account.
+  (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `export`, `nanoid`.
+  `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
+- `scripts/create-beta-user.mjs` — provisions beta accounts (email + password,
+  pre-confirmed) with the service-role key. `scripts/migrate-data.mjs` imports
+  the legacy `data/*.json` files into an account; restore them from the
+  `v0.2.0-final-data` tag first. `scripts/check-setup.mjs` is a read-only status
+  report (env vars, table row counts, accounts, whether the legacy import ran).
+- `.claude/commands/go-live.md` — the `/go-live` slash command: the ordered
+  cutover-and-beta-launch checklist, with gates on the steps that are unsafe to
+  do out of order.
 
 ## Conventions & gotchas
 
@@ -91,3 +95,5 @@ work out of the box.
 - Keep changes minimal and typed; never weaken or remove the shoulder/knee safety
   semantics encoded in the data shapes or plan logic.
 - `dist/` and `node_modules/` are git-ignored — never commit them.
+- **No athlete data belongs in this repo.** It lives in each user's Supabase
+  rows; nothing in the app writes to git any more.

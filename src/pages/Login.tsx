@@ -1,23 +1,16 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
-import { isAdminEmail } from '../auth/adminMode'
-import { useSettingsStore } from '../store/useSettingsStore'
 import { Button } from '../components/shared/Button'
 import { ClaudeMark } from '../components/shared/ClaudeMark'
-import { Mail, AlertCircle, CheckCircle, GitBranch } from 'lucide-react'
-
-/** Where admin mode points by default — the repo this app lives in. */
-const DEFAULT_OWNER = 'n473CL0'
-const DEFAULT_REPO = 'coach-claude'
-const DEFAULT_BRANCH = 'main'
+import { Mail, AlertCircle, CheckCircle, LogIn } from 'lucide-react'
 
 /**
  * Pulls a human-readable message out of whatever the auth call throws. Supabase
  * AuthErrors stringify to "{}" (message/stack are non-enumerable), so dig out
  * the useful fields explicitly and fall back to the HTTP status.
  */
-function authErrorMessage(e: unknown): string {
+function authErrorMessage(e: unknown, fallback: string): string {
   if (e && typeof e === 'object') {
     const err = e as { message?: string; error_description?: string; code?: string; status?: number }
     return (
@@ -25,63 +18,85 @@ function authErrorMessage(e: unknown): string {
       err.error_description ||
       err.code ||
       (err.status ? `Request failed (HTTP ${err.status})` : '') ||
-      'Could not send magic link'
+      fallback
     )
   }
-  return 'Could not send magic link'
+  return fallback
 }
 
+/**
+ * Magic-link sign-in is hidden unless VITE_ENABLE_MAGIC_LINK is 'true'. The
+ * code below stays wired up either way — flipping the variable brings the
+ * option back with no code change. It is off by default because magic links
+ * need working SMTP, and Supabase's built-in mailer allows only a couple of
+ * messages an hour, so the button would mostly promise an email that never
+ * shows up. Beta accounts are provisioned with a password instead (see
+ * scripts/create-beta-user.mjs).
+ */
+const MAGIC_LINK_ENABLED = import.meta.env.VITE_ENABLE_MAGIC_LINK === 'true'
+
 export function Login() {
-  const { signInWithEmail, signInAsAdmin, adminMode } = useAuth()
-  const github = useSettingsStore((s) => s.github)
+  const { user, loading, configured, signInWithPassword, signInWithEmail } = useAuth()
+  const [mode, setMode] = useState<'password' | 'magic-link'>('password')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
 
-  // Admin mode reuses whatever config this device already has, so a returning
-  // operator only has to type the magic email and hit connect.
-  const [token, setToken] = useState(github?.token ?? '')
-  const [owner, setOwner] = useState(github?.owner ?? DEFAULT_OWNER)
-  const [repo, setRepo] = useState(github?.repo ?? DEFAULT_REPO)
-  const [branch, setBranch] = useState(github?.branch ?? DEFAULT_BRANCH)
+  async function handlePassword() {
+    setError('')
+    setBusy(true)
+    try {
+      await signInWithPassword(email.trim(), password)
+      // On success the auth listener sets the session, `user` becomes non-null
+      // and the redirect below fires. This route sits outside RequireAuth, so
+      // without that redirect a successful sign-in would just re-render this
+      // form and look like nothing happened.
+    } catch (e: unknown) {
+      console.error('[auth] password sign-in failed:', e)
+      setError(authErrorMessage(e, 'Could not sign in'))
+    } finally {
+      setBusy(false)
+    }
+  }
 
-  const isAdmin = isAdminEmail(email)
-
-  async function handleEmail() {
+  async function handleMagicLink() {
     setError('')
     setBusy(true)
     try {
       await signInWithEmail(email.trim())
       setSent(true)
     } catch (e: unknown) {
-      // Full object to the console for debugging; readable message to the user.
       console.error('[auth] magic-link send failed:', e)
-      setError(authErrorMessage(e))
+      setError(authErrorMessage(e, 'Could not send magic link'))
     } finally {
       setBusy(false)
     }
   }
 
-  async function handleAdmin() {
+  function switchMode(next: 'password' | 'magic-link') {
+    setMode(next)
     setError('')
-    setBusy(true)
-    try {
-      await signInAsAdmin({
-        token: token.trim(),
-        owner: owner.trim(),
-        repo: repo.trim(),
-        branch: branch.trim() || DEFAULT_BRANCH,
-      })
-    } catch (e: unknown) {
-      console.error('[auth] GitHub storage sign-in failed:', e)
-      setError(authErrorMessage(e))
-    } finally {
-      setBusy(false)
-    }
+    setPassword('')
   }
 
-  if (adminMode) return <Navigate to="/" replace />
+  // Local mode (no Supabase env vars) has no accounts and no route guard, so
+  // there is nothing to sign in to — every button here would quietly no-op.
+  if (!configured) return <Navigate to="/" replace />
+
+  // Wait for the initial session check, so a signed-in user reloading /login
+  // doesn't see the form flash before being redirected.
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
+        <ClaudeMark size={56} idle />
+      </div>
+    )
+  }
+
+  // Signed in — including the instant a password sign-in succeeds.
+  if (user) return <Navigate to="/" replace />
 
   return (
     <div className="flex flex-col items-center justify-center min-h-svh bg-[#0a0a0a] px-6">
@@ -106,7 +121,7 @@ export function Login() {
         ) : (
           <div className="w-full flex flex-col gap-2">
             <input
-              type="text"
+              type="email"
               inputMode="email"
               autoComplete="email"
               placeholder="you@example.com"
@@ -115,57 +130,30 @@ export function Login() {
               className={inputClass}
             />
 
-            {isAdmin ? (
-              <div className="flex flex-col gap-2 bg-[#161616] border border-[#2a2a2a] rounded-2xl p-4 mt-1">
-                <div className="flex items-center gap-2">
-                  <GitBranch size={16} className="text-[#d97756]" />
-                  <p className="text-sm font-semibold text-[#f5f5f0]">GitHub storage</p>
-                </div>
-                <p className="text-xs text-[#6a6a6a] leading-relaxed">
-                  Reads and writes <span className="text-[#a8a29e]">data/*.json</span> in the repo instead of
-                  Supabase. Every sync is a commit. Your token stays on this device.
-                </p>
+            {mode === 'password' ? (
+              <>
                 <input
                   type="password"
-                  autoComplete="off"
-                  placeholder="GitHub personal access token"
-                  value={token}
-                  onChange={(e) => { setToken(e.target.value); setError('') }}
-                  className={`${inputClass} mt-1`}
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    placeholder="owner"
-                    value={owner}
-                    onChange={(e) => setOwner(e.target.value)}
-                    className={inputClass}
-                  />
-                  <input
-                    placeholder="repo"
-                    value={repo}
-                    onChange={(e) => setRepo(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <input
-                  placeholder="branch"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
+                  autoComplete="current-password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError('') }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && email.includes('@') && password) void handlePassword() }}
                   className={inputClass}
                 />
                 <Button
-                  onClick={handleAdmin}
+                  onClick={handlePassword}
                   loading={busy}
-                  disabled={!token.trim() || !owner.trim() || !repo.trim()}
+                  disabled={!email.includes('@') || !password}
                   fullWidth
                 >
-                  <GitBranch size={16} />
-                  Connect GitHub storage
+                  <LogIn size={16} />
+                  Sign in
                 </Button>
-              </div>
+              </>
             ) : (
               <Button
-                onClick={handleEmail}
+                onClick={handleMagicLink}
                 loading={busy}
                 disabled={!email.includes('@')}
                 fullWidth
@@ -181,6 +169,16 @@ export function Login() {
                 <p className="text-xs">{error}</p>
               </div>
             )}
+
+            {MAGIC_LINK_ENABLED && (
+              <button
+                type="button"
+                onClick={() => switchMode(mode === 'password' ? 'magic-link' : 'password')}
+                className="text-xs text-[#6a6a6a] hover:text-[#a8a29e] transition-colors mt-2 py-1"
+              >
+                {mode === 'password' ? 'Email me a sign-in link instead' : 'Sign in with a password instead'}
+              </button>
+            )}
           </div>
         )}
 
@@ -194,4 +192,3 @@ export function Login() {
 
 const inputClass =
   'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-sm text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors'
-

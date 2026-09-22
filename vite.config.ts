@@ -25,6 +25,12 @@ export default defineConfig(({ mode }) => {
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   )
 
+  // Magic-link sign-in is hidden unless this is explicitly 'true'. Magic links
+  // need working SMTP, and Supabase's built-in mailer allows only a couple of
+  // messages an hour — so while the beta runs on hand-delivered passwords,
+  // offering the button would mostly hand testers a link that never arrives.
+  const ENABLE_MAGIC_LINK = pick('VITE_ENABLE_MAGIC_LINK', 'ENABLE_MAGIC_LINK')
+
   // Surfaced in the Vercel build log so it's easy to confirm whether credentials
   // were present at build time (never prints the values themselves).
   console.log(
@@ -37,6 +43,7 @@ export default defineConfig(({ mode }) => {
   define: {
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(SUPABASE_URL),
     'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(SUPABASE_ANON_KEY),
+    'import.meta.env.VITE_ENABLE_MAGIC_LINK': JSON.stringify(ENABLE_MAGIC_LINK),
   },
   plugins: [
     react(),

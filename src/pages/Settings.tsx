@@ -8,12 +8,12 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, GitBranch } from 'lucide-react'
+import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight } from 'lucide-react'
 
 export function Settings() {
   const navigate = useNavigate()
-  const { user, configured, signOut, adminMode } = useAuth()
-  const { syncStatus, syncError, github } = useSettingsStore()
+  const { user, configured, signOut } = useAuth()
+  const { syncStatus, syncError } = useSettingsStore()
   const { profile, setProfile } = useAppStore()
   const { sync } = useAutoSync()
 
@@ -49,40 +49,23 @@ export function Settings() {
           <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">
             Account &amp; Sync
           </p>
-          <Card accent={!!user || adminMode}>
+          <Card accent={!!user}>
             <CardSection>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 min-w-0">
-                  {adminMode ? (
-                    <GitBranch size={18} className="text-[#f5f5f0] shrink-0" />
-                  ) : (
-                    <UserCircle size={18} className="text-[#f5f5f0] shrink-0" />
-                  )}
+                  <UserCircle size={18} className="text-[#f5f5f0] shrink-0" />
                   <span className="text-sm font-semibold text-[#f5f5f0] truncate">
-                    {adminMode && github
-                      ? `${github.owner}/${github.repo}`
-                      : user?.email ?? (configured ? 'Signed out' : 'Local mode')}
+                    {user?.email ?? (configured ? 'Signed out' : 'Local mode')}
                   </span>
                 </div>
                 <SyncIndicator />
               </div>
 
-              {adminMode || user ? (
+              {user ? (
                 <div className="flex flex-col gap-3">
                   <div className="text-xs text-[#6a6a6a] leading-relaxed bg-[#1a1a1a] rounded-2xl px-4 py-3">
-                    {adminMode && github ? (
-                      <>
-                        <p className="font-medium text-[#a8a29e] mb-1">
-                          ✓ GitHub storage on <span className="text-[#d97756]">{github.branch}</span>
-                        </p>
-                        <p>Admin mode — reading and writing <span className="text-[#a8a29e]">data/*.json</span> in the repo instead of your Supabase account. Each sync lands as a commit; in-workout saves are batched so a session isn't one commit per set.</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-medium text-[#a8a29e] mb-1">✓ Syncing to your account</p>
-                        <p>Workouts and plans save to the cloud automatically, and load each time you open the app. Sign in on any device to pick up where you left off.</p>
-                      </>
-                    )}
+                    <p className="font-medium text-[#a8a29e] mb-1">✓ Syncing to your account</p>
+                    <p>Workouts and plans save to the cloud automatically, and load each time you open the app. Sign in on any device to pick up where you left off.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="secondary" size="sm" onClick={() => sync('all')} fullWidth>
@@ -91,7 +74,7 @@ export function Settings() {
                     </Button>
                     <Button variant="secondary" size="sm" onClick={() => signOut()} fullWidth>
                       <LogOut size={14} />
-                      {adminMode ? 'Exit admin' : 'Sign out'}
+                      Sign out
                     </Button>
                   </div>
                   {syncStatus === 'error' && (
