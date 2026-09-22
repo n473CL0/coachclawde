@@ -116,7 +116,8 @@ async function main() {
     console.log(`  ${tick(sessions > 0)} logged_sessions  ${sessions}  ${sessions === 0 ? '(expected 20 after the import)' : ''}`)
     if (plans === 0 || sessions === 0) {
       console.log('\n  → Not imported yet. Restore the files and run the importer:')
-      console.log('      git checkout fca4846^ -- data/')
+      console.log('      DEL=$(git log --diff-filter=D --format=%H -1 -- data/)')
+      console.log('      git checkout "$DEL^" -- data/')
       console.log('      node --env-file=.env.local scripts/migrate-data.mjs')
     }
   }

@@ -96,9 +96,14 @@ in to an empty app.
 3. Restore the files and import:
 
    ```bash
-   git checkout fca4846^ -- data/
+   DEL=$(git log --diff-filter=D --format=%H -1 -- data/)
+   git checkout "$DEL^" -- data/
    node --env-file=.env.local scripts/migrate-data.mjs
    ```
+
+   (`$DEL` is the commit that removed the files; its parent still has them. The
+   `v0.2.0-final-data` tag from step 7 points at the same content, if it exists
+   by the time you read this.)
 
    Expect `✓ profile imported`, `✓ 7 week plan(s) imported`,
    `✓ 20 logged session(s) imported`.
@@ -141,26 +146,20 @@ particular, that a fresh account lands on the **onboarding slideshow** rather
 than dropping into Home with a blank profile, and that the login screen shows
 only the password fields (no "email me a sign-in link" option).
 
-## 7. Tag the legacy data and restore `main`
+## 7. Tag the legacy data and merge
+
+Tag the last commit that still carries the legacy data files, so the import in
+step 4 has a stable handle after they are removed:
 
 ```bash
-git tag -a v0.2.0-final-data fca4846^ -m "Legacy single-user data, before database-only"
+git tag -a v0.2.0-final-data \
+  "$(git log --diff-filter=D --format=%H -1 -- data/)^" \
+  -m "Legacy single-user data, before database-only"
 git push origin v0.2.0-final-data
 ```
 
-`main`'s history was flattened to 50 bot commits in September; the current
-branch restores the full 168-commit history, with the tip tree byte-identical.
-
-**This step rewrites `main`. Ask for explicit confirmation before running it,
-every time — do not run it because it is next on the list.** Check first that
-nobody else has the repo checked out, and that the branch is pushed and green.
-
-```bash
-git push --force-with-lease origin claude/confident-cerf-drygyr:main
-```
-
-If they would rather go through review, open a pull request instead and leave
-`main` alone for now.
+Then merge the pull request normally. The branch sits directly on top of `main`,
+so it is an ordinary fast-forward — **no force-push, and nothing to rewrite.**
 
 ## 8. Loose ends
 
