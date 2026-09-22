@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Button } from '../components/shared/Button'
 import { ClaudeMark } from '../components/shared/ClaudeMark'
@@ -35,7 +36,7 @@ function authErrorMessage(e: unknown, fallback: string): string {
 const MAGIC_LINK_ENABLED = import.meta.env.VITE_ENABLE_MAGIC_LINK === 'true'
 
 export function Login() {
-  const { signInWithPassword, signInWithEmail } = useAuth()
+  const { user, loading, configured, signInWithPassword, signInWithEmail } = useAuth()
   const [mode, setMode] = useState<'password' | 'magic-link'>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -48,8 +49,10 @@ export function Login() {
     setBusy(true)
     try {
       await signInWithPassword(email.trim(), password)
-      // On success the auth listener swaps the session and the route guard
-      // takes over — nothing to navigate to here.
+      // On success the auth listener sets the session, `user` becomes non-null
+      // and the redirect below fires. This route sits outside RequireAuth, so
+      // without that redirect a successful sign-in would just re-render this
+      // form and look like nothing happened.
     } catch (e: unknown) {
       console.error('[auth] password sign-in failed:', e)
       setError(authErrorMessage(e, 'Could not sign in'))
@@ -77,6 +80,23 @@ export function Login() {
     setError('')
     setPassword('')
   }
+
+  // Local mode (no Supabase env vars) has no accounts and no route guard, so
+  // there is nothing to sign in to — every button here would quietly no-op.
+  if (!configured) return <Navigate to="/" replace />
+
+  // Wait for the initial session check, so a signed-in user reloading /login
+  // doesn't see the form flash before being redirected.
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
+        <ClaudeMark size={56} idle />
+      </div>
+    )
+  }
+
+  // Signed in — including the instant a password sign-in succeeds.
+  if (user) return <Navigate to="/" replace />
 
   return (
     <div className="flex flex-col items-center justify-center min-h-svh bg-[#0a0a0a] px-6">

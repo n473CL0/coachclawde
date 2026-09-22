@@ -22,6 +22,17 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+/**
+ * Sign-in has no meaning without a backend, and returning silently would leave
+ * the caller showing a spinner that stops with nothing to say. Fail loudly
+ * instead — the login screen redirects away in local mode, so reaching this is
+ * a bug rather than a state a user can get into.
+ */
+function requireClient() {
+  if (!supabase) throw new Error('Not connected to a backend — running in local mode.')
+  return supabase
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   // Only "loading" when there's a backend session to resolve; in local mode
@@ -41,8 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signInWithGoogle = useCallback(async () => {
-    if (!supabase) return
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await requireClient().auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.origin },
     })
@@ -50,14 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signInWithPassword = useCallback(async (email: string, password: string) => {
-    if (!supabase) return
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await requireClient().auth.signInWithPassword({ email, password })
     if (error) throw error
   }, [])
 
   const signInWithEmail = useCallback(async (email: string) => {
-    if (!supabase) return
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await requireClient().auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin },
     })
@@ -65,8 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updatePassword = useCallback(async (password: string) => {
-    if (!supabase) return
-    const { error } = await supabase.auth.updateUser({ password })
+    const { error } = await requireClient().auth.updateUser({ password })
     if (error) throw error
   }, [])
 
