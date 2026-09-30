@@ -32,6 +32,8 @@ export interface ProgramConfig {
   lengthWeeks?: number;
   /** Local-ISO date (a Monday) the current program began; drives week progression. */
   startDate?: string;
+  /** Roughly how many days a week the athlete wants to train (from onboarding). */
+  daysPerWeek?: number;
 }
 
 export interface UserProfile {
@@ -39,6 +41,8 @@ export interface UserProfile {
   sex: 'male' | 'female';
   heightCm: number;
   weightKg: number;
+  /** Age in years, captured during onboarding. Optional for older profiles. */
+  age?: number;
   programWeek: number;
   injuries: string[];
   goals: string[];
@@ -50,23 +54,10 @@ export interface UserProfile {
   experienceLevel?: ExperienceLevel;
   /**
    * Whether the athlete has completed first-run onboarding. Absent/false means
-   * the onboarding slideshow is shown before the app. Set true on completion.
+   * the in-app onboarding chat is shown before the app. Set true on completion.
    */
   onboarded?: boolean;
   updatedAt: string;
-}
-
-/**
- * The "personalised workout background" JSON the athlete pastes back during
- * onboarding — Claude expands the basics they entered into a structured profile
- * the app merges in. Every field is optional so a partial paste still imports.
- */
-export interface AthleteBackground {
-  injuries?: string[];
-  goals?: string[];
-  fitnessBackground?: string;
-  dietaryNotes?: string[];
-  program?: Partial<ProgramConfig>;
 }
 
 export interface PlannedSet {
@@ -103,6 +94,17 @@ export interface PlannedInterval {
   notes?: string;
 }
 
+/**
+ * One move in a detailed warm-up or cool-down. Not logged — it's a guided
+ * checklist shown when the athlete expands the warm-up/cool-down card.
+ */
+export interface RoutineItem {
+  name: string;
+  /** e.g. "10 each side", "60s", "2 × 8". */
+  prescription?: string;
+  notes?: string;
+}
+
 export interface PlannedSession {
   id: string;
   date: string;
@@ -120,8 +122,14 @@ export interface PlannedSession {
    * which drives the split/pace units. The first entry is the default.
    */
   cardioOptions?: CardioType[];
+  /** Brief one-line warm-up summary. */
   warmup?: string;
+  /** Brief one-line cool-down summary. */
   cooldown?: string;
+  /** Detailed warm-up moves, shown when the warm-up card is expanded. */
+  warmupExercises?: RoutineItem[];
+  /** Detailed cool-down moves, shown when the cool-down card is expanded. */
+  cooldownExercises?: RoutineItem[];
 }
 
 export interface WeekPlan {

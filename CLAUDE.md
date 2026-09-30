@@ -2,46 +2,17 @@
 
 This repo is a workout tracking PWA. Claude generates personalised weekly workout plans from a prompt the app produces.
 
-## How to Run Onboarding
+## Onboarding
 
-New athletes go through a first-run onboarding slideshow in the app. Partway
-through it asks them to paste an **onboarding prompt** into Claude (titled
-"Coach Claude — Onboarding"). When you receive that prompt, get to know the
-athlete — feel free to ask a few follow-up questions about goals, equipment,
-what training they enjoy, dietary needs and how any injuries behave — then
-output a single JSON code block matching the **Athlete Background** schema
-below, followed by a short, friendly summary. The athlete pastes that JSON
-block back into the app to finish setting up their profile.
-
-Apply the **Critical Programming Rules** below (especially the injury-safety rule)
-when shaping their goals and program preferences.
-
-### Athlete Background JSON Schema
-
-```typescript
-{
-  injuries: string[],          // safety-critical; expand the athlete's notes into clear, specific items
-  goals: string[],             // free-text training goals
-  fitnessBackground: string,   // a short narrative: history, current level, relevant context
-  dietaryNotes: string[],      // e.g. ["Gluten-free"]
-  program: {                   // standing preferences that shape every future plan
-    goals: ("get-fit" | "get-strong" | "look-great")[],
-    exerciseTypes: ("weights" | "cardio" | "mobility")[],
-    facilities: ("yoga-mat" | "weights-at-home" | "full-gym")[],
-    sports: string[],          // preferred cardio modalities, e.g. ["Running", "Rowing"]; only relevant if cardio is in exerciseTypes
-    coachingStyle: "supportive" | "balanced" | "intense"
-  }
-}
-```
-
-Every field is optional — the app merges whatever you provide — but include as
-much as you reasonably can. The `program.exerciseTypes` you choose also decides
-which baseline questions the app asks next (press-ups for weights, furthest run
-for cardio), so set them thoughtfully.
+Onboarding happens entirely in the app: a scripted chat with Clawde
+(`src/lib/onboardingChat.ts`) asks about goals, experience, training types,
+frequency, equipment, injuries and coaching style, then an "About you"
+screen collects name, age and body stats. The answers are written straight
+into the profile — there is no onboarding prompt to answer here any more.
 
 ## How to Generate a Week Plan
 
-When the user pastes a prompt from the app (generated via Home → Plan → Generate & Copy Prompt), create a `WeekPlan` JSON matching the schema below and paste it back. The user will import it via Plan → Import Plan from Claude.
+When the user pastes a prompt from the app (generated via Home → Plan → Generate & Open Claude), create a `WeekPlan` JSON matching the schema below and paste it back. The user will import it via Plan → Import Plan from Claude.
 
 The app is **multi-user** and each athlete's data lives in a per-user database (not in this repo), so the pasted prompt is **self-contained**: it embeds the athlete's profile, injuries, goals, program preferences and a *summarised* recent training history. Read those straight from the pasted prompt:
 
@@ -72,8 +43,10 @@ PlannedSession {
   focus: string,                  // muscle groups or cardio type
   estimatedMinutes: number,
   intensity: "easy" | "moderate" | "hard",
-  warmup?: string,
-  cooldown?: string,
+  warmup?: string,                // brief one-line summary
+  cooldown?: string,              // brief one-line summary
+  warmupExercises?: RoutineItem[],   // detailed warm-up moves (4–8)
+  cooldownExercises?: RoutineItem[], // detailed cool-down moves
   exercises?: PlannedExercise[],  // for weights sessions
   intervals?: PlannedInterval[],  // for cardio sessions
   cardioOptions?: CardioType[]    // cardio only: modalities the athlete may
@@ -85,6 +58,12 @@ PlannedSession {
 }
 
 // CardioType = "run" | "row" | "bike" | "swim" | "other"
+
+RoutineItem {
+  name: string,                   // standard exercise name, e.g. "Leg Swings"
+  prescription?: string,          // e.g. "10 each side" or "60s"
+  notes?: string
+}
 
 PlannedExercise {
   id: string,
@@ -143,13 +122,15 @@ They arrive under `program` in the pasted prompt and should shape every plan:
   the athlete can actually do with the equipment available.
 - `sports` — preferred cardio modalities (e.g. Running, Rowing) — favour these
   for cardio sessions. Only relevant when `cardio` is in `exerciseTypes`.
+- `daysPerWeek` — roughly how often the athlete wants to train (6 means "6+").
+  The prompt's listed training days take precedence for the week itself.
 - `coachingStyle` — `supportive`, `balanced` or `intense`. Sets the tone of your
   written summary and how hard you push intensity/RPE targets.
 
 `program.lengthWeeks` (how many weeks the program runs) and `program.startDate`
 are **app-managed** — the athlete picks the length during onboarding / in Program
 setup, and the app tracks progress and prompts a re-onboard when the block ends.
-Don't set these in the Athlete Background JSON; leave them to the app.
+Never set them in a plan; leave them to the app.
 
 The Critical Programming Rules below (especially the safety rules) always
 override these preferences.
@@ -171,7 +152,9 @@ rather than assuming any particular injury.
 6. **TIMED EXERCISES**: For holds like planks, side planks, dead hangs or wall sits, set `durationSeconds` on each set (and no weight). The app gives the athlete a stopwatch.
 7. **PERIODISE ACROSS THE BLOCK**: The prompt gives "Week N of M" for the athlete's program block. Deload (~40% less volume, lighter loads, RPE ≤ 7) roughly every 4th–6th week, or sooner if recent history shows fatigue; build through the middle and push a little harder in the final week or two. Say in the summary if it's a deload week.
 8. **FIT THE SESSION LENGTH & DATES**: The prompt gives a target session length and the exact date for each training day. Use those dates verbatim (one session per listed day) and size each session to the target, with an honest `estimatedMinutes`.
-9. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
+9. **DETAILED WARM-UP & COOL-DOWN**: Every session gets a one-line `warmup` / `cooldown` summary *and* a detailed `warmupExercises` list (4–8 moves specific to the session, plus injury prehab where relevant) and a `cooldownExercises` list, each move with a clear `prescription`. The app shows the summary and expands to the full list.
+10. **STANDARD EXERCISE NAMES**: Name every exercise and warm-up/cool-down move with its common gym name (e.g. "Dumbbell Bench Press", "Romanian Deadlift", "Cat Stretch"). The app matches names against an exercise library (free-exercise-db) to show a movement guide, with a YouTube search as backup. Put variations and cues in `coachNotes` / `notes`, not the name.
+11. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
 
 ## Session Export
 

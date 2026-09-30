@@ -65,8 +65,15 @@ variable, which would inline it into the public bundle.
 
 Ask the operator to run each file in `supabase/migrations/` **in numerical
 order** in the Supabase SQL editor: `0001_init.sql`, `0002_onboarding.sql`,
-`0003_fix_new_user_onboarding.sql`. If the project is already live, only `0003`
-is new.
+`0003_fix_new_user_onboarding.sql`, `0004_profile_age.sql`. If the project is
+already live, only the ones it hasn't run yet are new. **`0004` must be applied
+before the build that collects age is deployed** — otherwise every profile save
+fails on the missing `age` column. Check it with:
+
+```sql
+select count(*) = 1 as has_0004 from information_schema.columns
+ where table_schema = 'public' and table_name = 'profiles' and column_name = 'age';
+```
 
 Then have them run this in the SQL editor and report the result:
 
@@ -168,7 +175,8 @@ Mention these once, at the end — don't act on them without being asked:
 - Two unmerged branches claim migration numbers this change took. When
   `claude/beta-feedback-banner-modal-uazdpq` (feedback sheet) and
   `claude/iphone-timer-notifications-8m7aon` (rest-timer push) land, renumber
-  their `0003`/`0004` migrations to `0004`/`0005`.
+  their `0003`/`0004` migrations to `0005`/`0006` (`0004` is now
+  `0004_profile_age.sql`).
 - `claude/smtp-resend-to-brevo-1jn9ng` has a finished Brevo SMTP guide. Not
   needed for a password-based beta. Land it, then set
   `VITE_ENABLE_MAGIC_LINK=true`, when magic-link sign-in is wanted.

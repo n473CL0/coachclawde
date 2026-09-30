@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Play, Square } from 'lucide-react'
+import { Check, Pencil, Play, Square, TriangleAlert } from 'lucide-react'
 import type { LoggedSet, PlannedSet } from '../../types'
 import { secondsToDisplay } from '../../lib/dateUtils'
+import { ConfirmDialog } from '../shared/ConfirmDialog'
 
 interface SetRowProps {
   setIndex: number
@@ -9,6 +10,8 @@ interface SetRowProps {
   loggedSet: LoggedSet | undefined
   onUpdate: (updates: Partial<LoggedSet>) => void
   onComplete: (payload?: Partial<LoggedSet>) => void
+  /** Reopen a completed set so its reps/weight/time can be corrected. */
+  onUncomplete: () => void
 }
 
 export function SetRow(props: SetRowProps) {
@@ -17,9 +20,10 @@ export function SetRow(props: SetRowProps) {
 }
 
 /** Standard reps × weight set. */
-function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete }: SetRowProps) {
+function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUncomplete }: SetRowProps) {
   const completed = loggedSet?.completed ?? false
   const skipped = loggedSet?.skipped ?? false
+  const [confirm, setConfirm] = useState<'empty' | 'edit' | null>(null)
 
   // Keep the raw typed text locally so partial decimals (e.g. "60.") survive —
   // parsing straight to Number on every keystroke would drop the trailing dot.
@@ -74,16 +78,45 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete }: Se
         <span className="text-xs text-[#4a4a4a] shrink-0">kg</span>
       </div>
 
-      <CompleteButton completed={completed} onClick={() => onComplete()} />
+      <CompleteButton
+        completed={completed}
+        onClick={() => {
+          // An empty-reps tick is usually a mis-tap; ticking a done set means
+          // the athlete wants to fix it. Both ask first.
+          if (completed) setConfirm('edit')
+          else if (repsText.trim() === '') setConfirm('empty')
+          else onComplete()
+        }}
+      />
+
+      {confirm === 'empty' && (
+        <ConfirmDialog
+          icon={<TriangleAlert size={20} />}
+          title="No reps entered"
+          confirmLabel="Mark done"
+          onConfirm={() => { setConfirm(null); onComplete() }}
+          onCancel={() => setConfirm(null)}
+        >
+          You haven't entered any reps for set {setIndex + 1}. Mark it done anyway?
+        </ConfirmDialog>
+      )}
+      {confirm === 'edit' && (
+        <EditSetDialog
+          setIndex={setIndex}
+          onConfirm={() => { setConfirm(null); onUncomplete() }}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
     </div>
   )
 }
 
 /** Timed hold (e.g. plank): a stopwatch you stop when you're done. */
-function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete }: SetRowProps) {
+function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete }: SetRowProps) {
   const completed = loggedSet?.completed ?? false
   const skipped = loggedSet?.skipped ?? false
   const target = plannedSet.durationSeconds ?? 0
+  const [confirmEdit, setConfirmEdit] = useState(false)
 
   const [running, setRunning] = useState(false)
   const [elapsed, setElapsed] = useState(0)
@@ -135,7 +168,7 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete }: SetRowProp
 
       {/* Start / Stop */}
       {completed ? (
-        <CompleteButton completed onClick={() => {}} />
+        <CompleteButton completed onClick={() => setConfirmEdit(true)} />
       ) : running ? (
         <button
           onClick={stop}
@@ -153,7 +186,34 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete }: SetRowProp
           Start
         </button>
       )}
+
+      {confirmEdit && (
+        <EditSetDialog
+          setIndex={setIndex}
+          timed
+          onConfirm={() => { setConfirmEdit(false); setElapsed(0); onUncomplete() }}
+          onCancel={() => setConfirmEdit(false)}
+        />
+      )}
     </div>
+  )
+}
+
+function EditSetDialog({
+  setIndex, timed, onConfirm, onCancel,
+}: { setIndex: number; timed?: boolean; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <ConfirmDialog
+      icon={<Pencil size={20} />}
+      title={`Edit set ${setIndex + 1}?`}
+      confirmLabel="Reopen set"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+    >
+      {timed
+        ? 'This reopens the set so you can redo the hold.'
+        : 'This reopens the set so you can fix the reps or weight, then tick it again.'}
+    </ConfirmDialog>
   )
 }
 
@@ -171,10 +231,10 @@ function CompleteButton({ completed, onClick }: { completed: boolean; onClick: (
   return (
     <button
       onClick={onClick}
-      disabled={completed}
+      aria-label={completed ? 'Edit completed set' : 'Complete set'}
       className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 ${
         completed
-          ? 'bg-emerald-500 text-white'
+          ? 'bg-emerald-500 text-white active:scale-90'
           : 'bg-[#2a2a2a] text-[#4a4a4a] hover:bg-[#d97756]/20 hover:text-[#d97756] active:scale-90'
       }`}
     >

@@ -48,6 +48,27 @@ make sure both are green.** On Claude Code on the web,
 `.claude/hooks/session-start.sh` installs dependencies at session start, so these
 work out of the box.
 
+## Shipping a beta update (versions & release notes)
+
+The app version lives in `package.json` (currently **1.0.1**) and is injected
+into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
+`src/lib/appVersion.ts`). The first time a tester opens a new version, a
+"What's new" sheet lists the changes; it's also reachable from Settings →
+What's new. For every beta release:
+
+1. Bump `version` in `package.json` (patch for fixes/feedback rounds, e.g.
+   `1.0.2`; minor for bigger features).
+2. Add an entry for that version at the **top** of `RELEASES` in
+   `src/lib/releaseNotes.ts`. List everything that came from tester feedback
+   under `fromFeedback` (plain language, the tester's point of view), and
+   anything else under `alsoNew`.
+
+`npm run build` fails if the newest `RELEASES` entry doesn't match
+`package.json`, so an update can't ship without notes. Which version a device
+has seen is kept in `localStorage` (`coach-claude-seen-version`), outside the
+Zustand store so signing out and back in doesn't replay it; brand-new athletes
+are marked as seen when they finish onboarding.
+
 ## Where things live
 
 - `src/types/index.ts` — **single source of truth** for all data shapes
@@ -64,15 +85,23 @@ work out of the box.
   store on sign-out). `src/pages/Login.tsx` is the sign-in screen.
 - `src/pages/` — one component per tab (`Home`, `WeekPlanner`, `Session`,
   `Progress`, `History`, `Settings`), wired in `src/App.tsx` with `BottomNav`.
+  `Onboarding` is the first-run flow: an in-app chat (`components/onboarding/
+  ChatOnboarding` driven by the script in `lib/onboardingChat`), then "About
+  you", then finish.
+- `src/components/session/MovementGuide` + `src/lib/exerciseGuide` — per-exercise
+  help sheets from free-exercise-db (fetched from jsDelivr, cached by the service
+  worker), fuzzy-matched by name with a YouTube-search fallback. `RoutineCard`
+  is the expandable warm-up/cool-down.
 - `src/components/session/` — the live-workout UI (exercise tiles, set rows, rest
   timer, interval rows, complete flow).
 - `src/components/shared/` & `components/layout/` — reusable primitives
-  (`Button`, `Card`, `Badge`, `PageHeader`, …). Reuse these instead of
+  (`Button`, `Card`, `Badge`, `PageHeader`, `ConfirmDialog`, `BottomSheet`, …). Reuse these instead of
   hand-rolling new ones.
 - `src/lib/` — pure helpers: `promptBuilder` (builds the **self-contained** plan
   prompt — embeds profile + summarised history), `historySummary` (bounds that
   history so the prompt isn't overloaded), `supabase` (client) + `supabaseSync`
-  (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `export`, `nanoid`.
+  (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `export`, `nanoid`, `programOptions`
+  (shared labels for the program preference enums).
   `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
 - `scripts/create-beta-user.mjs` — provisions beta accounts (email + password,
   pre-confirmed) with the service-role key. `scripts/migrate-data.mjs` imports

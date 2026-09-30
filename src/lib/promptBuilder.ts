@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { WEEK_DAYS_MON, addDays, toLocalISODate } from './weekUtils'
 import { summarizeHistory } from './historySummary'
 import { getProgramProgress } from './programProgress'
+import { daysPerWeekLabel } from './programOptions'
 
 /**
  * Builds the prompt the user pastes into Claude.
@@ -60,6 +61,7 @@ export function buildWeekPlanPrompt(
 - **Training types:** ${program.exerciseTypes.join(', ') || '—'}
 - **Facilities:** ${program.facilities.join(', ') || '—'}
 - **Preferred cardio:** ${program.sports.join(', ') || '—'}
+- **Preferred frequency:** ${program.daysPerWeek ? `about ${daysPerWeekLabel(program.daysPerWeek)} days a week` : '—'}
 - **Coaching style:** ${program.coachingStyle}`
     : '- (no standing program preferences set)'
 
@@ -79,7 +81,7 @@ ${dayLines || '  - —'}
 
 ## Athlete profile
 - **Name:** ${profile.name.trim() || 'Athlete'}
-- **Sex / height / weight:** ${profile.sex}, ${profile.heightCm}cm, ${profile.weightKg}kg
+- **Sex / age / height / weight:** ${profile.sex}, ${profile.age ? `${profile.age}y` : 'age —'}, ${profile.heightCm}cm, ${profile.weightKg}kg
 - **Program block:** ${blockLine}
 - **Experience level:** ${profile.experienceLevel ?? '—'}
 - **Goals:** ${profile.goals.length ? profile.goals.join('; ') : '—'}
@@ -136,6 +138,16 @@ Apply all of these. The safety rules override every preference above.
    scores, missed reps, stalled weights). Build through the middle of the block
    and push a little harder in the final week or two. Say in your summary if
    this is a deload week and why.
+8. **Detailed warm-up & cool-down:** Every session gets a one-line \`warmup\` /
+   \`cooldown\` summary AND a detailed \`warmupExercises\` list (4–8 moves
+   specific to that session's work — and to my injuries, as prehab, where
+   relevant) plus a \`cooldownExercises\` list. Give each move a clear
+   \`prescription\` (e.g. "10 each side", "60s").
+9. **Standard exercise names:** Name every exercise and warm-up move with its
+   common, standard gym name (e.g. "Dumbbell Bench Press", "Romanian Deadlift",
+   "Cat Stretch") — the app looks each name up in an exercise library to show
+   me a movement guide. Put variations and cues in \`coachNotes\` / \`notes\`,
+   not in the name.
 
 Match the tone of my chosen coaching style in your written summary and how hard
 you push intensity/RPE targets.
@@ -175,8 +187,10 @@ PlannedSession {
   focus: string,                  // muscle groups or cardio type
   estimatedMinutes: number,
   intensity: "easy" | "moderate" | "hard",
-  warmup?: string,
-  cooldown?: string,
+  warmup?: string,                // brief one-line summary
+  cooldown?: string,              // brief one-line summary
+  warmupExercises?: RoutineItem[],   // detailed warm-up moves
+  cooldownExercises?: RoutineItem[], // detailed cool-down moves
   exercises?: PlannedExercise[],  // for weights sessions
   intervals?: PlannedInterval[],  // for cardio sessions
   cardioOptions?: CardioType[]    // cardio only: modalities to choose between at
@@ -187,6 +201,12 @@ PlannedSession {
 }
 
 // CardioType = "run" | "row" | "bike" | "swim" | "other"
+
+RoutineItem {
+  name: string,                   // standard exercise name, e.g. "Leg Swings"
+  prescription?: string,          // e.g. "10 each side" or "60s"
+  notes?: string
+}
 
 PlannedExercise {
   id: string,

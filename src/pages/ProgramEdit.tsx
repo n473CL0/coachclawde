@@ -7,33 +7,11 @@ import { SyncIndicator } from '../components/shared/SyncIndicator'
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import { PRIMARY_SPORTS, OTHER_SPORTS, sportIcon } from '../lib/sports'
 import { Check, Plus, X } from 'lucide-react'
-import type {
-  ProgramConfig, ProgramGoal, ProgramExerciseType, ProgramFacility, CoachingStyle,
-} from '../types'
-
-const GOAL_OPTIONS: { value: ProgramGoal; label: string }[] = [
-  { value: 'get-fit', label: 'Get fit' },
-  { value: 'get-strong', label: 'Get strong' },
-  { value: 'look-great', label: 'Look great' },
-]
-
-const EXERCISE_OPTIONS: { value: ProgramExerciseType; label: string }[] = [
-  { value: 'weights', label: 'Weights' },
-  { value: 'cardio', label: 'Cardio' },
-  { value: 'mobility', label: 'Mobility' },
-]
-
-const FACILITY_OPTIONS: { value: ProgramFacility; label: string }[] = [
-  { value: 'yoga-mat', label: 'Yoga mat' },
-  { value: 'weights-at-home', label: 'Weights at home' },
-  { value: 'full-gym', label: 'Full gym' },
-]
-
-const COACHING_OPTIONS: { value: CoachingStyle; label: string }[] = [
-  { value: 'supportive', label: 'Supportive' },
-  { value: 'balanced', label: 'Balanced' },
-  { value: 'intense', label: 'Intense' },
-]
+import {
+  GOAL_OPTIONS, EXERCISE_OPTIONS, FACILITY_OPTIONS, COACHING_OPTIONS,
+  LENGTH_OPTIONS, DAYS_PER_WEEK_OPTIONS, daysPerWeekLabel,
+} from '../lib/programOptions'
+import type { ProgramConfig } from '../types'
 
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
@@ -117,6 +95,10 @@ export function ProgramEdit() {
               selected={[program.coachingStyle]}
               onToggle={(v) => update({ coachingStyle: v })}
             />
+            <DaysPerWeekGroup
+              value={program.daysPerWeek}
+              onChange={(daysPerWeek) => update({ daysPerWeek })}
+            />
             <LengthGroup
               value={program.lengthWeeks ?? 12}
               onChange={(lengthWeeks) => update({ lengthWeeks })}
@@ -128,7 +110,32 @@ export function ProgramEdit() {
   )
 }
 
-const LENGTH_OPTIONS = [4, 8, 12, 16] as const
+function DaysPerWeekGroup({ value, onChange }: { value: number | undefined; onChange: (v: number) => void }) {
+  return (
+    <div>
+      <p className="text-xs font-medium text-[#a8a29e] mb-2.5">Days per week</p>
+      <div className="grid grid-cols-5 gap-2">
+        {DAYS_PER_WEEK_OPTIONS.map((days) => {
+          const active = value === days
+          return (
+            <button
+              key={days}
+              onClick={() => onChange(days)}
+              aria-pressed={active}
+              className={`px-2 py-2.5 rounded-2xl text-sm font-medium text-center transition-all duration-150 ${
+                active
+                  ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
+                  : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
+              }`}
+            >
+              {daysPerWeekLabel(days)}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function LengthGroup({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (

@@ -151,6 +151,15 @@ body {
     opacity 0.3s ease-out 0.6s;
 }
 
+/* Onboarding chat — Clawde's "typing…" dots */
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%           { transform: translateY(-3px); opacity: 1; }
+}
+.typing-dot {
+  animation: typing-dot 1s ease-in-out infinite;
+}
+
 /* --- Scroll reveal --- */
 .reveal {
   opacity: 0;
@@ -168,7 +177,8 @@ body {
   .claude-cheer,
   .claude-sweat,
   .claude-pushup,
-  .claude-run { animation: none; }
+  .claude-run,
+  .typing-dot { animation: none; }
   .claude-flight { transition: opacity 0.3s ease-out; }
   .reveal { opacity: 1; transform: none; transition: none; }
 }

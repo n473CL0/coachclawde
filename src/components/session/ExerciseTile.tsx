@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Info } from 'lucide-react'
+import { ChevronDown, ChevronUp, CircleQuestionMark, Info } from 'lucide-react'
 import type { LoggedExercise, PlannedExercise } from '../../types'
 import { SetRow } from './SetRow'
+import { MovementGuide } from './MovementGuide'
 import { formatRestTime } from '../../lib/dateUtils'
 
 interface ExerciseTileProps {
@@ -9,12 +10,14 @@ interface ExerciseTileProps {
   logged: LoggedExercise
   onUpdateSet: (setIndex: number, updates: Partial<LoggedExercise['sets'][0]>) => void
   onSetComplete: (setIndex: number, payload?: Partial<LoggedExercise['sets'][0]>) => void
+  onSetUncomplete: (setIndex: number) => void
   isActive: boolean
   onActivate: () => void
 }
 
-export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, isActive, onActivate }: ExerciseTileProps) {
+export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, isActive, onActivate }: ExerciseTileProps) {
   const [expanded, setExpanded] = useState(isActive)
+  const [showGuide, setShowGuide] = useState(false)
 
   const completedSets = logged.sets.filter((s) => s.completed).length
   const totalSets = planned.sets.length
@@ -31,33 +34,43 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, isAc
       }`}
     >
       {/* Header */}
-      <button
-        className="w-full flex items-center gap-3 px-4 py-4 text-left"
-        onClick={() => { setExpanded((e) => !e); onActivate() }}
-      >
-        {/* Set progress indicator */}
-        <div className="flex gap-1 shrink-0">
-          {planned.sets.map((_, i) => (
-            <span
-              key={i}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                logged.sets[i]?.completed ? 'bg-emerald-400' : isActive ? 'bg-[#d97756]/40' : 'bg-[#2a2a2a]'
-              }`}
-            />
-          ))}
-        </div>
+      <div className="flex items-center pr-2">
+        <button
+          className="flex-1 min-w-0 flex items-center gap-3 pl-4 pr-2 py-4 text-left"
+          onClick={() => { setExpanded((e) => !e); onActivate() }}
+        >
+          {/* Set progress indicator */}
+          <div className="flex gap-1 shrink-0">
+            {planned.sets.map((_, i) => (
+              <span
+                key={i}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  logged.sets[i]?.completed ? 'bg-emerald-400' : isActive ? 'bg-[#d97756]/40' : 'bg-[#2a2a2a]'
+                }`}
+              />
+            ))}
+          </div>
 
-        <div className="flex-1 min-w-0">
-          <p className={`font-semibold text-sm leading-tight ${allDone ? 'text-[#6a6a6a] line-through' : 'text-[#f5f5f0]'}`}>
-            {planned.name}
-          </p>
-          <p className="text-xs text-[#4a4a4a] mt-0.5">
-            {completedSets}/{totalSets} sets · rest {formatRestTime(planned.sets[0]?.restSeconds ?? 90)}
-          </p>
-        </div>
+          <div className="flex-1 min-w-0">
+            <p className={`font-semibold text-sm leading-tight ${allDone ? 'text-[#6a6a6a] line-through' : 'text-[#f5f5f0]'}`}>
+              {planned.name}
+            </p>
+            <p className="text-xs text-[#4a4a4a] mt-0.5">
+              {completedSets}/{totalSets} sets · rest {formatRestTime(planned.sets[0]?.restSeconds ?? 90)}
+            </p>
+          </div>
 
-        {expanded ? <ChevronUp size={16} className="text-[#4a4a4a] shrink-0" /> : <ChevronDown size={16} className="text-[#4a4a4a] shrink-0" />}
-      </button>
+          {expanded ? <ChevronUp size={16} className="text-[#4a4a4a] shrink-0" /> : <ChevronDown size={16} className="text-[#4a4a4a] shrink-0" />}
+        </button>
+
+        <button
+          onClick={() => setShowGuide(true)}
+          aria-label={`How to do ${planned.name}`}
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-[#6a6a6a] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors shrink-0"
+        >
+          <CircleQuestionMark size={18} />
+        </button>
+      </div>
 
       {expanded && (
         <div className="px-4 pb-4 flex flex-col gap-2">
@@ -79,10 +92,15 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, isAc
                 loggedSet={logged.sets[i]}
                 onUpdate={(updates) => onUpdateSet(i, updates)}
                 onComplete={(payload) => onSetComplete(i, payload)}
+                onUncomplete={() => onSetUncomplete(i)}
               />
             ))}
           </div>
         </div>
+      )}
+
+      {showGuide && (
+        <MovementGuide name={planned.name} notes={planned.coachNotes} onClose={() => setShowGuide(false)} />
       )}
     </div>
   )
