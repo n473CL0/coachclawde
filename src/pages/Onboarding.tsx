@@ -281,7 +281,10 @@ function FinishStep({ name }: { name: string }) {
 /** Collapsible "add to home screen" instructions for the athlete's platform. */
 function InstallTips() {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
-  const isIOS = /iphone|ipad|ipod/i.test(ua)
+  // iPadOS Safari reports a Mac user agent; a touch-capable "Mac" is an iPad.
+  const isIOS =
+    /iphone|ipad|ipod/i.test(ua) ||
+    (typeof navigator !== 'undefined' && /Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
   const isAndroid = /android/i.test(ua)
   const installed =
     typeof window !== 'undefined' &&
@@ -365,7 +368,7 @@ function InstallCard({
       <ol className="flex flex-col gap-2">
         {steps.map((s, i) => (
           <li key={i} className="flex items-start gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+            <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
               {i + 1}
             </span>
             <span className="text-sm text-[#a8a29e] leading-snug">{s}</span>
@@ -397,8 +400,10 @@ function FlightToHome({ name }: { name: string }) {
       <div
         className="claude-flight absolute"
         style={{
-          left: '50%',
-          top: landed ? '64px' : '42vh',
+          // Landing point tracks Home's mascot: below the status bar, and
+          // centred in the content column (offset by the sidebar on iPad).
+          left: 'var(--flight-x)',
+          top: landed ? 'var(--flight-landing-y)' : '42vh',
           transform: `translate(-50%, 0) scale(${landed ? 0.72 : 1.2})`,
           opacity: landed ? 0 : 1,
         }}

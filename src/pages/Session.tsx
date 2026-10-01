@@ -402,7 +402,7 @@ export function Session() {
         <div className="fixed bottom-0 inset-x-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-[#1a1a1a] px-safe pb-safe pt-3">
           {/* Match the content column so the button doesn't stretch across
               landscape phones and iPads (or under the landscape notch). */}
-          <div className="max-w-md @3xl/app:max-w-xl mx-auto">
+          <div className="max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto">
             <Button onClick={() => setShowComplete(true)} fullWidth size="lg">
               <CheckCircle2 size={18} />
               Complete Session

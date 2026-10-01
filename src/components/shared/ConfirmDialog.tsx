@@ -26,7 +26,7 @@ export function ConfirmDialog({
         role="alertdialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-sm bg-[#111] rounded-3xl border border-[#2a2a2a] p-6 flex flex-col gap-4 fade-in"
+        className="w-full max-w-sm bg-[#111] rounded-[2.5rem] border border-[#2a2a2a] p-6 flex flex-col gap-4 fade-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3">

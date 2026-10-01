@@ -23,7 +23,7 @@ export function RoutineCard({ title, summary, items }: RoutineCardProps) {
   if (!summary && moves.length === 0) return null
 
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl border border-[#2a2a2a] overflow-hidden">
+    <div className="bg-[#1a1a1a] rounded-3xl border border-[#2a2a2a] overflow-hidden [--nest-radius:1.5rem] [--nest-inset:0.75rem]">
       <div className="px-4 py-3">
         <p className="text-xs font-semibold text-[#6a6a6a] uppercase tracking-widest mb-1">{title}</p>
         {summary && <p className="text-sm text-[#a8a29e]">{summary}</p>}
@@ -43,8 +43,8 @@ export function RoutineCard({ title, summary, items }: RoutineCardProps) {
           {expanded && (
             <ol className="px-3 pb-3 flex flex-col gap-1.5 fade-in">
               {moves.map((item, i) => (
-                <li key={i} className="flex items-start gap-2.5 bg-[#161616] border border-[#2a2a2a] rounded-2xl pl-3 pr-1.5 py-2.5">
-                  <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                <li key={i} className="flex items-start gap-2.5 bg-[#161616] border border-[#2a2a2a] rounded-nested pl-3 pr-1.5 py-2.5">
+                  <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">

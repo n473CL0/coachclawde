@@ -27,8 +27,8 @@ export function BottomNav() {
                 active ? 'bg-[#d97756]/15 text-[#d97756]' : 'text-[#6a6a6a] hover:text-[#a8a29e]'
               }`}
             >
-              <Icon size={20} strokeWidth={active ? 2.5 : 1.8} />
-              <span className="text-[0.6875rem] font-medium leading-none">{label}</span>
+              <Icon size="1.25em" strokeWidth={active ? 2.5 : 1.8} />
+              <span className="text-2xs font-medium leading-none">{label}</span>
             </button>
           )
         })}

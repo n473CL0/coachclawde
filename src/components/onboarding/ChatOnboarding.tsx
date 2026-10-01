@@ -94,13 +94,14 @@ export function ChatOnboarding({ answers, onAnswer, onRewind, onContinue }: Chat
         </div>
 
         {answered.length > 0 && !typing && current && (
-          <p className="text-[10px] text-[#4a4a4a] text-center mt-1">Tap any of your answers to change it</p>
+          <p className="text-2xs text-[#4a4a4a] text-center mt-1">Tap any of your answers to change it</p>
         )}
         <div ref={bottomRef} />
       </div>
 
       {/* Composer */}
-      <div className="sticky bottom-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-[#1a1a1a] px-4 pt-3 pb-safe">
+      {/* Rides on top of the keyboard (`--kb`) so the reply box stays in view. */}
+      <div className="kb-dock sticky bottom-(--kb) bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-[#1a1a1a] px-4 pt-3 pb-safe">
         {typing ? (
           <div className="h-12" aria-hidden />
         ) : current ? (

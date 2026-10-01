@@ -25,7 +25,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
 
   return (
     <div
-      className={`rounded-3xl border overflow-hidden transition-all duration-200 ${
+      className={`rounded-[2rem] border overflow-hidden transition-all duration-200 ${
         isActive
           ? 'border-[#d97756]/40 bg-gradient-to-br from-[#d97756]/5 to-[#161616]'
           : allDone
@@ -73,17 +73,18 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
       </div>
 
       {expanded && (
-        <div className="px-4 pb-4 flex flex-col gap-2">
+        <div className="px-4 pb-4 flex flex-col gap-2 [--nest-radius:2rem] [--nest-inset:1rem]">
           {/* Coach notes */}
           {planned.coachNotes && (
-            <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-2xl px-3 py-2.5 mb-1">
+            <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-nested px-3 py-2.5 mb-1">
               <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" />
               <p className="text-xs text-[#d97756]/90">{planned.coachNotes}</p>
             </div>
           )}
 
           {/* Set rows */}
-          <div className="flex flex-col gap-1.5">
+          {/* Size container: set rows reflow to two lines when text is large. */}
+          <div className="@container flex flex-col gap-1.5">
             {planned.sets.map((plannedSet, i) => (
               <SetRow
                 key={i}

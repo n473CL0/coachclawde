@@ -17,8 +17,11 @@ import { ProgramEdit } from './pages/ProgramEdit'
 import { BestEfforts } from './pages/BestEfforts'
 import { Settings } from './pages/Settings'
 import { ReleaseNotesGate } from './components/shared/WhatsNew'
+import { useKeyboardInset } from './hooks/useKeyboardInset'
 
 function App() {
+  useKeyboardInset()
+
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -26,6 +29,10 @@ function App() {
             queries (`@3xl/app:`) rather than media queries, so the shell
             responds to the space it actually has. */}
         <div className="@container/app w-full min-h-svh relative bg-[#0a0a0a] overflow-x-clip">
+          {/* Backs the translucent iOS status bar so content scrolling up on
+              header-less screens (Home) doesn't run under the clock and
+              Dynamic Island. Zero-height where there's no top inset. */}
+          <div aria-hidden className="fixed top-0 inset-x-0 h-(--safe-top) bg-[#0a0a0a]/90 backdrop-blur-xl z-40 pointer-events-none" />
           <Routes>
             <Route path="/login" element={<PhoneColumn><Login /></PhoneColumn>} />
             <Route
@@ -78,7 +85,7 @@ function MainApp() {
     <div className="flex min-h-svh">
       <SideNav />
       <main className="app-main flex-1 min-w-0 @3xl/app:pr-(--safe-right)">
-        <div className="w-full max-w-md @3xl/app:max-w-xl mx-auto min-h-svh relative">
+        <div className="w-full max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto min-h-svh relative">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/plan" element={<WeekPlanner />} />

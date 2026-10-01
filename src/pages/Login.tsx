@@ -99,8 +99,10 @@ export function Login() {
   if (user) return <Navigate to="/" replace />
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-svh bg-[#0a0a0a] px-6">
-      <div className="w-full max-w-sm flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center min-h-svh bg-[#0a0a0a] px-6 pt-safe pb-edge">
+      {/* my-auto (not justify-center) so a short landscape screen scrolls
+          instead of pushing the top of the form under the status bar. */}
+      <div className="my-auto w-full max-w-sm flex flex-col items-center gap-8 py-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <ClaudeMark size={72} sweat />
           <h1 className="text-2xl font-bold text-[#f5f5f0]">Coach Claude</h1>
@@ -182,7 +184,7 @@ export function Login() {
           </div>
         )}
 
-        <p className="text-[10px] text-[#3a3a3a] text-center leading-relaxed">
+        <p className="text-2xs text-[#3a3a3a] text-center leading-relaxed">
           Your data is private to your account and never shared.
         </p>
       </div>
@@ -191,4 +193,4 @@ export function Login() {
 }
 
 const inputClass =
-  'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-sm text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors'
+  'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors'

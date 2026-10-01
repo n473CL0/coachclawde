@@ -100,7 +100,7 @@ export function Home() {
                 <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium mb-3 px-1">
                   This week
                 </p>
-                <div className="flex flex-col gap-2">
+                <div className="grid gap-2 @3xl/app:grid-cols-2">
                   {futureSessions.map((s, i) => (
                     <Reveal key={s.id} index={i}>
                       <UpcomingTile
@@ -118,7 +118,7 @@ export function Home() {
                 <p className="text-xs text-amber-500/80 uppercase tracking-widest font-medium mb-3 px-1">
                   Missed
                 </p>
-                <div className="flex flex-col gap-2">
+                <div className="grid gap-2 @3xl/app:grid-cols-2">
                   {missed.map((s, i) => (
                     <Reveal key={s.id} index={i}>
                       <UpcomingTile

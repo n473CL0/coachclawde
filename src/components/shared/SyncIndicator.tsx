@@ -12,7 +12,7 @@ export function SyncIndicator() {
     return (
       <div className="flex items-center gap-1.5 text-[#3a3a3a]">
         <CloudOff size={13} />
-        <span className="text-[10px]">{configured ? 'Signed out' : 'Local only'}</span>
+        <span className="text-2xs">{configured ? 'Signed out' : 'Local only'}</span>
       </div>
     )
   }
@@ -21,7 +21,7 @@ export function SyncIndicator() {
     return (
       <div className="flex items-center gap-1.5 text-[#6a6a6a]">
         <Loader size={13} className="animate-spin" />
-        <span className="text-[10px]">Syncing…</span>
+        <span className="text-2xs">Syncing…</span>
       </div>
     )
   }
@@ -30,7 +30,7 @@ export function SyncIndicator() {
     return (
       <div className="flex items-center gap-1.5 text-red-400" title={syncError ?? ''}>
         <AlertCircle size={13} />
-        <span className="text-[10px]">Sync failed</span>
+        <span className="text-2xs">Sync failed</span>
       </div>
     )
   }
@@ -39,7 +39,7 @@ export function SyncIndicator() {
     return (
       <div className="flex items-center gap-1.5 text-emerald-500">
         <CheckCircle size={13} />
-        <span className="text-[10px]">{formatDistanceToNow(parseISO(lastSyncAt), { addSuffix: true })}</span>
+        <span className="text-2xs">{formatDistanceToNow(parseISO(lastSyncAt), { addSuffix: true })}</span>
       </div>
     )
   }
@@ -47,7 +47,7 @@ export function SyncIndicator() {
   return (
     <div className="flex items-center gap-1.5 text-[#4a4a4a]">
       <Cloud size={13} />
-      <span className="text-[10px]">Auto-sync on</span>
+      <span className="text-2xs">Auto-sync on</span>
     </div>
   )
 }

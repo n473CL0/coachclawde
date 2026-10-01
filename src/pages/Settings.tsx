@@ -231,10 +231,10 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-xs font-medium text-[#a8a29e]">{label}</p>
-      {hint && <p className="text-[10px] text-[#4a4a4a]">{hint}</p>}
+      {hint && <p className="text-2xs text-[#4a4a4a]">{hint}</p>}
       {children}
     </div>
   )
 }
 
-const inputClass = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-sm text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors'
+const inputClass = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors'

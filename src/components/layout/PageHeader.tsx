@@ -22,7 +22,7 @@ export function PageHeader({ title, subtitle, backTo, onBack, right }: PageHeade
           onClick={() => (onBack ? onBack() : navigate(backTo!))}
           className="w-9 h-9 flex items-center justify-center rounded-2xl bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0] transition-colors shrink-0"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size="1.125em" />
         </button>
       )}
       <div className="flex-1 min-w-0">

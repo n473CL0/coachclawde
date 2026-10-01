@@ -28,7 +28,7 @@ export function SideNav() {
           active ? 'bg-[#d97756]/15 text-[#d97756]' : 'text-[#6a6a6a] hover:bg-[#161616] hover:text-[#a8a29e]'
         }`}
       >
-        <Icon size={18} strokeWidth={active ? 2.5 : 1.8} />
+        <Icon size="1.125em" strokeWidth={active ? 2.5 : 1.8} />
         {label}
       </button>
     )

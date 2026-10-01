@@ -8,13 +8,40 @@ proposed fix, and the fixes are grouped into phases at the end.
 
 Audited on branch `claude/open-claude-app-and-prompt-refinements` (`bb3d7c6`), 2026-09-30.
 
-> **Status (2026-09-30):** a first implementation pass has landed. It adds layout
-> tokens for the four safe-area insets and the tab bar (`index.css`), a floating
-> tab bar with a concentric active highlight, a sidebar at 48rem+ container width
-> (iPad and phone landscape), and token-based bottom padding everywhere. That
-> resolves S-2, S-3, the bottom-padding half of S-4, the Session bar part of
-> S-5/W-2, the `pb-10` in S-6, the nav rows of H-1, and W-1 for tabbed screens.
-> Everything else below is still open.
+> **Status (2026-10-01): all findings addressed** except the optional light
+> theme (D-1 step 2). Two passes:
+>
+> 1. *Layout tokens* (`3143f2a`): safe-area and tab-bar tokens, floating
+>    concentric tab bar, iPad/landscape sidebar, token-based bottom padding.
+> 2. *Follow-up*, in five groups:
+>    - **Sheets + keyboard:** every sheet uses the shared `BottomSheet`. It
+>      rides above the keyboard via `--kb` (`useKeyboardInset`), uses `dvh`,
+>      is shell-width and has 44 px close targets. The chat-onboarding composer
+>      also docks to the keyboard. (K-1, S-4, S-5, W-2)
+>    - **Typing:** all fields are 16 px, the zoom lock is removed,
+>      `interactive-widget=resizes-content` is set, and Session fields use
+>      Enter-to-advance with `enterKeyHint`. (K-2, K-3, V-1)
+>    - **Safe areas:** status-bar backing strip, rest timer centred on short
+>      screens, flight landing tracks Home's mascot (including with the
+>      sidebar), Login is safe-area padded. (S-1, S-6, S-7, S-8)
+>    - **Text size:** iOS Dynamic Type opt-in (`lib/dynamicType.ts`, clamped
+>      14–24 px root), a `text-2xs` token replaces every 9/10 px size, set and
+>      interval rows reflow via container queries, Plan chips wrap, and key
+>      icons are em-sized. (T-1, T-2, T-3, H-2, H-3)
+>    - **Tablet, orientation, radii, colour:** the manifest orientation lock is
+>      removed, iPad detection is fixed, `rounded-nested` gives concentric
+>      corners (tile → set row → controls, routine card, confirm dialog),
+>      two-column lists on iPad, a wider column on large iPads, and
+>      `color-scheme: dark`. (O-1, O-2, R-1, W-1, D-1 step 1)
+>
+> **Correction to K-2:** iOS does show a Done key, in the form accessory bar
+> above the keypad. The real gaps were Android's enter key doing nothing and
+> the focused row scrolling out of view; both are now handled.
+>
+> K-5 (onboarding prompt step) no longer applies: v1.0.1 replaced that step
+> with the chat flow. Everything was verified in the browser pane with
+> simulated insets, keyboard and text size. A real iPhone and iPad are still
+> needed to confirm `env()` insets, keyboard panning and Dynamic Type.
 
 ## How this was tested
 

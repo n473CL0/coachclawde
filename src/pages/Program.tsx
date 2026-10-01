@@ -111,7 +111,7 @@ function ProgramBarChart() {
                 ) : (
                   <div className="w-full max-w-[20px] h-1 rounded-full bg-[#1f1f1f]" />
                 )}
-                <span className={`text-[9px] mt-1.5 ${isCurrent ? 'text-[#d97756] font-semibold' : 'text-[#4a4a4a]'}`}>
+                <span className={`text-2xs mt-1.5 ${isCurrent ? 'text-[#d97756] font-semibold' : 'text-[#4a4a4a]'}`}>
                   {format(w.weekStart, 'd/M')}
                 </span>
               </div>
