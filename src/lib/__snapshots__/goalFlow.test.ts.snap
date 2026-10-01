@@ -1,0 +1,54 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`§3.4 personas > snapshots each persona’s confirmation card 1`] = `
+{
+  "Beach-ready for a July holiday": [
+    "🎯 Goal: Lose fat and look sharper by Sat 10 Jul 2027 (41 weeks)",
+    "📈 Starting point: Lifting: on and off",
+    "🗓️ Schedule: 4 days a week · 45 min · gym",
+    "🩹 Health: All good",
+    "🔜 Next: I’ll suggest a quick check-in each week.",
+  ],
+  "First 5K from the sofa": [
+    "🎯 Goal: Run 5K without stopping",
+    "📈 Starting point: Mostly sitting at the moment",
+    "🗓️ Schedule: 3 days a week · 30 min",
+    "🩹 Health: All good",
+    "🔜 Next: Week 1 includes a short benchmark. I’ll suggest a quick check-in each week.",
+  ],
+  "Half marathon, time goal, knee niggle": [
+    "🎯 Goal: Half marathon on Sun 14 Mar 2027 (24 weeks), aiming for 1:45:00",
+    "📈 Starting point: 10–25 km a week. Paces from your 24:30 5K (threshold ≈ 5:10/km)",
+    "🗓️ Schedule: 4 days a week · 60 min · plus strength (gym)",
+    "🩹 Health: Left knee aches on stairs: I’ll program around it",
+    "🔜 Next: I’ll suggest a quick check-in each week.",
+  ],
+  "Has a coach’s plan": [
+    "🎯 Goal: Track my own plan",
+    "📈 Starting point: You paste your plan; Claude converts it for the app",
+    "🩹 Health: All good",
+    "🔜 Next: A short weekly summary of what you did",
+  ],
+  "Lifter chasing numbers": [
+    "🎯 Goal: Bigger squat, bench and deadlift",
+    "📈 Starting point: Lifting: consistently, a year+. Best: squat 100×5, bench press 75×5, deadlift 130×5",
+    "🗓️ Schedule: 4 days a week · 75 min · gym",
+    "🩹 Health: All good",
+    "🔜 Next: I’ll suggest a quick check-in each week.",
+  ],
+  "Long-term habit": [
+    "🎯 Goal: Build a training routine that sticks",
+    "📈 Starting point: Walking and the odd session",
+    "🗓️ Schedule: 3 days a week · 30 min · home weights, bodyweight",
+    "🩹 Health: All good",
+    "🔜 Next: Week 1 includes a short benchmark. I’ll suggest a quick check-in each week.",
+  ],
+  "Rugby player, in-season": [
+    "🎯 Goal: Rugby: in-season training to support my sport",
+    "📈 Starting point: Taken: Tue training, Thu training, Sat match. No heavy legs within 48 h of a match",
+    "🗓️ Schedule: 2 days a week · 45 min · gym",
+    "🩹 Health: All good",
+    "🔜 Next: I’ll suggest a quick check-in each week.",
+  ],
+}
+`;

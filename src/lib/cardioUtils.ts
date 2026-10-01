@@ -80,3 +80,40 @@ export function parseDurationToSeconds(t: string): number | null {
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
   return null
 }
+
+/**
+ * Parse a distance like "5km", "2000m", "800 m", "1.5 km" or "1 mile" into
+ * metres. Returns null when there's no recognisable distance.
+ */
+export function parseDistanceToMeters(text: string | undefined): number | null {
+  if (!text) return null
+  const m = text.trim().toLowerCase().match(/^(\d+(?:\.\d+)?)\s*(km|k|m|metres|meters|mi|mile|miles)?$/)
+  if (!m) return null
+  const n = Number(m[1])
+  if (!(n > 0)) return null
+  switch (m[2]) {
+    case 'km':
+    case 'k':
+      return Math.round(n * 1000)
+    case 'mi':
+    case 'mile':
+    case 'miles':
+      return Math.round(n * 1609.344)
+    case undefined:
+      // A bare number: under 100 is almost certainly km ("5"), else metres.
+      return n < 100 ? Math.round(n * 1000) : Math.round(n)
+    default:
+      return Math.round(n)
+  }
+}
+
+/** Seconds as "m:ss" (or "h:mm:ss" from an hour). */
+export function formatClock(totalSeconds: number): string {
+  const sec = Math.max(0, Math.round(totalSeconds))
+  const h = Math.floor(sec / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  const s = sec % 60
+  return h
+    ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    : `${m}:${String(s).padStart(2, '0')}`
+}

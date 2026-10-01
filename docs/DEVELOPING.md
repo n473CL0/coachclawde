@@ -41,16 +41,18 @@ of the bundle.
 - `npm run dev` — local dev server (HMR).
 - `npm run lint` — ESLint. Must pass clean.
 - `npm run build` — `tsc -b && vite build`. **This is the only typecheck gate**
-  (there is no separate `typecheck` script and no test runner).
+  (there is no separate `typecheck` script).
+- `npm test` — Vitest, for the pure logic in `src/lib` (`*.test.ts` next to the
+  module). Tests run in Node; there are no component tests.
 
-**Before committing any code change, run `npm run lint` and `npm run build` and
-make sure both are green.** On Claude Code on the web,
+**Before committing any code change, run `npm run lint`, `npm run build` and
+`npm test` and make sure all three are green.** On Claude Code on the web,
 `.claude/hooks/session-start.sh` installs dependencies at session start, so these
 work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.0.1**) and is injected
+The app version lives in `package.json` (currently **1.0.2**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -62,6 +64,18 @@ What's new. For every beta release:
    `src/lib/releaseNotes.ts`. List everything that came from tester feedback
    under `fromFeedback` (plain language, the tester's point of view), and
    anything else under `alsoNew`.
+
+**How updates reach installed apps.** The service worker is registered in
+code (`lib/appUpdate`, with `injectRegister: false`), not by the plugin's
+injected script. It checks for a new version whenever the app returns to the
+foreground (iPhone Home Screen apps are resumed, not relaunched, so `load`
+rarely fires), every 30 minutes, and when back online. A new worker takes
+over at once (`skipWaiting` + `clientsClaim`), and the page reloads at a safe
+moment: immediately on most screens, but never on `/session/*`, `/onboarding`
+or `/check-in`, or while a text field has focus. There it waits for the next
+navigation or for the app going into the background. `vercel.json` sends
+`no-cache` for `/`, `/index.html`, `/sw.js` and the manifest so a deploy is
+always seen, and caches the hashed `/assets/*` forever.
 
 `npm run build` fails if the newest `RELEASES` entry doesn't match
 `package.json`, so an update can't ship without notes. Which version a device
@@ -96,8 +110,9 @@ are marked as seen when they finish onboarding.
   `--nest-radius` / `--nest-inset`. Row layouts that must survive large text
   sizes reflow with a `@container` + `@max-[17rem]:` variant.
   `Onboarding` is the first-run flow: an in-app chat (`components/onboarding/
-  ChatOnboarding` driven by the script in `lib/onboardingChat`), then "About
-  you", then finish.
+  ChatFlow` rendering the goal tree in `lib/goalFlow`), a confirmation card,
+  then "About you", then finish. `?from=<node>` re-enters the tree for an
+  onboarded athlete.
 - `src/components/session/MovementGuide` + `src/lib/exerciseGuide` — per-exercise
   help sheets from free-exercise-db (fetched from jsDelivr, cached by the service
   worker), fuzzy-matched by name with a YouTube-search fallback. `RoutineCard`
@@ -113,6 +128,25 @@ are marked as seen when they finish onboarding.
   (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `export`, `nanoid`, `programOptions`
   (shared labels for the program preference enums).
   `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
+- **Runners & athletes (v1.0.2, design in `docs/RUNNERS-AND-ATHLETES.md`):**
+  - `lib/flow` — the flow-as-data engine (`walk`, `rewindTo`, `enumeratePaths`)
+    behind every chat. Deterministic, no AI. `components/onboarding/ChatFlow`
+    renders any flow.
+  - `lib/goalFlow` — the onboarding goal tree, reflections/feasibility,
+    `toGoalProfile` and `profilePatchFromGoal` (legacy fields are derived from
+    the `GoalProfile`). Tests enforce ≤ 10 questions on every path.
+  - `lib/goalPrompt` — the prompt's Goal section and the phase skeleton.
+    `lib/goalProfile` — zones / measurement helpers and the legacy mapping.
+  - `lib/checkIn` (rules C1–C10, budget, actions), `lib/checkInTriggers`
+    (when to suggest one), `lib/migrationFlow` (the three-question upgrade for
+    pre-v1.0.2 athletes), `pages/CheckIn`.
+  - `lib/workout` (structured workouts, legacy `intervals[]` conversion,
+    notation), `lib/zones` (VDOT pace zones), `lib/runEngine` (Run Mode cue
+    timing), `lib/audioCues` (Web Audio tones, `transient` audio session,
+    Android vibration), `components/session/RunMode`.
+  - `lib/coachingConfig` — **every coaching number** (min weeks, ambition
+    thresholds, zones, tapers, deloads). Must be reviewed by a qualified coach.
+  - `lib/quickLog` — "Did something else?" and "Log a session".
 - `scripts/create-beta-user.mjs` — provisions beta accounts (email + password,
   pre-confirmed) with the service-role key. `scripts/migrate-data.mjs` imports
   the legacy `data/*.json` files into an account; restore them from the

@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { Button } from '../components/shared/Button'
 import { ClaudeMark } from '../components/shared/ClaudeMark'
-import { ChatOnboarding } from '../components/onboarding/ChatOnboarding'
-import {
-  answersToProfile,
-  rewindTo,
-  type ChatAnswer,
-  type ChatAnswers,
-  type QuestionId,
-} from '../lib/onboardingChat'
+import { ChatFlow } from '../components/onboarding/ChatFlow'
+import { ConfirmCard } from '../components/onboarding/ConfirmCard'
+import { rewindTo, type FlowAnswers, type FlowValue } from '../lib/flow'
+import { GOAL_FLOW, confirmationRows, mergeGoalUpdate, profilePatchFromGoal, toGoalProfile } from '../lib/goalFlow'
 import type { UserProfile } from '../types'
 import { markVersionSeen } from '../lib/appVersion'
 import { isValidBirthDate } from '../lib/dateUtils'
@@ -26,22 +22,36 @@ const STEPS: StepKey[] = ['chat', 'about', 'finish']
 
 /**
  * First-run onboarding, in three screens:
- *  1. a chat with Clawde that asks everything we need for the plan prompts,
- *  2. "About you" — name, age and body stats,
+ *  1. a chat with Clawde that walks the goal tree (lib/goalFlow) and ends on a
+ *     "here's what I heard" card,
+ *  2. "About you": name (required) and optional stats,
  *  3. a finish screen with install-to-home-screen tips.
+ *
+ * `?from=<node>` re-enters the tree at a node for an athlete who's already
+ * onboarded ("my race moved", from a check-in): earlier answers are kept,
+ * later ones become drafts, and saving skips the About/finish screens.
  */
 export function Onboarding() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const profile = useAppStore((s) => s.profile)
   const setProfile = useAppStore((s) => s.setProfile)
   const { sync } = useAutoSync()
 
-  const [step, setStep] = useState<StepKey>('chat')
-  const [answers, setAnswers] = useState<ChatAnswers>({})
-
   // About you — pre-filled when an existing athlete re-onboards (new stores
   // carry placeholder defaults, so only trust the profile once onboarded).
   const known = profile.onboarded ? profile : null
+  const from = params.get('from')
+  const why = params.get('why')
+  const stored = (known?.goal?.origin === 'onboarding' ? known.goal.answers : undefined) as FlowAnswers | undefined
+  // Re-entry: at a node of a stored tree, or (for a pre-v1.0.2 athlete) at a branch.
+  const atNode = !!(from && stored && GOAL_FLOW.nodes[from])
+  const atBranch = !!(known && why && ['event', 'fitness', 'physique', 'strength', 'sport', 'tracker'].includes(why))
+  const reentry = atNode || atBranch
+
+  const [step, setStep] = useState<StepKey>('chat')
+  const [answers, setAnswers] = useState<FlowAnswers>(() => (atNode ? rewindTo(GOAL_FLOW, stored!, from!) : atBranch ? { why: why! } : {}))
+  const [anythingElse, setAnythingElse] = useState('')
   const [name, setName] = useState(known?.name ?? '')
   const [birthDate, setBirthDate] = useState(known?.birthDate ?? '')
   const [sex, setSex] = useState<'male' | 'female' | undefined>(known?.sex)
@@ -49,16 +59,47 @@ export function Onboarding() {
   const [weightKg, setWeightKg] = useState(known?.weightKg ? String(known.weightKg) : '')
 
   const [finishing, setFinishing] = useState(false)
+  // Fixed for the whole chat so reflections don't shift under the athlete.
+  const [now] = useState(() => new Date())
+  const ctx = useMemo(() => ({ now, weightKg: Number(weightKg) > 0 ? Number(weightKg) : undefined }), [now, weightKg])
+  const goal = useMemo(() => toGoalProfile(answers, ctx), [answers, ctx])
 
   const stepIndex = STEPS.indexOf(step)
 
-  function handleAnswer(id: QuestionId, answer: ChatAnswer) {
+  function handleAnswer(id: string, answer: FlowValue) {
     setAnswers((a) => ({ ...a, [id]: answer }))
+  }
+
+  function buildPatch(): Partial<UserProfile> {
+    const merged = mergeGoalUpdate(known?.goal, goal)
+    return profilePatchFromGoal(merged, {
+      now,
+      coachingStyle: known?.program?.coachingStyle,
+      anythingElse: anythingElse || undefined,
+    })
+  }
+
+  /** Re-entry: the athlete has a profile already, so save straight away. */
+  function handleSaveUpdate() {
+    const patch = buildPatch()
+    // A goal update keeps the block running unless the date changed it.
+    if (atNode && known?.program?.startDate && patch.program && !from?.startsWith('ev.') && !from?.startsWith('phy.') && from !== 'why') {
+      patch.program = { ...patch.program, startDate: known.program.startDate, lengthWeeks: known.program.lengthWeeks }
+    }
+    // Injuries are safety-critical: anything no longer listed moves to the
+    // injury history rather than vanishing.
+    const removed = (known?.injuries ?? []).filter((i) => !(patch.injuries ?? []).includes(i))
+    if (removed.length && patch.goal) {
+      patch.goal = { ...patch.goal, health: { ...patch.goal.health, pastInjuries: [...new Set([...(patch.goal.health.pastInjuries ?? []), ...removed])] } }
+    }
+    setProfile(patch)
+    void sync('profile')
+    navigate('/', { replace: true })
   }
 
   function handleFinish() {
     const patch: Partial<UserProfile> = {
-      ...answersToProfile(answers),
+      ...buildPatch(),
       name: name.trim() || 'Athlete',
       birthDate: isValidBirthDate(birthDate) ? birthDate : undefined,
       heightCm: Number(heightCm) > 0 ? Number(heightCm) : 0,
@@ -66,8 +107,8 @@ export function Onboarding() {
       onboarded: true,
     }
     if (sex) patch.sex = sex
-    // Onboarding no longer asks about diet. Keep a re-onboarding athlete's
-    // notes, but start new athletes clean rather than inheriting the defaults.
+    // Onboarding doesn't ask about diet (it's a check-in question). Keep a
+    // re-onboarding athlete's notes, but start new athletes clean.
     if (!profile.onboarded) patch.dietaryNotes = []
 
     setProfile(patch)
@@ -88,7 +129,7 @@ export function Onboarding() {
       {/* Progress */}
       <div className="sticky top-0 z-10 bg-[#0a0a0a] px-5 pt-safe pb-2">
         <div className="flex gap-1.5 pt-4">
-          {STEPS.map((s, i) => (
+          {(reentry ? ['chat'] : STEPS).map((s, i) => (
             <div
               key={s}
               className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
@@ -100,11 +141,27 @@ export function Onboarding() {
       </div>
 
       {step === 'chat' ? (
-        <ChatOnboarding
+        <ChatFlow
+          flow={GOAL_FLOW}
           answers={answers}
+          ctx={ctx}
+          initialDrafts={atNode ? stored : known?.injuries.length ? { 'health.injury': known.injuries.join('\n') } : undefined}
           onAnswer={handleAnswer}
-          onRewind={(id) => setAnswers((a) => rewindTo(a, id))}
-          onContinue={() => setStep('about')}
+          onRewind={(id) => setAnswers((a) => rewindTo(GOAL_FLOW, a, id))}
+          endLines={["Here's what I heard. Tap a line to change it."]}
+          endContent={
+            <ConfirmCard
+              rows={confirmationRows(goal, ctx)}
+              onEdit={(id) => setAnswers((a) => rewindTo(GOAL_FLOW, a, id))}
+              anythingElse={anythingElse}
+              onAnythingElse={setAnythingElse}
+            />
+          }
+          endAction={
+            <Button size="lg" fullWidth onClick={reentry ? handleSaveUpdate : () => setStep('about')}>
+              {reentry ? 'Save my goal' : 'Looks right'} <ArrowRight size={18} />
+            </Button>
+          }
         />
       ) : (
         <>
@@ -116,6 +173,7 @@ export function Onboarding() {
                 sex={sex} setSex={setSex}
                 heightCm={heightCm} setHeightCm={setHeightCm}
                 weightKg={weightKg} setWeightKg={setWeightKg}
+                showWeight={goal.pursuit === 'physique'}
               />
             )}
             {step === 'finish' && <FinishStep name={name} />}
@@ -172,14 +230,28 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 function AboutStep({
-  name, setName, birthDate, setBirthDate, sex, setSex, heightCm, setHeightCm, weightKg, setWeightKg,
+  name, setName, birthDate, setBirthDate, sex, setSex, heightCm, setHeightCm, weightKg, setWeightKg, showWeight,
 }: {
   name: string; setName: (v: string) => void
   birthDate: string; setBirthDate: (v: string) => void
   sex: 'male' | 'female' | undefined; setSex: (v: 'male' | 'female' | undefined) => void
   heightCm: string; setHeightCm: (v: string) => void
   weightKg: string; setWeightKg: (v: string) => void
+  /** Physique goals track body weight, so it's shown up front. */
+  showWeight: boolean
 }) {
+  const [more, setMore] = useState(!!(heightCm || sex))
+  const weightField = (
+    <div>
+      <FieldLabel>Weight (kg) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
+      <TextInput
+        value={weightKg}
+        onChange={(e) => setWeightKg(e.target.value.replace(/[^0-9.]/g, ''))}
+        placeholder="75"
+        inputMode="decimal"
+      />
+    </div>
+  )
   return (
     <div>
       <StepHeading title="A bit about you" subtitle="Only your name is required. The rest helps Claude pitch your weights and pacing." />
@@ -207,51 +279,57 @@ function AboutStep({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <FieldLabel>Height (cm) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
-            <TextInput
-              value={heightCm}
-              onChange={(e) => setHeightCm(e.target.value.replace(/[^0-9.]/g, ''))}
-              placeholder="180"
-              inputMode="decimal"
-            />
-          </div>
-          <div>
-            <FieldLabel>Weight (kg) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
-            <TextInput
-              value={weightKg}
-              onChange={(e) => setWeightKg(e.target.value.replace(/[^0-9.]/g, ''))}
-              placeholder="75"
-              inputMode="decimal"
-            />
-          </div>
-        </div>
+        {showWeight && weightField}
 
-        <div>
-          <FieldLabel>Sex <span className="text-[#4a4a4a]">(optional)</span></FieldLabel>
-          <div className="grid grid-cols-3 gap-2">
-            {([['male', 'Male'], ['female', 'Female'], ['skip', 'Prefer not to say']] as const).map(
-              ([value, label]) => {
-                const active = value === 'skip' ? sex === undefined : sex === value
-                return (
-                  <button
-                    key={value}
-                    onClick={() => setSex(value === 'skip' ? undefined : value)}
-                    aria-pressed={active}
-                    className={`px-2 py-2.5 rounded-2xl text-xs font-medium transition-all duration-150 ${
-                      active
-                        ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
-                        : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                )
-              }
-            )}
+        <button
+          onClick={() => setMore((m) => !m)}
+          aria-expanded={more}
+          className="flex items-center gap-2 text-sm text-[#a8a29e] self-start py-1"
+        >
+          More about you {more ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {more && (
+          <div className="flex flex-col gap-5 fade-in">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <FieldLabel>Height (cm) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
+                <TextInput
+                  value={heightCm}
+                  onChange={(e) => setHeightCm(e.target.value.replace(/[^0-9.]/g, ''))}
+                  placeholder="180"
+                  inputMode="decimal"
+                />
+              </div>
+              {!showWeight && weightField}
+            </div>
+
+            <div>
+              <FieldLabel>Sex <span className="text-[#4a4a4a]">(optional)</span></FieldLabel>
+              <div className="grid grid-cols-3 gap-2">
+                {([['male', 'Male'], ['female', 'Female'], ['skip', 'Prefer not to say']] as const).map(
+                  ([value, label]) => {
+                    const active = value === 'skip' ? sex === undefined : sex === value
+                    return (
+                      <button
+                        key={value}
+                        onClick={() => setSex(value === 'skip' ? undefined : value)}
+                        aria-pressed={active}
+                        className={`px-2 py-2.5 rounded-2xl text-xs font-medium transition-all duration-150 ${
+                          active
+                            ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
+                            : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    )
+                  }
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

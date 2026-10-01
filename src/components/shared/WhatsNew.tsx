@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { Check, MessageCircleHeart, Sparkles } from 'lucide-react'
+import { Check, MessageCircleHeart, Sparkles, RefreshCw } from 'lucide-react'
 import { Button } from './Button'
 import { ClaudeMark } from './ClaudeMark'
 import { BottomSheet } from './BottomSheet'
@@ -28,7 +29,9 @@ export function ReleaseNotesGate() {
 
 /** Bottom sheet listing one or more releases, newest first. */
 export function WhatsNewSheet({ releases, onClose }: { releases: Release[]; onClose: () => void }) {
+  const navigate = useNavigate()
   const latest = releases[0]
+  const action = latest.action
   return (
     <BottomSheet label={`What's new in version ${latest.version}`} onClose={onClose}>
       <div className="flex flex-col items-center text-center px-6 pt-6 pb-4">
@@ -50,7 +53,22 @@ export function WhatsNewSheet({ releases, onClose }: { releases: Release[]; onCl
         <p className="text-xs text-[#6a6a6a] text-center mb-3">
           Thanks for all the feedback. Keep it coming!
         </p>
-        <div className="pb-2">
+        <div className="pb-2 flex flex-col gap-2">
+          {action?.note && <p className="text-xs text-[#a8a29e] text-center leading-relaxed">{action.note}</p>}
+          {action && (
+            <Button
+              fullWidth
+              size="lg"
+              variant="secondary"
+              onClick={() => {
+                onClose()
+                navigate(action.to)
+              }}
+            >
+              <RefreshCw size={18} />
+              {action.label}
+            </Button>
+          )}
           <Button fullWidth size="lg" onClick={onClose}>Let's go</Button>
         </div>
       </div>

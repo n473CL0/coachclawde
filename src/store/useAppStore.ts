@@ -1,8 +1,21 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { AppState, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
+import type { AppState, CheckIn, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
+import { normalizePlan } from '../lib/workout'
+import { scopePlansAndLogs, scopeSessionIds } from '../lib/planIds'
+
+/**
+ * Every plan the store holds is read through this: legacy intervals get a
+ * structured workout, and session ids are scoped to their week (lib/planIds).
+ */
+const readPlan = (p: WeekPlan) => scopeSessionIds(normalizePlan(p))
+
+/** Plans and logs from storage or the database, with logs re-linked to scoped ids. */
+function readAll(plans: WeekPlan[], logs: LoggedSession[]) {
+  return scopePlansAndLogs(plans.map(normalizePlan), logs)
+}
 
 interface AppStore extends AppState {
   setProfile: (profile: Partial<UserProfile>) => void
@@ -10,12 +23,21 @@ interface AppStore extends AppState {
   updateWeekPlan: (id: string, updates: Partial<WeekPlan>) => void
   addLoggedSession: (session: LoggedSession) => void
   updateLoggedSession: (id: string, updates: Partial<LoggedSession>) => void
+  /** Adds a check-in, or replaces one with the same id. */
+  saveCheckIn: (checkIn: CheckIn) => void
+  /**
+   * Check-in invitations the athlete dismissed on this device, as keys like
+   * "week:2026-09-28" or "milestone:block-end". Local only: at most one
+   * nudge per trigger, never a nag.
+   */
+  checkInDismissed: string[]
+  dismissCheckIn: (key: string) => void
   setActiveSession: (id: string | null) => void
   setTimer: (timer: TimerState) => void
   clearTimer: () => void
   getCurrentWeekPlan: () => WeekPlan | undefined
   getLastNSessions: (n: number) => LoggedSession[]
-  restoreFromRemote: (data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[] }) => void
+  restoreFromRemote: (data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[]; checkIns?: CheckIn[] }) => void
   /** Wipe in-memory + persisted data (used on sign-out so accounts don't leak on a shared device). */
   reset: () => void
 }
@@ -33,18 +55,26 @@ export const useAppStore = create<AppStore>()(
       profile: DEFAULT_PROFILE,
       weekPlans: [],
       loggedSessions: [],
+      checkIns: [],
+      checkInDismissed: [],
       activeSessionId: null,
       timer: DEFAULT_TIMER,
+
+      saveCheckIn: (checkIn) =>
+        set((s) => ({ checkIns: [...s.checkIns.filter((c) => c.id !== checkIn.id), checkIn] })),
+
+      dismissCheckIn: (key) =>
+        set((s) => (s.checkInDismissed.includes(key) ? s : { checkInDismissed: [...s.checkInDismissed, key] })),
 
       setProfile: (updates) =>
         set((s) => ({ profile: { ...s.profile, ...updates, updatedAt: new Date().toISOString() } })),
 
       addWeekPlan: (plan) =>
-        set((s) => ({ weekPlans: [...s.weekPlans, plan] })),
+        set((s) => ({ weekPlans: [...s.weekPlans, readPlan(plan)] })),
 
       updateWeekPlan: (id, updates) =>
         set((s) => ({
-          weekPlans: s.weekPlans.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+          weekPlans: s.weekPlans.map((p) => (p.id === id ? readPlan({ ...p, ...updates }) : p)),
         })),
 
       addLoggedSession: (session) =>
@@ -85,26 +115,49 @@ export const useAppStore = create<AppStore>()(
           .slice(0, n)
       },
 
-      restoreFromRemote: (data) => set({
+      restoreFromRemote: (data) => set(() => {
+        // Stored plans may predate structured workouts or week-scoped ids.
+        const { plans, logs } = readAll(data.weekPlans, data.loggedSessions)
+        return {
         profile: data.profile,
-        weekPlans: data.weekPlans,
-        loggedSessions: data.loggedSessions,
+        weekPlans: plans,
+        loggedSessions: logs,
+        // Older databases may not have the check_ins table yet; keep local ones.
+        ...(data.checkIns ? { checkIns: data.checkIns } : {}),
+        }
       }),
 
       reset: () => set({
         profile: DEFAULT_PROFILE,
         weekPlans: [],
         loggedSessions: [],
+        checkIns: [],
+        checkInDismissed: [],
         activeSessionId: null,
         timer: DEFAULT_TIMER,
       }),
     }),
     {
       name: 'coach-claude-store',
+      // Plans cached before structured workouts get one on rehydrate.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>
+        const { plans, logs } = readAll(p.weekPlans ?? current.weekPlans, p.loggedSessions ?? current.loggedSessions)
+        return {
+          ...current,
+          ...p,
+          weekPlans: plans,
+          loggedSessions: logs,
+          checkIns: p.checkIns ?? [],
+          checkInDismissed: (p as { checkInDismissed?: string[] }).checkInDismissed ?? [],
+        }
+      },
       partialize: (state) => ({
         profile: state.profile,
         weekPlans: state.weekPlans,
         loggedSessions: state.loggedSessions,
+        checkIns: state.checkIns,
+        checkInDismissed: state.checkInDismissed,
       }),
     }
   )

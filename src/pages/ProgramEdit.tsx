@@ -12,7 +12,9 @@ import {
   GOAL_OPTIONS, EXERCISE_OPTIONS, FACILITY_OPTIONS, COACHING_OPTIONS,
   LENGTH_OPTIONS, DAYS_PER_WEEK_OPTIONS, daysPerWeekLabel,
 } from '../lib/programOptions'
-import type { ProgramConfig } from '../types'
+import type { GoalProfile, ProgramConfig, RunsWith } from '../types'
+import { TimeInput } from '../components/shared/TimeInput'
+import { goalOrLegacy, resultSource, zonesLine } from '../lib/goalProfile'
 
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
@@ -51,7 +53,17 @@ export function ProgramEdit() {
   }, [pushProgram])
 
   function update(patch: Partial<ProgramConfig>) {
-    setProfile({ program: { ...program, ...patch } })
+    // Days a week also lives in the goal profile; keep the two in step.
+    const goal = profile.goal && patch.daysPerWeek
+      ? { ...profile.goal, constraints: { ...profile.goal.constraints, daysPerWeek: patch.daysPerWeek } }
+      : profile.goal
+    setProfile({ program: { ...program, ...patch }, goal })
+    scheduleSync()
+  }
+
+  function updateGoal(fn: (g: GoalProfile) => GoalProfile) {
+    const g = fn(goalOrLegacy(profile))
+    setProfile({ goal: { ...g, updatedAt: new Date().toISOString() } })
     scheduleSync()
   }
 
@@ -106,6 +118,8 @@ export function ProgramEdit() {
             />
           </CardSection>
         </Card>
+
+        {cardioOn && <PacesCard goal={profile.goal} onChange={updateGoal} zonesText={zonesLine(profile)} source={resultSource(profile)} />}
       </div>
     </div>
   )
@@ -295,5 +309,102 @@ function SportsModal({
         })}
       </div>
   </BottomSheet>
+  )
+}
+
+const RESULT_DISTANCES: { meters: number; label: string; hours: boolean }[] = [
+  { meters: 5000, label: '5K', hours: false },
+  { meters: 10000, label: '10K', hours: false },
+  { meters: 21097.5, label: 'Half', hours: true },
+  { meters: 42195, label: 'Marathon', hours: true },
+]
+
+const RUNS_WITH: { value: RunsWith; label: string }[] = [
+  { value: 'phone', label: 'Just my phone' },
+  { value: 'watch', label: 'GPS watch' },
+  { value: 'track', label: 'A track' },
+  { value: 'treadmill', label: 'Treadmill' },
+]
+
+/**
+ * A recent race or timed run sets the athlete's pace zones; "runs with" decides
+ * whether plans may use distance reps (only with a watch, track or treadmill).
+ */
+function PacesCard({
+  goal, onChange, zonesText, source,
+}: {
+  goal: GoalProfile | undefined
+  onChange: (fn: (g: GoalProfile) => GoalProfile) => void
+  zonesText: string
+  source: string | null
+}) {
+  const result = goal?.starting.recentResult
+  const [meters, setMeters] = useState(result?.meters ?? 5000)
+  const [seconds, setSeconds] = useState(result?.seconds ?? 0)
+  const dist = RESULT_DISTANCES.find((d) => d.meters === meters) ?? RESULT_DISTANCES[0]
+  const runsWith = goal?.constraints.runsWith ?? []
+
+  function saveResult(m: number, s: number) {
+    if (s < 60) return
+    onChange((g) => ({
+      ...g,
+      starting: { ...g.starting, recentResult: { meters: m, seconds: s } },
+      zoneOffsetPct: 0,
+    }))
+  }
+
+  return (
+    <Card>
+      <CardSection className="flex flex-col gap-4">
+        <div>
+          <p className="text-sm font-medium text-[#a8a29e]">Recent race or timed run</p>
+          <p className="text-xs text-[#6a6a6a] mt-1">Sets your pace zones for runs. Use something from the last couple of months.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {RESULT_DISTANCES.map((d) => (
+            <button
+              key={d.label}
+              onClick={() => { setMeters(d.meters); saveResult(d.meters, seconds) }}
+              aria-pressed={meters === d.meters}
+              className={`px-3.5 py-2 rounded-2xl text-sm font-medium ${meters === d.meters ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a]'}`}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+        <TimeInput
+          key={dist.label}
+          seconds={seconds}
+          showHours={dist.hours}
+          label="Finishing time"
+          onChange={(s) => { setSeconds(s); saveResult(meters, s) }}
+        />
+        <p className="text-xs text-[#6a6a6a] leading-relaxed">{source ? zonesText : 'No result yet: runs are set by feel.'}</p>
+
+        <div className="border-t border-[#2a2a2a] pt-4">
+          <p className="text-sm font-medium text-[#a8a29e]">What do you run with?</p>
+          <p className="text-xs text-[#6a6a6a] mt-1 mb-3">With just a phone, reps are set by time: a phone can't tell you when you've run 800 m.</p>
+          <div className="flex flex-wrap gap-2">
+            {RUNS_WITH.map((o) => {
+              const on = runsWith.includes(o.value)
+              return (
+                <button
+                  key={o.value}
+                  aria-pressed={on}
+                  onClick={() => onChange((g) => {
+                    const cur = g.constraints.runsWith ?? []
+                    const next = on ? cur.filter((x) => x !== o.value) : [...cur, o.value]
+                    return { ...g, constraints: { ...g.constraints, runsWith: next }, deferred: g.deferred.filter((d) => d !== 'runs-with') }
+                  })}
+                  className={`px-3.5 py-2 rounded-2xl text-sm font-medium ${on ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a]'}`}
+                >
+                  {on && <Check size={13} className="inline -mt-0.5 mr-1" />}{o.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </CardSection>
+    </Card>
   )
 }

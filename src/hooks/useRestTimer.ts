@@ -1,5 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
+import { combine, scheduleEarcon, unlockAudio, type CueHandle } from '../lib/audioCues'
+
+// The pending end-of-rest alarm. Module-level because several components use
+// this hook, but only one rest timer runs at a time.
+let alarm: CueHandle | null = null
+
+/**
+ * Queues three countdown pips and the "rest over" tone on the audio clock, so
+ * they sound on time even if the page's timers are throttled. Android also
+ * vibrates. Called from the tap that started the rest, which unlocks audio.
+ */
+function scheduleAlarm(seconds: number) {
+  alarm?.cancel()
+  unlockAudio()
+  const handles: CueHandle[] = []
+  for (const k of [3, 2, 1]) {
+    if (seconds > k + 1) handles.push(scheduleEarcon('pip', seconds - k, { vibrate: false }))
+  }
+  handles.push(scheduleEarcon('restOver', seconds))
+  alarm = combine(handles)
+}
 
 export function useRestTimer() {
   const { timer, setTimer, clearTimer } = useAppStore()
@@ -25,6 +46,7 @@ export function useRestTimer() {
   }, [timer.isActive, timer.endTime, clearTimer])
 
   function startTimer(seconds: number, label: string) {
+    scheduleAlarm(seconds)
     setTimer({
       isActive: true,
       endTime: Date.now() + seconds * 1000,
@@ -34,6 +56,8 @@ export function useRestTimer() {
   }
 
   function skipTimer() {
+    alarm?.cancel()
+    alarm = null
     clearTimer()
   }
 

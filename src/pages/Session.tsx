@@ -1,4 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import { WorkoutCard } from '../components/session/WorkoutCard'
+import { RunMode, type RunResult } from '../components/session/RunMode'
+import { flattenWorkout, initialLoggedIntervals, loggableSteps, stepLabel, type FlatStep } from '../lib/workout'
+import { athleteZones } from '../lib/goalProfile'
+import { wantsCheckIns } from '../lib/checkInTriggers'
+import { resolveTarget, type RunZones } from '../lib/zones'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { PageHeader } from '../components/layout/PageHeader'
@@ -8,15 +14,21 @@ import { Button } from '../components/shared/Button'
 import { ExerciseTile } from '../components/session/ExerciseTile'
 import { IntervalRow } from '../components/session/IntervalRow'
 import { RestTimerOverlay } from '../components/session/RestTimer'
-import { CompleteFlow } from '../components/session/CompleteFlow'
+import { CompleteFlow, type SessionCompleteData } from '../components/session/CompleteFlow'
+import { QuickLogSheet } from '../components/session/QuickLogSheet'
+import { useWakeLock } from '../hooks/useWakeLock'
+import { buildQuickLog, type QuickLogInput } from '../lib/quickLog'
+import { describeSubstitute } from '../lib/historySummary'
+import { formatSessionDate } from '../lib/dateUtils'
 import { RoutineCard } from '../components/session/RoutineCard'
 import { useRestTimer } from '../hooks/useRestTimer'
 import { useAutoSync } from '../hooks/useAutoSync'
-import { formatDuration, formatRestTime } from '../lib/dateUtils'
+import { formatDuration } from '../lib/dateUtils'
 import { cardioLabel, inferCardioType } from '../lib/cardioUtils'
 import { warmExerciseDb } from '../lib/exerciseGuide'
-import type { CardioType, Intensity, LoggedExercise, LoggedInterval, LoggedSession, PlannedSession, Rating, WeekReflection } from '../types'
-import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle } from 'lucide-react'
+import type { CardioType, Intensity, LoggedExercise, LoggedInterval, LoggedSession, PlannedSession } from '../types'
+import type { IntervalRowSpec } from '../components/session/IntervalRow'
+import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, Play } from 'lucide-react'
 import { nanoid } from '../lib/nanoid'
 
 function usePlannedSession(sessionId: string | undefined): PlannedSession | undefined {
@@ -37,11 +49,20 @@ export function Session() {
   // of a fixed route. `location.key === 'default'` means this is the first entry
   // in the history stack (e.g. a deep link), so fall back to Home.
   const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/'))
-  const { weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession } = useAppStore()
+  const { weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession, profile, dismissCheckIn } = useAppStore()
+  const zones = athleteZones(profile)
+  // The cardio workout as the ordered steps Run Mode plays; manual rows are
+  // the non-recovery steps (legacy plans were converted on read).
+  const flat = useMemo(() => (planned?.workout ? flattenWorkout(planned.workout) : []), [planned])
+  const rows = useMemo(() => loggableSteps(flat), [flat])
+  const [showRun, setShowRun] = useState(false)
   const { startTimer } = useRestTimer()
   const { syncSession } = useAutoSync()
   const [activeExerciseIdx, setActiveExerciseIdx] = useState(0)
   const [showComplete, setShowComplete] = useState(false)
+  const [showQuickLog, setShowQuickLog] = useState(false)
+  // Run Mode saves the session itself, then may show only the week invitation.
+  const [showInvite, setShowInvite] = useState(false)
 
   const existingLog = loggedSessions.find((ls) => ls.plannedSessionId === id)
   const [loggedSession, setLoggedSession] = useState<LoggedSession | null>(existingLog ?? null)
@@ -69,8 +90,12 @@ export function Session() {
     if (!weekPlan || !id) return false
     const completedIds = loggedSessions.filter((ls) => ls.status === 'complete').map((ls) => ls.plannedSessionId)
     const remaining = weekPlan.sessions.filter((s) => s.id !== id && !completedIds.includes(s.id))
-    return remaining.length === 0
-  }, [weekPlan, id, loggedSessions])
+    // No invitation for athletes who turned check-ins off (or just track).
+    return remaining.length === 0 && wantsCheckIns(profile)
+  }, [weekPlan, id, loggedSessions, profile])
+
+  // Keep the screen on while a workout is being logged.
+  useWakeLock(!!loggedSession && loggedSession.status !== 'complete' && !showRun)
 
   useEffect(() => {
     if (id) setActiveSession(id)
@@ -83,6 +108,10 @@ export function Session() {
     if (planned?.type !== 'cardio') warmExerciseDb()
   }, [planned?.type])
 
+  if (!planned && existingLog?.substitute) {
+    return <LoggedActivityView log={existingLog} onBack={goBack} />
+  }
+
   if (!planned) {
     return (
       <div className="flex flex-col items-center justify-center min-h-svh gap-4 px-4">
@@ -94,8 +123,8 @@ export function Session() {
   }
 
   // Initialize log if not started yet
-  function startSession() {
-    if (!planned) return
+  function startSession(): LoggedSession | null {
+    if (!planned) return null
     const initial: LoggedSession = {
       id: nanoid(),
       plannedSessionId: planned.id,
@@ -117,18 +146,40 @@ export function Session() {
           skipped: false,
         })),
       })),
-      loggedIntervals: planned.intervals?.flatMap((iv) =>
-        Array.from({ length: iv.repeats }, (_, i) => ({
-          label: iv.label,
-          repeatIndex: i,
-          targetPace: iv.targetPace,
-          targetDuration: iv.targetDuration,
-          completed: false,
-        }))
-      ),
+      loggedIntervals: flat.length ? initialLoggedIntervals(flat) : undefined,
     }
     addLoggedSession(initial)
     setLoggedSession(initial)
+    return initial
+  }
+
+  function openRunMode() {
+    if (!loggedSession) startSession()
+    setShowRun(true)
+  }
+
+  /** Run Mode finished: store what it timed and complete the session. */
+  function handleRunSave(result: RunResult) {
+    const log = loggedSession ?? useAppStore.getState().loggedSessions.find((ls) => ls.plannedSessionId === id)
+    if (!log) return
+    const updates: Partial<LoggedSession> = {
+      status: 'complete',
+      completedAt: new Date().toISOString(),
+      cardioType,
+      loggedSteps: result.loggedSteps,
+      loggedIntervals: result.loggedIntervals,
+      rpe: result.rpe,
+      outcome: result.outcome,
+      painNotes: result.painNotes,
+      generalNotes: result.generalNotes,
+    }
+    updateLoggedSession(log.id, updates)
+    setLoggedSession({ ...log, ...updates })
+    syncSession(log.id)
+    setShowRun(false)
+    // The last session of the week still gets its (optional) invitation.
+    if (isLastSession) setShowInvite(true)
+    else navigate('/')
   }
 
   function updateExerciseSet(exerciseIdx: number, setIndex: number, updates: Partial<LoggedExercise['sets'][0]>) {
@@ -189,23 +240,21 @@ export function Session() {
     updateLoggedSession(loggedSession.id, { loggedIntervals: intervals })
   }
 
-  function completeInterval(intervalIdx: number) {
-    if (!loggedSession || !planned?.intervals) return
-    updateInterval(intervalIdx, { completed: true })
+  function completeInterval(rowIdx: number, updates: Partial<LoggedInterval>) {
+    if (!loggedSession) return
+    updateInterval(rowIdx, { ...updates, completed: true })
     // Persist progress on each completed interval (see completeSet).
     syncSession(loggedSession.id)
-    const flatInterval = planned.intervals.flatMap((iv) => Array.from({ length: iv.repeats }, () => iv))[intervalIdx]
-    if (flatInterval?.restSeconds > 0) {
-      startTimer(flatInterval.restSeconds, `After ${flatInterval.label}`)
+    // Rest timer for the recovery that follows this step in the workout.
+    const at = flat.indexOf(rows[rowIdx])
+    const rest = flat[at + 1]
+    if (existingLog?.status !== 'complete' && rest?.step.role === 'recover' && rest.step.end.by === 'time' && rest.step.end.seconds > 0) {
+      const next = flat[at + 2]
+      startTimer(rest.step.end.seconds, next ? `Up next: ${stepLabel(next)}` : 'Last one done')
     }
   }
 
-  function handleSessionComplete(data: {
-    feelings: Rating
-    painNotes: string
-    generalNotes: string
-    weekReflection?: WeekReflection
-  }) {
+  function handleSessionSave(data: SessionCompleteData) {
     if (!loggedSession) return
     const updates: Partial<LoggedSession> = {
       status: 'complete',
@@ -213,13 +262,39 @@ export function Session() {
       feelings: data.feelings,
       painNotes: data.painNotes || undefined,
       generalNotes: data.generalNotes || undefined,
-      weekReflection: data.weekReflection,
+      outcome: data.outcome,
     }
     updateLoggedSession(loggedSession.id, updates)
-    setShowComplete(false)
     // Push just the finished session in the background — don't await so
     // navigation is instant.
     syncSession(loggedSession.id)
+  }
+
+  // The week-done invitation opens a check-in, or snoozes until the next trigger.
+  const reviewWeek = weekPlan?.weekStartDate ?? ''
+  function openCheckIn() {
+    setShowComplete(false)
+    navigate(`/check-in?trigger=week-complete&week=${reviewWeek}`, { replace: true })
+  }
+  function declineCheckIn() {
+    dismissCheckIn(`week:${reviewWeek}`)
+    finishAndLeave()
+  }
+
+  function finishAndLeave() {
+    setShowComplete(false)
+    navigate('/')
+  }
+
+  /** "Did something else?" — replaces this session's log with the swap. */
+  function handleQuickLog(input: QuickLogInput) {
+    if (!planned) return
+    const current = useAppStore.getState().loggedSessions.find((ls) => ls.plannedSessionId === planned.id)
+    const log = buildQuickLog(input, { planned, weekPlanId: weekPlan?.id, existing: current })
+    if (current) updateLoggedSession(current.id, log)
+    else addLoggedSession(log)
+    setShowQuickLog(false)
+    syncSession(log.id)
     navigate('/')
   }
 
@@ -232,7 +307,7 @@ export function Session() {
   const totalIntervals = loggedSession?.loggedIntervals?.length ?? 0
   const completedIntervals = loggedSession?.loggedIntervals?.filter((iv) => iv.completed).length ?? 0
 
-  const progressPercent = planned.type === 'weights'
+  const progressPercent = planned.type !== 'cardio'
     ? totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0
     : totalIntervals > 0 ? Math.round((completedIntervals / totalIntervals) * 100) : 0
 
@@ -262,16 +337,16 @@ export function Session() {
             <Clock size={13} />
             {formatDuration(planned.estimatedMinutes)}
           </div>
-          {planned.type === 'weights' && planned.exercises && (
+          {planned.type !== 'cardio' && !!planned.exercises?.length && (
             <div className="flex items-center gap-1.5 text-xs text-[#6a6a6a]">
               <Dumbbell size={13} />
               {planned.exercises.length} exercises
             </div>
           )}
-          {planned.type === 'cardio' && planned.intervals && (
+          {planned.type === 'cardio' && rows.length > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-[#6a6a6a]">
               <Waves size={13} />
-              {planned.intervals.reduce((sum, iv) => sum + iv.repeats, 0)} intervals
+              {rows.length} {rows.length === 1 ? 'step' : 'steps'}
             </div>
           )}
           {loggedSession && (
@@ -288,7 +363,7 @@ export function Session() {
           </div>
         )}
 
-        {!loggedSession && !isAlreadyComplete && (
+        {!loggedSession && !isAlreadyComplete && !(planned.type === 'cardio' && flat.length > 0) && (
           <div className="px-4 py-8 flex flex-col items-center gap-4">
             <div className="w-16 h-16 rounded-3xl bg-[#d97756]/15 flex items-center justify-center">
               {planned.type === 'weights' ? <Dumbbell size={28} className="text-[#d97756]" /> : <Waves size={28} className="text-[#d97756]" />}
@@ -300,6 +375,7 @@ export function Session() {
             <Button onClick={startSession} size="lg">
               Start Session
             </Button>
+            <DidSomethingElse onClick={() => setShowQuickLog(true)} />
           </div>
         )}
 
@@ -309,12 +385,13 @@ export function Session() {
             <div>
               <p className="text-sm font-semibold text-emerald-400">Session complete</p>
               {existingLog?.feelings && <p className="text-xs text-[#6a6a6a] mt-0.5">Felt {['', 'terrible', 'poor', 'ok', 'good', 'great'][existingLog.feelings]}</p>}
+              {existingLog?.substitute && <p className="text-xs text-[#a8a29e] mt-0.5">Did something else: {describeSubstitute(existingLog.substitute)}</p>}
             </div>
           </div>
         )}
 
         {/* Weights session */}
-        {planned.type === 'weights' && loggedSession?.loggedExercises && (
+        {planned.type !== 'cardio' && !!loggedSession?.loggedExercises?.length && (
           <div className="px-4 flex flex-col gap-3">
             <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1">Exercises</p>
             {planned.exercises?.map((ex, i) => (
@@ -355,38 +432,43 @@ export function Session() {
                 </div>
               </div>
             )}
-            {planned.intervals?.map((interval, ivIdx) => {
-              const startIdx = planned.intervals!.slice(0, ivIdx).reduce((sum, iv) => sum + iv.repeats, 0)
-              return (
-                <div key={ivIdx}>
-                  <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-2">
-                    {interval.label} × {interval.repeats}
-                    {interval.restSeconds > 0 && <span className="ml-2 text-[#3a3a3a]">· {formatRestTime(interval.restSeconds)} rest</span>}
-                  </p>
-                  {interval.notes && (
-                    <p className="text-xs text-[#6a6a6a] px-1 mb-2">{interval.notes}</p>
-                  )}
-                  <div className="flex flex-col gap-2">
-                    {Array.from({ length: interval.repeats }, (_, r) => {
-                      const flatIdx = startIdx + r
-                      return (
-                        <IntervalRow
-                          key={r}
-                          interval={interval}
-                          repeatIndex={r}
-                          cardioType={cardioType}
-                          logged={loggedSession?.loggedIntervals?.[flatIdx]}
-                          onUpdate={(updates) => updateInterval(flatIdx, updates)}
-                          onComplete={() => {
-                            if (loggedSession) completeInterval(flatIdx)
-                          }}
-                        />
-                      )
-                    })}
-                  </div>
+            {flat.length > 0 && <WorkoutCard workout={planned.workout!} modality={cardioType} zones={zones} />}
+
+            {!isAlreadyComplete && flat.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Button size="lg" fullWidth onClick={openRunMode}>
+                  <Play size={18} />
+                  {loggedSession ? 'Open Run Mode' : 'Start Run Mode'}
+                </Button>
+                {!loggedSession && (
+                  <Button variant="secondary" fullWidth onClick={startSession}>
+                    Log it by hand instead
+                  </Button>
+                )}
+                {!loggedSession && (
+                  <div className="flex justify-center"><DidSomethingElse onClick={() => setShowQuickLog(true)} /></div>
+                )}
+              </div>
+            )}
+
+            {loggedSession && rows.length > 0 && (
+              <div>
+                <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-2">Log by hand</p>
+                <div className="flex flex-col gap-2">
+                  {rows.map((f, i) => (
+                    <IntervalRow
+                      key={f.path}
+                      spec={stepSpec(f, cardioType, zones)}
+                      repeatIndex={f.rep ? f.rep.index - 1 : i}
+                      cardioType={cardioType}
+                      logged={loggedSession.loggedIntervals?.[i]}
+                      onUpdate={(updates) => updateInterval(i, updates)}
+                      onComplete={(updates) => completeInterval(i, updates)}
+                    />
+                  ))}
                 </div>
-              )
-            })}
+              </div>
+            )}
           </div>
         )}
 
@@ -394,6 +476,12 @@ export function Session() {
         {(!!planned.cooldown || !!planned.cooldownExercises?.length) && loggedSession && (
           <div className="mx-4 mt-4">
             <RoutineCard title="Cooldown" summary={planned.cooldown} items={planned.cooldownExercises} />
+          </div>
+        )}
+
+        {loggedSession && !isAlreadyComplete && (
+          <div className="flex justify-center mt-4">
+            <DidSomethingElse onClick={() => setShowQuickLog(true)} />
           </div>
         )}
       </div>
@@ -422,10 +510,92 @@ export function Session() {
         <CompleteFlow
           sessionTitle={planned.title}
           isLastSessionOfWeek={isLastSession}
-          onComplete={handleSessionComplete}
+          onSave={handleSessionSave}
+          onCheckIn={openCheckIn}
+          onNotNow={declineCheckIn}
+          onFinish={finishAndLeave}
           onDismiss={() => setShowComplete(false)}
         />
       )}
+
+      {(showInvite) && (
+        <CompleteFlow
+          sessionTitle={planned.title}
+          isLastSessionOfWeek
+          initialStep="invite"
+          onSave={() => {}}
+          onCheckIn={openCheckIn}
+          onNotNow={declineCheckIn}
+          onFinish={finishAndLeave}
+          onDismiss={finishAndLeave}
+        />
+      )}
+
+      {showRun && flat.length > 0 && (
+        <RunMode
+          title={planned.title}
+          flat={flat}
+          modality={cardioType}
+          zones={zones}
+          onSave={handleRunSave}
+          onClose={() => setShowRun(false)}
+        />
+      )}
+
+      {showQuickLog && (
+        <QuickLogSheet
+          plannedTitle={planned.title}
+          defaultMinutes={planned.estimatedMinutes || 45}
+          onSave={handleQuickLog}
+          onClose={() => setShowQuickLog(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+/** A workout step as an interval-row spec, pre-filling what the plan fixes. */
+function stepSpec(f: FlatStep, modality: CardioType, zones: RunZones | undefined): IntervalRowSpec {
+  const { end, effort, target } = f.step
+  const meters = end.by === 'distance' ? end.meters : undefined
+  const t = target ? { primary: target, secondary: undefined } : resolveTarget(effort, modality, zones, meters)
+  return {
+    label: stepLabel(f),
+    targets: [t.primary, t.secondary].filter((x): x is string => !!x),
+    knownMeters: meters,
+    knownSeconds: end.by === 'time' ? end.seconds : undefined,
+  }
+}
+
+function DidSomethingElse({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 text-sm text-[#6a6a6a] hover:text-[#a8a29e] py-2 px-3 rounded-xl"
+    >
+      <Shuffle size={14} />
+      Did something else?
+    </button>
+  )
+}
+
+/** A session logged with no plan behind it ("Log a session"). */
+function LoggedActivityView({ log, onBack }: { log: LoggedSession; onBack: () => void }) {
+  return (
+    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
+      <PageHeader title={log.title} subtitle={formatSessionDate(log.date)} onBack={onBack} />
+      <div className="px-4 py-4 flex flex-col gap-3">
+        <div className="flex items-center gap-3 bg-emerald-500/10 rounded-2xl px-4 py-3 border border-emerald-500/20">
+          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-emerald-400">Logged</p>
+            <p className="text-xs text-[#a8a29e] mt-0.5">
+              {describeSubstitute(log.substitute!)}{log.rpe ? ` · effort ${log.rpe}/10` : ''}
+            </p>
+          </div>
+        </div>
+        {log.generalNotes && <p className="text-sm text-[#a8a29e] px-1">{log.generalNotes}</p>}
+      </div>
     </div>
   )
 }
