@@ -97,6 +97,11 @@ function apply() {
 /** Call once at startup; re-measures on rotation and resize. */
 export function watchDeviceShape() {
   apply()
+  // Applying --app-h makes the page at least screen-height (see index.css),
+  // which can change the viewport iOS reports, so measure again once that has
+  // been laid out.
+  requestAnimationFrame(() => requestAnimationFrame(apply))
+  window.addEventListener('load', apply)
   window.addEventListener('resize', apply)
   window.addEventListener('orientationchange', apply)
 }

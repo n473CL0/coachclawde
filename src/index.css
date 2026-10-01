@@ -37,6 +37,15 @@ body {
   display: flex;
   flex-direction: column;
 }
+/* Installed iPhone app: iOS measures `svh` short of the screen there, and
+   when the page is shorter than the screen it only draws fixed UI down to the
+   page's end, cutting the tab bar off on short pages (Home, a short History).
+   Making the page at least the real screen height (`--app-h`, from
+   lib/deviceShape) gives short pages the same full-screen treatment as long
+   ones. */
+:root[data-standalone] #root {
+  min-height: var(--app-h, 100svh);
+}
 
 /* Always reserve the scrollbar's space (where scrollbars take any), so pages
    that do and don't scroll have the same width and fixed UI never shifts. */
