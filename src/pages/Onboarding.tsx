@@ -14,6 +14,8 @@ import {
 } from '../lib/onboardingChat'
 import type { UserProfile } from '../types'
 import { markVersionSeen } from '../lib/appVersion'
+import { isValidBirthDate } from '../lib/dateUtils'
+import { toLocalISODate } from '../lib/weekUtils'
 import {
   ArrowRight, ChevronDown, ChevronLeft, ChevronUp, Check, Share, Smartphone, MoreVertical, Sparkles,
 } from 'lucide-react'
@@ -40,7 +42,7 @@ export function Onboarding() {
   // carry placeholder defaults, so only trust the profile once onboarded).
   const known = profile.onboarded ? profile : null
   const [name, setName] = useState(known?.name ?? '')
-  const [age, setAge] = useState(known?.age ? String(known.age) : '')
+  const [birthDate, setBirthDate] = useState(known?.birthDate ?? '')
   const [sex, setSex] = useState<'male' | 'female' | undefined>(known?.sex)
   const [heightCm, setHeightCm] = useState(known?.heightCm ? String(known.heightCm) : '')
   const [weightKg, setWeightKg] = useState(known?.weightKg ? String(known.weightKg) : '')
@@ -54,11 +56,10 @@ export function Onboarding() {
   }
 
   function handleFinish() {
-    const ageNum = Math.round(Number(age))
     const patch: Partial<UserProfile> = {
       ...answersToProfile(answers),
       name: name.trim() || 'Athlete',
-      age: ageNum > 0 && ageNum < 130 ? ageNum : undefined,
+      birthDate: isValidBirthDate(birthDate) ? birthDate : undefined,
       heightCm: Number(heightCm) > 0 ? Number(heightCm) : 0,
       weightKg: Number(weightKg) > 0 ? Number(weightKg) : 0,
       onboarded: true,
@@ -110,7 +111,7 @@ export function Onboarding() {
             {step === 'about' && (
               <AboutStep
                 name={name} setName={setName}
-                age={age} setAge={setAge}
+                birthDate={birthDate} setBirthDate={setBirthDate}
                 sex={sex} setSex={setSex}
                 heightCm={heightCm} setHeightCm={setHeightCm}
                 weightKg={weightKg} setWeightKg={setWeightKg}
@@ -170,10 +171,10 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 
 function AboutStep({
-  name, setName, age, setAge, sex, setSex, heightCm, setHeightCm, weightKg, setWeightKg,
+  name, setName, birthDate, setBirthDate, sex, setSex, heightCm, setHeightCm, weightKg, setWeightKg,
 }: {
   name: string; setName: (v: string) => void
-  age: string; setAge: (v: string) => void
+  birthDate: string; setBirthDate: (v: string) => void
   sex: 'male' | 'female' | undefined; setSex: (v: 'male' | 'female' | undefined) => void
   heightCm: string; setHeightCm: (v: string) => void
   weightKg: string; setWeightKg: (v: string) => void
@@ -193,16 +194,19 @@ function AboutStep({
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <FieldLabel>Age <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
-            <TextInput
-              value={age}
-              onChange={(e) => setAge(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
-              placeholder="30"
-              inputMode="numeric"
-            />
-          </div>
+        <div>
+          <FieldLabel>Date of birth <span className="text-[#4a4a4a]">(optional)</span></FieldLabel>
+          <TextInput
+            type="date"
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
+            min="1900-01-01"
+            max={toLocalISODate(new Date())}
+            style={{ colorScheme: 'dark' }}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <FieldLabel>Height (cm) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
             <TextInput

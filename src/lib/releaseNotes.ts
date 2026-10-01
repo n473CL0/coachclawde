@@ -35,7 +35,7 @@ export const RELEASES: Release[] = [
     headline: 'Faster setup and a better workout screen, shaped by your feedback.',
     fromFeedback: [
       'Onboarding is now a quick chat with Clawde, right in the app. No more copying prompts back and forth.',
-      'Fewer setup steps. Your name and stats come last, and we now ask your age.',
+      'Fewer setup steps. Your name and stats come last, and we now ask your date of birth (optional, editable in Settings).',
       'Warm-ups expand into the full list of moves, just like the main workout.',
       'Every exercise has a ? button with a how-to guide and photos, plus a YouTube search as backup.',
       "Tick a set without entering reps and we'll check it wasn't an accident.",

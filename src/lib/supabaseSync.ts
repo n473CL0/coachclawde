@@ -16,7 +16,7 @@ interface ProfileRow {
   sex: string
   height_cm: number
   weight_kg: number
-  age: number | null
+  birth_date: string | null
   program_week: number
   injuries: string[]
   goals: string[]
@@ -35,7 +35,7 @@ function rowToProfile(row: ProfileRow): UserProfile {
     sex: row.sex === 'female' ? 'female' : 'male',
     heightCm: Number(row.height_cm),
     weightKg: Number(row.weight_kg),
-    age: row.age ?? undefined,
+    birthDate: row.birth_date ?? undefined,
     programWeek: row.program_week,
     injuries: row.injuries ?? [],
     goals: row.goals ?? [],
@@ -60,7 +60,7 @@ export async function pushProfile(userId: string, profile: UserProfile) {
       sex: profile.sex,
       height_cm: profile.heightCm,
       weight_kg: profile.weightKg,
-      age: profile.age ?? null,
+      birth_date: profile.birthDate ?? null,
       program_week: profile.programWeek,
       injuries: profile.injuries,
       goals: profile.goals,

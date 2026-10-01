@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import { WEEK_DAYS_MON, addDays, toLocalISODate } from './weekUtils'
 import { summarizeHistory } from './historySummary'
 import { getProgramProgress } from './programProgress'
+import { ageFromBirthDate } from './dateUtils'
 import { daysPerWeekLabel } from './programOptions'
 
 /**
@@ -55,6 +56,8 @@ export function buildWeekPlanPrompt(
     ? '\n_Note: a plan already exists for this week — generate a fresh one to replace it._'
     : ''
 
+  const age = ageFromBirthDate(profile.birthDate)
+
   const program = profile.program
   const programBlock = program
     ? `- **Goals:** ${program.goals.join(', ') || '—'}
@@ -81,7 +84,7 @@ ${dayLines || '  - —'}
 
 ## Athlete profile
 - **Name:** ${profile.name.trim() || 'Athlete'}
-- **Sex / age / height / weight:** ${profile.sex}, ${profile.age ? `${profile.age}y` : 'age —'}, ${profile.heightCm}cm, ${profile.weightKg}kg
+- **Sex / age / height / weight:** ${profile.sex}, ${age !== undefined ? `${age}y` : 'age —'}, ${profile.heightCm}cm, ${profile.weightKg}kg
 - **Program block:** ${blockLine}
 - **Experience level:** ${profile.experienceLevel ?? '—'}
 - **Goals:** ${profile.goals.length ? profile.goals.join('; ') : '—'}

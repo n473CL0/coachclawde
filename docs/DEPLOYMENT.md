@@ -58,7 +58,7 @@ You now also have a Supabase project dashboard at https://supabase.com/dashboard
 2. Run **every file in [`supabase/migrations/`](../supabase/migrations/) in
    numerical order** — paste each one's contents and click **Run**:
    `0001_init.sql`, `0002_onboarding.sql`, `0003_fix_new_user_onboarding.sql`,
-   `0004_profile_age.sql`.
+   `0004_profile_birth_date.sql`.
 3. Confirm under **Table Editor** that `profiles`, `week_plans` and
    `logged_sessions` exist, and under **Authentication → Policies** that each has
    an "owner-only" RLS policy.
@@ -69,9 +69,11 @@ without it that row is marked as already-onboarded, and every new account skips
 the onboarding slideshow and lands in the app with an empty profile (no
 injuries, no goals), which the plan generator depends on.
 
-**`0004` must be applied before deploying the build that asks for age.** The
-app writes an `age` column on every profile save; without the column each save
-fails with an unknown-column error.
+**`0004` must be applied before deploying the build that asks for a date of
+birth.** The app writes a `birth_date` column on every profile save; without it
+each save (and "Sync now") fails with *Could not find the 'birth_date' column
+of 'profiles' in the schema cache*. Running the migration fixes it — no app
+change or re-login needed.
 
 *(Optional, if you prefer the CLI: `npm i -g supabase`, `supabase link
 --project-ref <ref>`, then `supabase db push`.)*

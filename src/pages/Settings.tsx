@@ -12,6 +12,8 @@ import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, Chev
 import { WhatsNewSheet } from '../components/shared/WhatsNew'
 import { APP_VERSION } from '../lib/appVersion'
 import { RELEASES } from '../lib/releaseNotes'
+import { ageFromBirthDate, isValidBirthDate } from '../lib/dateUtils'
+import { toLocalISODate } from '../lib/weekUtils'
 
 export function Settings() {
   const navigate = useNavigate()
@@ -24,6 +26,8 @@ export function Settings() {
   const [weight, setWeight] = useState(String(profile.weightKg))
   const [height, setHeight] = useState(String(profile.heightCm))
   const [sex, setSex] = useState<'male' | 'female'>(profile.sex)
+  const [birthDate, setBirthDate] = useState(profile.birthDate ?? '')
+  const age = ageFromBirthDate(birthDate)
   const [profileSaved, setProfileSaved] = useState(false)
   const [showWhatsNew, setShowWhatsNew] = useState(false)
 
@@ -36,6 +40,8 @@ export function Settings() {
       weightKg: Number(weight) || profile.weightKg,
       heightCm: Number(height) || profile.heightCm,
       sex,
+      // Blank clears it; a half-typed or out-of-range date keeps the old one.
+      birthDate: birthDate === '' ? undefined : isValidBirthDate(birthDate) ? birthDate : profile.birthDate,
     })
     setProfileSaved(true)
     setTimeout(() => setProfileSaved(false), 2500)
@@ -135,6 +141,20 @@ export function Settings() {
                   />
                 </Field>
               </div>
+              <Field
+                label="Date of birth"
+                hint={age !== undefined ? `${age} years old. Claude uses this to pitch your training.` : 'Optional. Claude uses your age to pitch your training.'}
+              >
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  min="1900-01-01"
+                  max={toLocalISODate(new Date())}
+                  style={{ colorScheme: 'dark' }}
+                  className={inputClass}
+                />
+              </Field>
               <Field label="Gender">
                 <div className="grid grid-cols-2 gap-2">
                   {(['male', 'female'] as const).map((g) => (
