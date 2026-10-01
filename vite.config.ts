@@ -65,6 +65,9 @@ export default defineConfig(({ mode, command }) => {
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Registered in code (lib/appUpdate) so the app can check for updates
+      // on resume and reload only at a safe moment.
+      injectRegister: false,
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
         name: 'Coach Claude',
@@ -81,6 +84,11 @@ export default defineConfig(({ mode, command }) => {
         ],
       },
       workbox: {
+        // A new version takes over as soon as it's installed (lib/appUpdate
+        // then reloads the page at a safe moment). Explicit because with
+        // injectRegister off the plugin otherwise waits for a prompt.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {

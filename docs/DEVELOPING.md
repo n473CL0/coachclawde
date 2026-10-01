@@ -65,6 +65,18 @@ What's new. For every beta release:
    under `fromFeedback` (plain language, the tester's point of view), and
    anything else under `alsoNew`.
 
+**How updates reach installed apps.** The service worker is registered in
+code (`lib/appUpdate`, with `injectRegister: false`), not by the plugin's
+injected script. It checks for a new version whenever the app returns to the
+foreground (iPhone Home Screen apps are resumed, not relaunched, so `load`
+rarely fires), every 30 minutes, and when back online. A new worker takes
+over at once (`skipWaiting` + `clientsClaim`), and the page reloads at a safe
+moment: immediately on most screens, but never on `/session/*`, `/onboarding`
+or `/check-in`, or while a text field has focus. There it waits for the next
+navigation or for the app going into the background. `vercel.json` sends
+`no-cache` for `/`, `/index.html`, `/sw.js` and the manifest so a deploy is
+always seen, and caches the hashed `/assets/*` forever.
+
 `npm run build` fails if the newest `RELEASES` entry doesn't match
 `package.json`, so an update can't ship without notes. Which version a device
 has seen is kept in `localStorage` (`coach-claude-seen-version`), outside the

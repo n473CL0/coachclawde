@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { applyPendingUpdate } from './lib/appUpdate'
 import type { ReactNode } from 'react'
 import { AuthProvider } from './auth/AuthProvider'
 import { RequireAuth } from './auth/RequireAuth'
@@ -27,6 +29,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <UpdateOnNavigate />
         {/* The `app` container drives the phone ↔ iPad layout switch: container
             queries (`@3xl/app:`) rather than media queries, so the shell
             responds to the space it actually has. */}
@@ -74,6 +77,18 @@ function RequireOnboarded({ children }: { children: ReactNode }) {
   const onboarded = useAppStore((s) => s.profile.onboarded)
   if (!onboarded) return <Navigate to="/onboarding" replace />
   return <>{children}</>
+}
+
+/**
+ * A downloaded update waits while the athlete is mid-workout or mid-chat;
+ * leaving that screen is the next safe moment to switch to it.
+ */
+function UpdateOnNavigate() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    applyPendingUpdate()
+  }, [pathname])
+  return null
 }
 
 /** Single centred phone-width column, for the screens without navigation. */

@@ -41,6 +41,7 @@ export const RELEASES: Release[] = [
       'Did something else? Log a bike ride, a class or a swim instead of the planned session, and it counts. "Log a session" on Home works with no plan at all.',
       'Your session notes, pain notes and swaps now reach Claude when it plans your next week.',
       'The rest timer beeps when rest is over (and buzzes on Android), and your screen stays on during a workout.',
+      'Updates now arrive by themselves. The app checks when you open it and switches over at a quiet moment, never mid-workout.',
     ],
     alsoNew: [
       'Onboarding starts with why you’re here (a race, a habit, a holiday, your sport, or your own plan), asks only what changes your plan, and ends with a card you can correct.',
