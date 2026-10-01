@@ -38,6 +38,30 @@ body {
   flex-direction: column;
 }
 
+/* Always reserve the scrollbar's space (where scrollbars take any), so pages
+   that do and don't scroll have the same width and fixed UI never shifts. */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Layer for screen-anchored UI (see FixedLayer.tsx). It is the viewport, so
+   `position: fixed` children anchor to the screen even in browsers that treat
+   size containers as fixed containing blocks. It is also the `app` size
+   container for those children. Clicks pass through to the page except on
+   its children. */
+#fixed-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  container: app / inline-size;
+}
+@layer base {
+  #fixed-layer > * {
+    pointer-events: auto;
+  }
+}
+
 /* --- Device layout tokens ---
    Every edge offset in the app derives from these, so nothing hardcodes a
    guess like pb-24 for "the nav is about this tall". See docs/DEVICE-FIT.md. */

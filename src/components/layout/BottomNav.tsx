@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NAV_ITEMS, isFullscreenRoute } from './navItems'
+import { FixedLayer } from './FixedLayer'
 
 /**
  * Floating tab bar for phone widths: a pill that hovers above the home
@@ -14,25 +15,27 @@ export function BottomNav() {
   if (isFullscreenRoute(location.pathname)) return null
 
   return (
-    <nav aria-label="Primary" className="fixed z-40 tabbar-dock @3xl/app:hidden">
-      <div className="flex h-full rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/85 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50">
-        {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
-          const active = location.pathname === path
-          return (
-            <button
-              key={path}
-              onClick={() => navigate(path)}
-              aria-current={active ? 'page' : undefined}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-(--tabbar-item-radius) transition-colors duration-150 ${
-                active ? 'bg-[#d97756]/15 text-[#d97756]' : 'text-[#6a6a6a] hover:text-[#a8a29e]'
-              }`}
-            >
-              <Icon size="1.25em" strokeWidth={active ? 2.5 : 1.8} />
-              <span className="text-2xs font-medium leading-none">{label}</span>
-            </button>
-          )
-        })}
-      </div>
-    </nav>
+    <FixedLayer>
+      <nav aria-label="Primary" className="fixed tabbar-dock @3xl/app:hidden">
+        <div className="flex h-full rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/85 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50">
+          {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
+            const active = location.pathname === path
+            return (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                aria-current={active ? 'page' : undefined}
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-(--tabbar-item-radius) transition-colors duration-150 ${
+                  active ? 'bg-[#d97756]/15 text-[#d97756]' : 'text-[#6a6a6a] hover:text-[#a8a29e]'
+                }`}
+              >
+                <Icon size="1.25em" strokeWidth={active ? 2.5 : 1.8} />
+                <span className="text-2xs font-medium leading-none">{label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+    </FixedLayer>
   )
 }

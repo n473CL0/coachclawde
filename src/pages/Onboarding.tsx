@@ -16,6 +16,7 @@ import type { UserProfile } from '../types'
 import { markVersionSeen } from '../lib/appVersion'
 import { isValidBirthDate } from '../lib/dateUtils'
 import { toLocalISODate } from '../lib/weekUtils'
+import { FixedLayer } from '../components/layout/FixedLayer'
 import {
   ArrowRight, ChevronDown, ChevronLeft, ChevronUp, Check, Share, Smartphone, MoreVertical, Sparkles,
 } from 'lucide-react'
@@ -390,26 +391,28 @@ function FlightToHome({ name }: { name: string }) {
     return () => cancelAnimationFrame(id)
   }, [])
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0a] overflow-hidden">
-      <p
-        className="absolute left-0 right-0 text-center text-sm text-[#6a6a6a] transition-opacity duration-300"
-        style={{ top: '58%', opacity: landed ? 0 : 1 }}
-      >
-        See you in there{name.trim() ? `, ${name.trim().split(' ')[0]}` : ''}…
-      </p>
-      <div
-        className="claude-flight absolute"
-        style={{
-          // Landing point tracks Home's mascot: below the status bar, and
-          // centred in the content column (offset by the sidebar on iPad).
-          left: 'var(--flight-x)',
-          top: landed ? 'var(--flight-landing-y)' : '42vh',
-          transform: `translate(-50%, 0) scale(${landed ? 0.72 : 1.2})`,
-          opacity: landed ? 0 : 1,
-        }}
-      >
-        <ClaudeMark size={96} sweat />
+    <FixedLayer>
+      <div className="fixed inset-0 z-50 bg-[#0a0a0a] overflow-hidden">
+        <p
+          className="absolute left-0 right-0 text-center text-sm text-[#6a6a6a] transition-opacity duration-300"
+          style={{ top: '58%', opacity: landed ? 0 : 1 }}
+        >
+          See you in there{name.trim() ? `, ${name.trim().split(' ')[0]}` : ''}…
+        </p>
+        <div
+          className="claude-flight absolute"
+          style={{
+            // Landing point tracks Home's mascot: below the status bar, and
+            // centred in the content column (offset by the sidebar on iPad).
+            left: 'var(--flight-x)',
+            top: landed ? 'var(--flight-landing-y)' : '42vh',
+            transform: `translate(-50%, 0) scale(${landed ? 0.72 : 1.2})`,
+            opacity: landed ? 0 : 1,
+          }}
+        >
+          <ClaudeMark size={96} sweat />
+        </div>
       </div>
-    </div>
+    </FixedLayer>
   )
 }

@@ -4,6 +4,7 @@ import { AuthProvider } from './auth/AuthProvider'
 import { RequireAuth } from './auth/RequireAuth'
 import { BottomNav } from './components/layout/BottomNav'
 import { SideNav } from './components/layout/SideNav'
+import { FixedLayer } from './components/layout/FixedLayer'
 import { useAppStore } from './store/useAppStore'
 import { Login } from './pages/Login'
 import { Onboarding } from './pages/Onboarding'
@@ -32,7 +33,9 @@ function App() {
           {/* Backs the translucent iOS status bar so content scrolling up on
               header-less screens (Home) doesn't run under the clock and
               Dynamic Island. Zero-height where there's no top inset. */}
-          <div aria-hidden className="fixed top-0 inset-x-0 h-(--safe-top) bg-[#0a0a0a]/90 backdrop-blur-xl z-40 pointer-events-none" />
+          <FixedLayer>
+            <div aria-hidden className="fixed top-0 inset-x-0 h-(--safe-top) bg-[#0a0a0a]/90 backdrop-blur-xl pointer-events-none" />
+          </FixedLayer>
           <Routes>
             <Route path="/login" element={<PhoneColumn><Login /></PhoneColumn>} />
             <Route
