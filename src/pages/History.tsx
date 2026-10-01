@@ -54,7 +54,7 @@ export function History() {
         {grouped.map(({ weekLabel, sessions }) => (
           <div key={weekLabel}>
             <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">{weekLabel}</p>
-            <div className="grid gap-2 @3xl/app:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
               {sessions.map((session) => {
                 const planned = getPlanned(session)
                 return (
