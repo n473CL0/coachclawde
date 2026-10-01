@@ -4,6 +4,18 @@ import type { AppState, CheckIn, UserProfile, WeekPlan, LoggedSession, TimerStat
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
 import { normalizePlan } from '../lib/workout'
+import { scopePlansAndLogs, scopeSessionIds } from '../lib/planIds'
+
+/**
+ * Every plan the store holds is read through this: legacy intervals get a
+ * structured workout, and session ids are scoped to their week (lib/planIds).
+ */
+const readPlan = (p: WeekPlan) => scopeSessionIds(normalizePlan(p))
+
+/** Plans and logs from storage or the database, with logs re-linked to scoped ids. */
+function readAll(plans: WeekPlan[], logs: LoggedSession[]) {
+  return scopePlansAndLogs(plans.map(normalizePlan), logs)
+}
 
 interface AppStore extends AppState {
   setProfile: (profile: Partial<UserProfile>) => void
@@ -58,11 +70,11 @@ export const useAppStore = create<AppStore>()(
         set((s) => ({ profile: { ...s.profile, ...updates, updatedAt: new Date().toISOString() } })),
 
       addWeekPlan: (plan) =>
-        set((s) => ({ weekPlans: [...s.weekPlans, normalizePlan(plan)] })),
+        set((s) => ({ weekPlans: [...s.weekPlans, readPlan(plan)] })),
 
       updateWeekPlan: (id, updates) =>
         set((s) => ({
-          weekPlans: s.weekPlans.map((p) => (p.id === id ? normalizePlan({ ...p, ...updates }) : p)),
+          weekPlans: s.weekPlans.map((p) => (p.id === id ? readPlan({ ...p, ...updates }) : p)),
         })),
 
       addLoggedSession: (session) =>
@@ -103,13 +115,16 @@ export const useAppStore = create<AppStore>()(
           .slice(0, n)
       },
 
-      restoreFromRemote: (data) => set({
+      restoreFromRemote: (data) => set(() => {
+        // Stored plans may predate structured workouts or week-scoped ids.
+        const { plans, logs } = readAll(data.weekPlans, data.loggedSessions)
+        return {
         profile: data.profile,
-        // Stored plans may predate structured workouts: convert on read.
-        weekPlans: data.weekPlans.map(normalizePlan),
-        loggedSessions: data.loggedSessions,
+        weekPlans: plans,
+        loggedSessions: logs,
         // Older databases may not have the check_ins table yet; keep local ones.
         ...(data.checkIns ? { checkIns: data.checkIns } : {}),
+        }
       }),
 
       reset: () => set({
@@ -127,10 +142,12 @@ export const useAppStore = create<AppStore>()(
       // Plans cached before structured workouts get one on rehydrate.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>
+        const { plans, logs } = readAll(p.weekPlans ?? current.weekPlans, p.loggedSessions ?? current.loggedSessions)
         return {
           ...current,
           ...p,
-          weekPlans: (p.weekPlans ?? current.weekPlans).map(normalizePlan),
+          weekPlans: plans,
+          loggedSessions: logs,
           checkIns: p.checkIns ?? [],
           checkInDismissed: (p as { checkInDismissed?: string[] }).checkInDismissed ?? [],
         }
