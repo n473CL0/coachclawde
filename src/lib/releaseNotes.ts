@@ -45,6 +45,7 @@ export const RELEASES: Release[] = [
     alsoNew: [
       'When you come back from Claude, the import sheet is open and ready to paste.',
       'Set how many days a week you want to train in Program setup.',
+      "The app now fits your screen properly: a floating tab bar that lines up with your iPhone's corners, a sidebar on iPad, sheets that stay above the keyboard, and support for larger text sizes.",
     ],
   },
 ]

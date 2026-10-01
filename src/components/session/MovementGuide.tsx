@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CirclePlay, Info, LoaderCircle, SearchX, WifiOff, X } from 'lucide-react'
+import { CirclePlay, Info, LoaderCircle, SearchX, WifiOff } from 'lucide-react'
 import {
   exerciseImageUrl,
   findExercise,
@@ -8,7 +8,7 @@ import {
   youtubeSearchUrl,
   type ExerciseDbEntry,
 } from '../../lib/exerciseGuide'
-import { BottomSheet } from '../shared/BottomSheet'
+import { BottomSheet, SheetCloseButton } from '../shared/BottomSheet'
 
 type GuideState =
   | { status: 'loading' }
@@ -48,15 +48,13 @@ export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
     <BottomSheet label={`How to do ${name}`} onClose={onClose}>
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold text-[#d97756] uppercase tracking-widest">Movement guide</p>
+          <p className="text-2xs font-semibold text-[#d97756] uppercase tracking-widest">Movement guide</p>
           <h3 className="text-lg font-bold text-[#f5f5f0] leading-tight mt-0.5">{name}</h3>
           {match && match.name.toLowerCase() !== name.toLowerCase() && (
             <p className="text-xs text-[#6a6a6a] mt-1">Closest match: {match.name}</p>
           )}
         </div>
-        <button onClick={onClose} aria-label="Close" className="text-[#4a4a4a] hover:text-[#f5f5f0] shrink-0 p-1">
-          <X size={20} />
-        </button>
+        <SheetCloseButton onClose={onClose} />
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-4 flex flex-col gap-4">
@@ -129,7 +127,7 @@ function GuideBody({ entry }: { entry: ExerciseDbEntry }) {
                 className="w-full h-full object-cover"
                 onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
               />
-              <figcaption className="absolute bottom-1.5 left-1.5 text-[10px] font-semibold uppercase tracking-wide bg-black/60 text-white/90 rounded-md px-1.5 py-0.5">
+              <figcaption className="absolute bottom-1.5 left-1.5 text-2xs font-semibold uppercase tracking-wide bg-black/60 text-white/90 rounded-md px-1.5 py-0.5">
                 {i === 0 ? 'Start' : 'Finish'}
               </figcaption>
             </figure>
@@ -151,7 +149,7 @@ function GuideBody({ entry }: { entry: ExerciseDbEntry }) {
         <ol className="flex flex-col gap-2.5">
           {entry.instructions.map((step, i) => (
             <li key={i} className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                 {i + 1}
               </span>
               <span className="text-sm text-[#a8a29e] leading-relaxed">{step}</span>

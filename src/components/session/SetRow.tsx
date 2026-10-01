@@ -29,6 +29,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
   // parsing straight to Number on every keystroke would drop the trailing dot.
   const [repsText, setRepsText] = useState(loggedSet?.actualReps?.toString() ?? '')
   const [weightText, setWeightText] = useState(loggedSet?.weightKg?.toString() ?? '')
+  const weightRef = useRef<HTMLInputElement>(null)
 
   return (
     <div className={rowClass(completed, skipped)}>
@@ -41,11 +42,14 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
           <span className="block text-[#4a4a4a]">~{plannedSet.suggestedWeightKg}kg</span>
         )}
       </div>
+      <RowBreak />
 
       {/* Actual reps */}
       <input
         type="text"
         inputMode="numeric"
+        enterKeyHint="next"
+        onKeyDown={(e) => { if (e.key === 'Enter') weightRef.current?.focus() }}
         placeholder={plannedSet.reps}
         value={repsText}
         onChange={(e) => {
@@ -55,14 +59,17 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
           onUpdate({ actualReps: raw === '' || Number.isNaN(n) ? undefined : n })
         }}
         disabled={completed}
-        className="w-14 bg-[#111] border border-[#2a2a2a] rounded-xl px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
+        className="w-14 @max-[17rem]:w-11 @max-[17rem]:px-1 bg-[#111] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
       />
 
       {/* Actual weight */}
-      <div className="flex items-center flex-1 gap-1">
+      <div className="flex items-center flex-1 min-w-0 @max-[17rem]:basis-0 gap-1">
         <input
           type="text"
+          ref={weightRef}
           inputMode="decimal"
+          enterKeyHint="done"
+          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
           placeholder="kg"
           value={weightText}
           onChange={(e) => {
@@ -73,7 +80,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
             onUpdate({ weightKg: raw === '' || Number.isNaN(n) ? undefined : n })
           }}
           disabled={completed}
-          className="w-full bg-[#111] border border-[#2a2a2a] rounded-xl px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
+          className="w-full bg-[#111] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
         />
         <span className="text-xs text-[#4a4a4a] shrink-0">kg</span>
       </div>
@@ -152,9 +159,10 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
       <div className="text-xs text-[#6a6a6a] shrink-0 w-16">
         {secondsToDisplay(target)} hold
       </div>
+      <RowBreak />
 
       {/* Live stopwatch / recorded time */}
-      <div className="flex-1 text-center">
+      <div className="flex-1 min-w-0 @max-[17rem]:basis-0 text-center">
         {completed ? (
           <span className="text-sm font-semibold text-emerald-400 tabular-nums">
             {secondsToDisplay(loggedSet?.actualSeconds ?? target)}
@@ -172,7 +180,7 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
       ) : running ? (
         <button
           onClick={stop}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-xl bg-[#d97756] text-white text-xs font-semibold transition-all active:scale-95 shrink-0"
+          className="flex items-center gap-1.5 h-8 px-3 rounded-nested bg-[#d97756] text-white text-xs font-semibold transition-all active:scale-95 shrink-0"
         >
           <Square size={13} strokeWidth={2.5} fill="currentColor" />
           Stop
@@ -180,7 +188,7 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
       ) : (
         <button
           onClick={start}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-xl bg-[#2a2a2a] text-[#d97756] text-xs font-semibold transition-all hover:bg-[#d97756]/20 active:scale-95 shrink-0"
+          className="flex items-center gap-1.5 h-8 px-3 rounded-nested bg-[#2a2a2a] text-[#d97756] text-xs font-semibold transition-all hover:bg-[#d97756]/20 active:scale-95 shrink-0"
         >
           <Play size={13} strokeWidth={2.5} fill="currentColor" />
           Start
@@ -218,7 +226,10 @@ function EditSetDialog({
 }
 
 function rowClass(completed: boolean, skipped: boolean): string {
-  return `flex items-center gap-2 rounded-2xl px-3 py-2.5 transition-all ${
+  // Rows sit 1rem inside a 2rem-radius tile, so their corners are 1rem
+  // (concentric). They then declare their own radius/inset so the inputs and
+  // tick ~0.625rem inside pick up the remainder via rounded-nested.
+  return `flex items-center @max-[17rem]:flex-wrap gap-2 rounded-2xl [--nest-radius:1rem] [--nest-inset:0.625rem] px-3 py-2.5 transition-all ${
     completed
       ? 'bg-emerald-500/8 border border-emerald-500/15'
       : skipped
@@ -232,13 +243,23 @@ function CompleteButton({ completed, onClick }: { completed: boolean; onClick: (
     <button
       onClick={onClick}
       aria-label={completed ? 'Edit completed set' : 'Complete set'}
-      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 ${
+      className={`w-8 h-8 rounded-nested flex items-center justify-center transition-all shrink-0 ${
         completed
           ? 'bg-emerald-500 text-white active:scale-90'
           : 'bg-[#2a2a2a] text-[#4a4a4a] hover:bg-[#d97756]/20 hover:text-[#d97756] active:scale-90'
       }`}
     >
-      <Check size={14} strokeWidth={2.5} />
+      <Check size="0.875em" strokeWidth={2.5} />
     </button>
   )
+}
+
+/**
+ * Line break used when large text leaves the row too narrow for one line
+ * (the set list is a size container; 17rem tracks the text size, so this only
+ * kicks in when the athlete's text setting is large). The set number and
+ * target sit on the first line, the inputs and tick on the second.
+ */
+function RowBreak() {
+  return <span aria-hidden className="hidden @max-[17rem]:block basis-full h-0" />
 }

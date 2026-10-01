@@ -84,7 +84,17 @@ are marked as seen when they finish onboarding.
   (route guard that pulls the signed-in user's data on sign-in and resets the
   store on sign-out). `src/pages/Login.tsx` is the sign-in screen.
 - `src/pages/` — one component per tab (`Home`, `WeekPlanner`, `Session`,
-  `Progress`, `History`, `Settings`), wired in `src/App.tsx` with `BottomNav`.
+  `Progress`, `History`, `Settings`), wired in `src/App.tsx` with `BottomNav` (floating tab bar, phones) and
+  `SideNav` (sidebar, when the `app` container is 48rem+ — iPad / landscape).
+  Edge offsets come from the layout tokens in `src/index.css` (`--safe-*`,
+  `--tabbar-*`): use `pb-tabbar` / `pb-action-bar` / `pb-edge` / `pt-safe` /
+  `px-safe` instead of hardcoding `pb-24`-style guesses. See `docs/DEVICE-FIT.md`.
+- **Device-fit conventions** (see `docs/DEVICE-FIT.md`): new sheets use the
+  shared `BottomSheet` (keyboard-aware, safe-area padded). Text fields use
+  `text-base` (16 px; smaller makes iOS zoom in on focus). Use `text-2xs`, not
+  `text-[10px]`. Nested rounded boxes use `rounded-nested` with the parent's
+  `--nest-radius` / `--nest-inset`. Row layouts that must survive large text
+  sizes reflow with a `@container` + `@max-[17rem]:` variant.
   `Onboarding` is the first-run flow: an in-app chat (`components/onboarding/
   ChatOnboarding` driven by the script in `lib/onboardingChat`), then "About
   you", then finish.

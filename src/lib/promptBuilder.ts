@@ -141,11 +141,10 @@ Apply all of these. The safety rules override every preference above.
    scores, missed reps, stalled weights). Build through the middle of the block
    and push a little harder in the final week or two. Say in your summary if
    this is a deload week and why.
-8. **Detailed warm-up & cool-down:** Every session gets a one-line \`warmup\` /
-   \`cooldown\` summary AND a detailed \`warmupExercises\` list (4–8 moves
-   specific to that session's work — and to my injuries, as prehab, where
-   relevant) plus a \`cooldownExercises\` list. Give each move a clear
-   \`prescription\` (e.g. "10 each side", "60s").
+8. **Detailed warm-up & cool-down (required):** Every session must include the
+   full step-by-step warm-up and cool-down described in "Warm-up & cool-down
+   format" below. I follow it move by move in the app, so never skip it or
+   reduce it to a one-line summary.
 9. **Standard exercise names:** Name every exercise and warm-up move with its
    common, standard gym name (e.g. "Dumbbell Bench Press", "Romanian Deadlift",
    "Cat Stretch") — the app looks each name up in an exercise library to show
@@ -154,6 +153,59 @@ Apply all of these. The safety rules override every preference above.
 
 Match the tone of my chosen coaching style in your written summary and how hard
 you push intensity/RPE targets.
+
+## Warm-up & cool-down format (required on every session)
+
+The app shows each session's warm-up as a one-line summary that expands into
+a numbered checklist, with a movement guide for every move. Build it like this:
+
+- \`warmup\`: one line summarising the whole warm-up.
+- \`warmupExercises\`: the full warm-up **in the order I do it**, 4–8 moves,
+  about 8–12 minutes (count it in \`estimatedMinutes\`). Work through these
+  phases:
+  1. **Raise:** 3–5 min of easy cardio to get my heart rate up.
+  2. **Mobilise:** dynamic mobility for the joints this session loads (e.g.
+     hips and ankles before squats, upper back and shoulders before pressing).
+  3. **Activate / prehab:** 1–2 moves for the muscles that protect my flagged
+     injuries, or that the session leans on most.
+  4. **Ramp-up sets (weights sessions):** before the first main lift, and any
+     later lift much heavier than what came before, give 2–3 lighter build-up
+     sets with falling reps at roughly 40–50%, 70% and 85–90% of the working
+     weight you set. Write the actual kg in the \`prescription\`, rounded to
+     loadable jumps. Skip this for bodyweight or light accessory work.
+     **Cardio sessions:** instead finish with drills (e.g. Leg Swings, High
+     Knees, Butt Kicks) and 2–4 short strides or build-ups toward the target
+     pace before the first interval. **Active recovery:** a gentle mobility
+     flow.
+- **Every move needs a \`prescription\`**: reps, sets × reps, time or distance,
+  e.g. "2 × 10", "60s", "5 min easy", "10 each side", "8 × 12kg, 5 × 18kg". Use
+  \`notes\` for the cue or why the move is there (e.g. "shoulder prehab before
+  pressing").
+- \`cooldown\` + \`cooldownExercises\`: 3–5 moves, about 5 minutes. An easy
+  flush first, then static stretches (30–60s holds) for the muscles worked, in
+  order.
+- Warm-up and cool-down moves aren't logged sets, so don't repeat them in
+  \`exercises\`.
+
+Example of the shape (base the real moves and loads on each session and my
+working weights; don't copy these):
+
+\`\`\`json
+"warmup": "5 min easy row, hip and upper-back mobility, band pull-aparts, ramp-up sets",
+"warmupExercises": [
+  { "name": "Rowing Machine", "prescription": "5 min easy", "notes": "Conversational pace, just get warm" },
+  { "name": "World's Greatest Stretch", "prescription": "5 each side", "notes": "Opens hips and upper back" },
+  { "name": "Cat Stretch", "prescription": "8 slow reps" },
+  { "name": "Band Pull-Apart", "prescription": "2 × 15", "notes": "Shoulder prehab before pressing" },
+  { "name": "Dumbbell Bench Press", "prescription": "10 × 10kg, 6 × 16kg, 3 × 20kg", "notes": "Ramp-up to the 22.5kg work sets: light, crisp reps, not logged" }
+],
+"cooldown": "Easy walk, then chest, lat and hip-flexor stretches",
+"cooldownExercises": [
+  { "name": "Walking", "prescription": "2 min easy" },
+  { "name": "Chest Stretch", "prescription": "45s each side" },
+  { "name": "Lat Stretch", "prescription": "45s each side" }
+]
+\`\`\`
 
 ## Output: \`WeekPlan\` JSON schema
 
@@ -190,10 +242,11 @@ PlannedSession {
   focus: string,                  // muscle groups or cardio type
   estimatedMinutes: number,
   intensity: "easy" | "moderate" | "hard",
-  warmup?: string,                // brief one-line summary
-  cooldown?: string,              // brief one-line summary
-  warmupExercises?: RoutineItem[],   // detailed warm-up moves
-  cooldownExercises?: RoutineItem[], // detailed cool-down moves
+  warmup: string,                 // REQUIRED: one-line summary of the warm-up
+  warmupExercises: RoutineItem[], // REQUIRED: the full warm-up, in order, 4–8
+                                  // moves (see "Warm-up & cool-down format")
+  cooldown: string,               // REQUIRED: one-line summary of the cool-down
+  cooldownExercises: RoutineItem[], // REQUIRED: the full cool-down, 3–5 moves
   exercises?: PlannedExercise[],  // for weights sessions
   intervals?: PlannedInterval[],  // for cardio sessions
   cardioOptions?: CardioType[]    // cardio only: modalities to choose between at
@@ -207,8 +260,9 @@ PlannedSession {
 
 RoutineItem {
   name: string,                   // standard exercise name, e.g. "Leg Swings"
-  prescription?: string,          // e.g. "10 each side" or "60s"
-  notes?: string
+  prescription: string,           // REQUIRED: e.g. "10 each side", "60s",
+                                  // "2 × 10", "8 × 12kg, 5 × 18kg"
+  notes?: string                  // cue or purpose
 }
 
 PlannedExercise {

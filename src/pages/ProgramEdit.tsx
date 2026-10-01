@@ -4,9 +4,10 @@ import { useAutoSync } from '../hooks/useAutoSync'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
+import { BottomSheet, SheetCloseButton } from '../components/shared/BottomSheet'
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import { PRIMARY_SPORTS, OTHER_SPORTS, sportIcon } from '../lib/sports'
-import { Check, Plus, X } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 import {
   GOAL_OPTIONS, EXERCISE_OPTIONS, FACILITY_OPTIONS, COACHING_OPTIONS,
   LENGTH_OPTIONS, DAYS_PER_WEEK_OPTIONS, daysPerWeekLabel,
@@ -63,7 +64,7 @@ export function ProgramEdit() {
         right={<SyncIndicator />}
       />
 
-      <div className="flex flex-col gap-5 px-4 pt-4 pb-32">
+      <div className="flex flex-col gap-5 px-4 pt-4 pb-tabbar">
         <Card>
           <CardSection className="flex flex-col gap-5">
             <ChipGroup
@@ -268,38 +269,31 @@ function SportsModal({
   onClose: () => void
 }) {
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col" onClick={onClose}>
-      <div
-        className="mt-auto bg-[#111] rounded-t-3xl border-t border-[#2a2a2a] flex flex-col slide-up max-h-[85svh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <h3 className="text-base font-semibold text-[#f5f5f0]">Add a sport</h3>
-          <button onClick={onClose} className="text-[#4a4a4a] hover:text-[#f5f5f0]">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-3 pb-6">
-          {OTHER_SPORTS.map((s) => {
-            const active = selected.includes(s)
-            return (
-              <button
-                key={s}
-                onClick={() => onToggle(s)}
-                className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-[#1a1a1a] transition-colors text-left"
-              >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                  active ? 'bg-[#d97756]/15 text-[#d97756]' : 'bg-[#1a1a1a] text-[#6a6a6a]'
-                }`}>
-                  {createElement(sportIcon(s), { size: 18 })}
-                </div>
-                <span className={`flex-1 text-sm font-medium ${active ? 'text-[#f5f5f0]' : 'text-[#a8a29e]'}`}>{s}</span>
-                {active && <Check size={18} className="text-[#d97756] shrink-0" />}
-              </button>
-            )
-          })}
-        </div>
+    <BottomSheet label="Add a sport" onClose={onClose}>
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <h3 className="text-base font-semibold text-[#f5f5f0]">Add a sport</h3>
+        <SheetCloseButton onClose={onClose} />
       </div>
-    </div>
+      <div className="flex-1 overflow-y-auto px-3 pb-edge">
+        {OTHER_SPORTS.map((s) => {
+          const active = selected.includes(s)
+          return (
+            <button
+              key={s}
+              onClick={() => onToggle(s)}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-[#1a1a1a] transition-colors text-left"
+            >
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                active ? 'bg-[#d97756]/15 text-[#d97756]' : 'bg-[#1a1a1a] text-[#6a6a6a]'
+              }`}>
+                {createElement(sportIcon(s), { size: 18 })}
+              </div>
+              <span className={`flex-1 text-sm font-medium ${active ? 'text-[#f5f5f0]' : 'text-[#a8a29e]'}`}>{s}</span>
+              {active && <Check size={18} className="text-[#d97756] shrink-0" />}
+            </button>
+          )
+        })}
+      </div>
+  </BottomSheet>
   )
 }

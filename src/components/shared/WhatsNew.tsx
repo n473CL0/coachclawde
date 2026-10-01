@@ -33,7 +33,7 @@ export function WhatsNewSheet({ releases, onClose }: { releases: Release[]; onCl
     <BottomSheet label={`What's new in version ${latest.version}`} onClose={onClose}>
       <div className="flex flex-col items-center text-center px-6 pt-6 pb-4">
         <ClaudeMark size={64} cheer sweat />
-        <p className="text-[10px] font-semibold text-[#d97756] uppercase tracking-widest mt-3">
+        <p className="text-2xs font-semibold text-[#d97756] uppercase tracking-widest mt-3">
           What's new · v{latest.version}
         </p>
         <h2 className="text-xl font-bold text-[#f5f5f0] mt-1 leading-tight">You asked, we built it</h2>

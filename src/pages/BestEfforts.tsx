@@ -23,7 +23,7 @@ export function BestEfforts() {
         backTo="/progress"
       />
 
-      <div className="flex flex-col gap-4 px-4 pt-4 pb-32">
+      <div className="flex flex-col gap-4 px-4 pt-4 pb-tabbar">
         {empty ? (
           <Card>
             <CardSection className="flex items-center gap-3 py-5">

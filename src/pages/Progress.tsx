@@ -64,7 +64,7 @@ export function Progress() {
         }
       />
 
-      <div className="flex flex-col gap-6 w-full px-4 pt-4 pb-32">
+      <div className="flex flex-col gap-6 w-full px-4 pt-4 pb-tabbar">
         {/* Program progress — tap to configure & see week-by-week history */}
         <Reveal>
           <Card accent onClick={() => navigate('/program')}>
@@ -114,7 +114,7 @@ export function Progress() {
         {/* All time */}
         <Reveal index={3}>
           <Section title="All time">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 @3xl/app:grid-cols-4 gap-3">
               <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={completed.length} label="Total sessions" />
               <StatCard icon={<TrendingUp size={18} className="text-emerald-400" />} value={`${avgFeeling}/5`} label="Avg feeling" />
               <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={weightSessions.length} label="Weights sessions" />
@@ -190,7 +190,7 @@ function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
       <CardSection className="flex flex-col gap-2">
         <div className="grid grid-cols-7 gap-1.5 mb-0.5">
           {WEEK_DAYS_MON.map((d, i) => (
-            <span key={i} className="text-[10px] text-[#4a4a4a] text-center">{d[0]}</span>
+            <span key={i} className="text-2xs text-[#4a4a4a] text-center">{d[0]}</span>
           ))}
         </div>
         {weeks.map((week, wi) => (
@@ -212,11 +212,11 @@ function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
           </div>
         ))}
         <div className="flex items-center justify-end gap-1.5 mt-1">
-          <span className="text-[10px] text-[#4a4a4a]">Less</span>
+          <span className="text-2xs text-[#4a4a4a]">Less</span>
           {[0, 1, 2, 3].map((n) => (
             <div key={n} className={`w-2.5 h-2.5 rounded-sm ${heatClass(n, false)}`} />
           ))}
-          <span className="text-[10px] text-[#4a4a4a]">More</span>
+          <span className="text-2xs text-[#4a4a4a]">More</span>
         </div>
       </CardSection>
     </Card>

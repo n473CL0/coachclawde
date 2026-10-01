@@ -1,6 +1,19 @@
 @import "tailwindcss";
 
+/* 11px at default size, but in rem so it follows the text-size setting —
+   the smallest text in the app (tab labels, chart ticks, step numbers). */
+@theme {
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+}
+
+/* Short viewports — phone landscape, split-screen. */
+@custom-variant short (@media (max-height: 32rem));
+
 :root {
+  /* Dark-only app: tell the browser, so native controls, autofill, carets and
+     scrollbars render dark too. */
+  color-scheme: dark;
   --sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
@@ -24,14 +37,164 @@ body {
   display: flex;
   flex-direction: column;
 }
-
-/* Safe area for iOS notch/home bar */
-.pb-safe {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+/* Installed iPhone app: iOS measures `svh` short of the screen there, and
+   when the page is shorter than the screen it only draws fixed UI down to the
+   page's end, cutting the tab bar off on short pages (Home, a short History).
+   Making the page at least the real screen height (`--app-h`, from
+   lib/deviceShape) gives short pages the same full-screen treatment as long
+   ones. */
+:root[data-standalone] #root {
+  min-height: var(--app-h, 100svh);
 }
 
-.pt-safe {
-  padding-top: max(0.5rem, env(safe-area-inset-top));
+/* Always reserve the scrollbar's space (where scrollbars take any), so pages
+   that do and don't scroll have the same width and fixed UI never shifts. */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Layer for screen-anchored UI (see FixedLayer.tsx): the tab bar, sheets,
+   dialogs, the Session bar and the rest timer. Children are `absolute` within
+   it, so the layer is their "screen":
+   - normally it is the viewport (inset: 0);
+   - in the installed iPhone app it is sized from the real screen height
+     (`--app-h`, from lib/deviceShape), because iOS can report a viewport that
+     stops short of the bottom by the status bar's height.
+   It is also the `app` size container for its children. Clicks pass through
+   to the page except on its children. */
+#fixed-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  container: app / inline-size;
+}
+:root[data-standalone] #fixed-layer {
+  bottom: auto;
+  height: var(--app-h, 100%);
+}
+@layer base {
+  #fixed-layer > * {
+    pointer-events: auto;
+  }
+}
+
+/* --- Device layout tokens ---
+   Every edge offset in the app derives from these, so nothing hardcodes a
+   guess like pb-24 for "the nav is about this tall". See docs/DEVICE-FIT.md. */
+:root {
+  /* iOS notch / Dynamic Island / home indicator / landscape sensor housing */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Floating tab bar: a pill hovering `gap` above the home indicator. The
+     active-tab highlight is inset by `pad`, so its radius is the bar's radius
+     minus that inset — the two curves stay concentric. */
+  --tabbar-h: 4rem;
+  --tabbar-gap: 0.75rem;
+  --tabbar-pad: 0.375rem;
+  --tabbar-radius: calc(var(--tabbar-h) / 2);
+  --tabbar-item-radius: calc(var(--tabbar-radius) - var(--tabbar-pad));
+  /* Screen edge → bar: clear of the home indicator, never flush. */
+  --tabbar-offset: max(var(--tabbar-gap), var(--safe-bottom));
+  --tabbar-side: var(--tabbar-gap);
+  /* Room content must leave beneath it so the last row isn't hidden. The
+     page ends at the (reported) viewport bottom, which in the installed
+     iPhone app can sit `--viewport-gap` above the screen bottom the bar is
+     anchored to. */
+  --tabbar-clearance: calc(var(--tabbar-offset) + var(--tabbar-h) + var(--tabbar-gap) - var(--viewport-gap, 0px));
+
+  /* Session's pinned "Complete Session" bar, excluding its safe-area padding. */
+  --action-bar-h: 4.5rem;
+
+  /* iPad / wide layout: sidebar navigation replaces the tab bar. */
+  --sidebar-w: 14rem;
+
+  /* On-screen keyboard height, kept up to date by useKeyboardInset. */
+  --kb: 0px;
+}
+
+/* Installed iPhone app with a known display corner radius (lib/deviceShape):
+   float the bar the same distance from the side and the bottom, at the
+   distance that makes its rounded ends concentric with the screen's corners
+   (gap = screen radius - bar radius). */
+:root[data-screen-radius] {
+  --tabbar-concentric: max(0.5rem, calc(var(--screen-radius) - var(--tabbar-radius)));
+  --tabbar-offset: var(--tabbar-concentric);
+  --tabbar-side: var(--tabbar-concentric);
+}
+
+/* Bottom sheets: never taller than the space under the status bar and above
+   the keyboard. While the keyboard is up it covers the home indicator, so
+   sheets and keyboard-docked bars (.kb-dock) don't need to clear it. */
+.sheet-panel {
+  max-height: calc(var(--app-h, 100dvh) - var(--kb) - max(1.5rem, var(--safe-top)) - 0.5rem);
+}
+:root[data-keyboard] .sheet-panel,
+:root[data-keyboard] .kb-dock {
+  --safe-bottom: 0px;
+}
+
+/* At sidebar widths there is no tab bar to clear — just the bottom edge. */
+@container app (width >= 48rem) {
+  .app-main {
+    --tabbar-clearance: max(1.5rem, calc(var(--safe-bottom) + 0.75rem));
+  }
+}
+
+@utility pt-safe {
+  padding-top: max(0.5rem, var(--safe-top));
+}
+
+@utility pb-safe {
+  padding-bottom: max(1rem, var(--safe-bottom));
+}
+
+@utility px-safe {
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+}
+
+/* Bottom of a page that sits above the tab bar. */
+@utility pb-tabbar {
+  padding-bottom: var(--tabbar-clearance);
+}
+
+/* Bottom of a page that sits above Session's pinned action bar. */
+@utility pb-action-bar {
+  padding-bottom: calc(var(--action-bar-h) + max(1rem, var(--safe-bottom)) + 1rem);
+}
+
+/* Anything that ends at the screen's bottom edge with nothing pinned below
+   it: sheet footers, overlays, full-screen routes. */
+@utility pb-edge {
+  padding-bottom: max(1.5rem, calc(var(--safe-bottom) + 0.75rem));
+}
+
+/* Concentric corners: a child inset from a rounded parent should curve around
+   the same centre, so its radius is the parent's radius minus the inset. The
+   parent declares both (e.g. `[--nest-radius:2rem] [--nest-inset:1rem]`);
+   children opt in with `rounded-nested`. Floored so tight insets don't go
+   square. */
+@utility rounded-nested {
+  border-radius: max(0.375rem, calc(var(--nest-radius, 1rem) - var(--nest-inset, 0.5rem)));
+}
+
+@utility tabbar-dock {
+  bottom: var(--tabbar-offset);
+  left: max(var(--tabbar-side), var(--safe-left));
+  right: max(var(--tabbar-side), var(--safe-right));
+  height: var(--tabbar-h);
+  /* Stay within the phone column (max-w-md) rather than stretching. */
+  max-width: calc(28rem - 2 * var(--tabbar-side));
+  margin-inline: auto;
+}
+
+@utility sidebar-dock {
+  width: calc(var(--sidebar-w) + var(--safe-left));
+  padding-left: max(1rem, var(--safe-left));
 }
 
 /* Smooth scrolling */
@@ -143,12 +306,21 @@ body {
 }
 
 /* Clawde "flying" from the finish screen up to where it lives on the home
-   header — a one-shot transition driven by inline top/left/scale. */
+   header — a one-shot transition driven by inline top/left/scale. The landing
+   point follows Home's layout: pushed down by the status bar, and centred on
+   the content column, which the sidebar offsets at 48rem+. */
 .claude-flight {
+  --flight-x: 50%;
+  --flight-landing-y: calc(64px + max(0.5rem, var(--safe-top)) - 0.5rem);
   transition: top 0.8s cubic-bezier(0.5, 0, 0.2, 1),
     left 0.8s cubic-bezier(0.5, 0, 0.2, 1),
     transform 0.8s cubic-bezier(0.5, 0, 0.2, 1),
     opacity 0.3s ease-out 0.6s;
+}
+@container app (width >= 48rem) {
+  .claude-flight {
+    --flight-x: calc(50% + (var(--sidebar-w) + var(--safe-left) - var(--safe-right)) / 2);
+  }
 }
 
 /* Onboarding chat — Clawde's "typing…" dots */

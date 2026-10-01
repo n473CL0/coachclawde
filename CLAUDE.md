@@ -43,10 +43,12 @@ PlannedSession {
   focus: string,                  // muscle groups or cardio type
   estimatedMinutes: number,
   intensity: "easy" | "moderate" | "hard",
-  warmup?: string,                // brief one-line summary
-  cooldown?: string,              // brief one-line summary
-  warmupExercises?: RoutineItem[],   // detailed warm-up moves (4–8)
-  cooldownExercises?: RoutineItem[], // detailed cool-down moves
+  warmup: string,                 // REQUIRED: one-line summary of the warm-up
+  warmupExercises: RoutineItem[], // REQUIRED: the full warm-up, in order, 4–8 moves
+  cooldown: string,               // REQUIRED: one-line summary of the cool-down
+  cooldownExercises: RoutineItem[], // REQUIRED: the full cool-down, 3–5 moves
+                                  // (optional in src/types so pre-v1.0.1 plans
+                                  // still load, but every new plan includes them)
   exercises?: PlannedExercise[],  // for weights sessions
   intervals?: PlannedInterval[],  // for cardio sessions
   cardioOptions?: CardioType[]    // cardio only: modalities the athlete may
@@ -61,8 +63,9 @@ PlannedSession {
 
 RoutineItem {
   name: string,                   // standard exercise name, e.g. "Leg Swings"
-  prescription?: string,          // e.g. "10 each side" or "60s"
-  notes?: string
+  prescription: string,           // REQUIRED: e.g. "10 each side", "60s",
+                                  // "2 × 10", "8 × 12kg, 5 × 18kg"
+  notes?: string                  // cue or purpose
 }
 
 PlannedExercise {
@@ -152,7 +155,16 @@ rather than assuming any particular injury.
 6. **TIMED EXERCISES**: For holds like planks, side planks, dead hangs or wall sits, set `durationSeconds` on each set (and no weight). The app gives the athlete a stopwatch.
 7. **PERIODISE ACROSS THE BLOCK**: The prompt gives "Week N of M" for the athlete's program block. Deload (~40% less volume, lighter loads, RPE ≤ 7) roughly every 4th–6th week, or sooner if recent history shows fatigue; build through the middle and push a little harder in the final week or two. Say in the summary if it's a deload week.
 8. **FIT THE SESSION LENGTH & DATES**: The prompt gives a target session length and the exact date for each training day. Use those dates verbatim (one session per listed day) and size each session to the target, with an honest `estimatedMinutes`.
-9. **DETAILED WARM-UP & COOL-DOWN**: Every session gets a one-line `warmup` / `cooldown` summary *and* a detailed `warmupExercises` list (4–8 moves specific to the session, plus injury prehab where relevant) and a `cooldownExercises` list, each move with a clear `prescription`. The app shows the summary and expands to the full list.
+9. **DETAILED WARM-UP & COOL-DOWN (required on every session)**: The athlete follows these move by move in the app, which shows the one-line summary and expands it into a numbered checklist with a movement guide per move.
+   - `warmup`: one-line summary. `warmupExercises`: the full warm-up **in order**, 4–8 moves, ~8–12 min (counted in `estimatedMinutes`), through these phases:
+     1. **Raise**: 3–5 min easy cardio.
+     2. **Mobilise**: dynamic mobility for the joints the session loads.
+     3. **Activate / prehab**: 1–2 moves protecting the athlete's flagged injuries or the muscles the session leans on.
+     4. **Ramp-up sets** (weights): before the first main lift, and any later much heavier lift, 2–3 build-up sets with falling reps at ~40–50%, 70% and 85–90% of the working weight, with actual kg in the `prescription` (e.g. "10 × 10kg, 6 × 16kg, 3 × 20kg"). Cardio sessions instead use drills (Leg Swings, High Knees, Butt Kicks) plus 2–4 strides toward target pace; active recovery uses a gentle mobility flow.
+   - Every move has a `prescription` (reps, sets × reps, time or distance) and, where useful, `notes` with the cue or purpose.
+   - `cooldown` + `cooldownExercises`: 3–5 moves, ~5 min: an easy flush, then 30–60s static stretches for the muscles worked.
+   - Warm-up and cool-down moves aren't logged, so don't repeat them in `exercises`.
+   The app's prompt (`src/lib/promptBuilder.ts`) carries the same spec plus a worked JSON example. Keep the two in sync.
 10. **STANDARD EXERCISE NAMES**: Name every exercise and warm-up/cool-down move with its common gym name (e.g. "Dumbbell Bench Press", "Romanian Deadlift", "Cat Stretch"). The app matches names against an exercise library (free-exercise-db) to show a movement guide, with a YouTube search as backup. Put variations and cues in `coachNotes` / `notes`, not the name.
 11. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
 
