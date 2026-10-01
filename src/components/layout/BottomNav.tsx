@@ -1,18 +1,18 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { NAV_ITEMS, isFullscreenRoute } from './navItems'
+import { NAV_ITEMS, hidesTabBar } from './navItems'
 import { FixedLayer } from './FixedLayer'
 
 /**
  * Floating tab bar for phone widths: a pill that hovers above the home
  * indicator and stays within the phone column. Hidden at sidebar widths
- * (see SideNav) and on full-screen routes. Geometry lives in the `--tabbar-*`
+ * (see SideNav), on full-screen routes and on Settings. Geometry lives in the `--tabbar-*`
  * tokens in index.css, which pages clear with `pb-tabbar`.
  */
 export function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  if (isFullscreenRoute(location.pathname)) return null
+  if (hidesTabBar(location.pathname)) return null
 
   return (
     <FixedLayer>

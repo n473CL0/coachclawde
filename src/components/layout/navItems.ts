@@ -16,6 +16,15 @@ export const NAV_ITEMS: NavItem[] = [
 // Routes that take over the full screen and hide both the tab bar and sidebar.
 const FULLSCREEN_ROUTES = ['/session/', '/plan']
 
+// Screens reached from a page header (with a back button) rather than a tab.
+// On phones they hide the tab bar; the iPad sidebar stays, since it links to
+// them directly.
+const NO_TAB_BAR_ROUTES = ['/settings']
+
 export function isFullscreenRoute(pathname: string): boolean {
   return FULLSCREEN_ROUTES.some((r) => pathname.startsWith(r))
+}
+
+export function hidesTabBar(pathname: string): boolean {
+  return isFullscreenRoute(pathname) || NO_TAB_BAR_ROUTES.some((r) => pathname.startsWith(r))
 }

@@ -51,7 +51,7 @@ export function Settings() {
   }
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a] pb-tabbar">
+    <div className="flex flex-col min-h-svh bg-[#0a0a0a] pb-edge">
       <PageHeader title="Settings" backTo="/progress" />
 
       <div className="flex flex-col gap-5 px-4 pt-4">
