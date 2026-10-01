@@ -392,7 +392,7 @@ function FlightToHome({ name }: { name: string }) {
   }, [])
   return (
     <FixedLayer>
-      <div className="fixed inset-0 z-50 bg-[#0a0a0a] overflow-hidden">
+      <div className="absolute inset-0 z-50 bg-[#0a0a0a] overflow-hidden">
         <p
           className="absolute left-0 right-0 text-center text-sm text-[#6a6a6a] transition-opacity duration-300"
           style={{ top: '58%', opacity: landed ? 0 : 1 }}

@@ -34,6 +34,15 @@ Audited on branch `claude/open-claude-app-and-prompt-refinements` (`bb3d7c6`), 2
 >      two-column lists on iPad, a wider column on large iPads, and
 >      `color-scheme: dark`. (O-1, O-2, R-1, W-1, D-1 step 1)
 >
+> **Installed-app follow-up:** on a real iPhone home-screen app the tab bar
+> floated about 59pt (the status bar's height) above the bottom. iOS reports a
+> viewport shorter than the screen there. Screen-anchored UI now lives in
+> `#fixed-layer` (`FixedLayer.tsx`), which `lib/deviceShape.ts` sizes from the
+> real screen height in the installed iPhone app. The tab bar uses the
+> display's corner radius (looked up by screen size) to sit concentric with
+> the bezel. Settings → About shows a "Display:" line with the measured
+> numbers for debugging on devices.
+>
 > **Correction to K-2:** iOS does show a Done key, in the form accessory bar
 > above the keypad. The real gaps were Android's enter key doing nothing and
 > the focused row scrolling out of view; both are now handled.

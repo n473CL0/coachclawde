@@ -11,6 +11,7 @@ import { SyncIndicator } from '../components/shared/SyncIndicator'
 import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift } from 'lucide-react'
 import { WhatsNewSheet } from '../components/shared/WhatsNew'
 import { APP_VERSION } from '../lib/appVersion'
+import { getDeviceShape } from '../lib/deviceShape'
 import { RELEASES } from '../lib/releaseNotes'
 import { ageFromBirthDate, isValidBirthDate } from '../lib/dateUtils'
 import { toLocalISODate } from '../lib/weekUtils'
@@ -219,12 +220,38 @@ export function Settings() {
               </CardSection>
             </button>
           </Card>
+          <DisplayInfo />
         </div>
       </div>
 
       {showWhatsNew && <WhatsNewSheet releases={RELEASES} onClose={() => setShowWhatsNew(false)} />}
     </div>
   )
+}
+
+/**
+ * One line of screen geometry: what the app measured and what iOS reports.
+ * Lets a tester screenshot the real numbers if the layout sits wrong on a
+ * device we can't test.
+ */
+function DisplayInfo() {
+  const shape = getDeviceShape()
+  const probe = (side: string) => {
+    const el = document.createElement('div')
+    el.style.cssText = `position:absolute;visibility:hidden;padding-top:env(safe-area-inset-${side})`
+    document.body.appendChild(el)
+    const px = Math.round(parseFloat(getComputedStyle(el).paddingTop))
+    el.remove()
+    return px
+  }
+  const parts = [
+    `${screen.width}×${screen.height}`,
+    `viewport ${window.innerWidth}×${window.innerHeight}`,
+    `safe ${probe('top')}/${probe('bottom')}`,
+    shape.screenRadius ? `corners ${shape.screenRadius}pt` : 'corners —',
+    shape.standalone ? `app${shape.viewportGap ? ` +${shape.viewportGap}` : ''}` : 'browser',
+  ]
+  return <p className="text-2xs text-[#3a3a3a] text-center mt-3 tabular-nums">Display: {parts.join(' · ')}</p>
 }
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {

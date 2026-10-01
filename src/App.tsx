@@ -34,7 +34,7 @@ function App() {
               header-less screens (Home) doesn't run under the clock and
               Dynamic Island. Zero-height where there's no top inset. */}
           <FixedLayer>
-            <div aria-hidden className="fixed top-0 inset-x-0 h-(--safe-top) bg-[#0a0a0a]/90 backdrop-blur-xl pointer-events-none" />
+            <div aria-hidden className="absolute top-0 inset-x-0 h-(--safe-top) bg-[#0a0a0a]/90 backdrop-blur-xl pointer-events-none" />
           </FixedLayer>
           <Routes>
             <Route path="/login" element={<PhoneColumn><Login /></PhoneColumn>} />

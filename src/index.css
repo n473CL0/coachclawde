@@ -44,17 +44,25 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Layer for screen-anchored UI (see FixedLayer.tsx). It is the viewport, so
-   `position: fixed` children anchor to the screen even in browsers that treat
-   size containers as fixed containing blocks. It is also the `app` size
-   container for those children. Clicks pass through to the page except on
-   its children. */
+/* Layer for screen-anchored UI (see FixedLayer.tsx): the tab bar, sheets,
+   dialogs, the Session bar and the rest timer. Children are `absolute` within
+   it, so the layer is their "screen":
+   - normally it is the viewport (inset: 0);
+   - in the installed iPhone app it is sized from the real screen height
+     (`--app-h`, from lib/deviceShape), because iOS can report a viewport that
+     stops short of the bottom by the status bar's height.
+   It is also the `app` size container for its children. Clicks pass through
+   to the page except on its children. */
 #fixed-layer {
   position: fixed;
   inset: 0;
   z-index: 40;
   pointer-events: none;
   container: app / inline-size;
+}
+:root[data-standalone] #fixed-layer {
+  bottom: auto;
+  height: var(--app-h, 100%);
 }
 @layer base {
   #fixed-layer > * {
@@ -80,10 +88,14 @@ html {
   --tabbar-pad: 0.375rem;
   --tabbar-radius: calc(var(--tabbar-h) / 2);
   --tabbar-item-radius: calc(var(--tabbar-radius) - var(--tabbar-pad));
-  /* Screen bottom → bar bottom: clear of the home indicator, never flush. */
+  /* Screen edge → bar: clear of the home indicator, never flush. */
   --tabbar-offset: max(var(--tabbar-gap), var(--safe-bottom));
-  /* Room content must leave beneath it so the last row isn't hidden. */
-  --tabbar-clearance: calc(var(--tabbar-offset) + var(--tabbar-h) + var(--tabbar-gap));
+  --tabbar-side: var(--tabbar-gap);
+  /* Room content must leave beneath it so the last row isn't hidden. The
+     page ends at the (reported) viewport bottom, which in the installed
+     iPhone app can sit `--viewport-gap` above the screen bottom the bar is
+     anchored to. */
+  --tabbar-clearance: calc(var(--tabbar-offset) + var(--tabbar-h) + var(--tabbar-gap) - var(--viewport-gap, 0px));
 
   /* Session's pinned "Complete Session" bar, excluding its safe-area padding. */
   --action-bar-h: 4.5rem;
@@ -95,11 +107,21 @@ html {
   --kb: 0px;
 }
 
+/* Installed iPhone app with a known display corner radius (lib/deviceShape):
+   float the bar the same distance from the side and the bottom, at the
+   distance that makes its rounded ends concentric with the screen's corners
+   (gap = screen radius - bar radius). */
+:root[data-screen-radius] {
+  --tabbar-concentric: max(0.5rem, calc(var(--screen-radius) - var(--tabbar-radius)));
+  --tabbar-offset: var(--tabbar-concentric);
+  --tabbar-side: var(--tabbar-concentric);
+}
+
 /* Bottom sheets: never taller than the space under the status bar and above
    the keyboard. While the keyboard is up it covers the home indicator, so
    sheets and keyboard-docked bars (.kb-dock) don't need to clear it. */
 .sheet-panel {
-  max-height: calc(100dvh - var(--kb) - max(1.5rem, var(--safe-top)) - 0.5rem);
+  max-height: calc(var(--app-h, 100dvh) - var(--kb) - max(1.5rem, var(--safe-top)) - 0.5rem);
 }
 :root[data-keyboard] .sheet-panel,
 :root[data-keyboard] .kb-dock {
@@ -153,11 +175,11 @@ html {
 
 @utility tabbar-dock {
   bottom: var(--tabbar-offset);
-  left: max(var(--tabbar-gap), var(--safe-left));
-  right: max(var(--tabbar-gap), var(--safe-right));
+  left: max(var(--tabbar-side), var(--safe-left));
+  right: max(var(--tabbar-side), var(--safe-right));
   height: var(--tabbar-h);
   /* Stay within the phone column (max-w-md) rather than stretching. */
-  max-width: calc(28rem - 2 * var(--tabbar-gap));
+  max-width: calc(28rem - 2 * var(--tabbar-side));
   margin-inline: auto;
 }
 

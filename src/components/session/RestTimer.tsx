@@ -15,7 +15,7 @@ export function RestTimerOverlay() {
 
   return (
     <FixedLayer>
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end short:items-center justify-center pb-edge short:pt-safe">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end short:items-center justify-center pb-edge short:pt-safe">
         <div className="bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up">
           <p className="text-xs text-[#6a6a6a] uppercase tracking-widest font-medium">Rest</p>
           <p className="text-sm text-[#a8a29e]">{label}</p>

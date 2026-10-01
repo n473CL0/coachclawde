@@ -1,14 +1,15 @@
 import type { ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import { FixedLayer } from '../layout/FixedLayer'
 
 /**
  * Slide-up bottom sheet over a dimmed backdrop. Tapping the backdrop closes it
  * unless `dismissOnBackdrop` is false (use that when the sheet holds typed
  * input that a stray tap shouldn't throw away).
  *
- * Portalled to <body> so it can be opened from inside tiles, rows and other
- * overflow-hidden containers. Lay the content out as a flex column: give the
+ * Rendered into the fixed layer (see FixedLayer) so it can be opened from
+ * inside tiles, rows and other overflow-hidden containers, and so it anchors
+ * to the real screen bottom in the installed iPhone app. Lay the content out as a flex column: give the
  * scrolling middle `flex-1 overflow-y-auto`, and end with a footer that uses
  * `pb-edge` so it clears the home indicator.
  *
@@ -25,22 +26,23 @@ export function BottomSheet({
   children: ReactNode
   dismissOnBackdrop?: boolean
 }) {
-  return createPortal(
-    <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col pb-(--kb)"
-      onClick={dismissOnBackdrop ? onClose : undefined}
-    >
+  return (
+    <FixedLayer>
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-        className="sheet-panel mt-auto w-full max-w-md md:max-w-lg mx-auto bg-[#111] rounded-t-3xl border-t border-[#2a2a2a] flex flex-col slide-up"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col pb-(--kb)"
+        onClick={dismissOnBackdrop ? onClose : undefined}
       >
-        {children}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={label}
+          className="sheet-panel mt-auto w-full max-w-md md:max-w-lg mx-auto bg-[#111] rounded-t-3xl border-t border-[#2a2a2a] flex flex-col slide-up"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
       </div>
-    </div>,
-    document.body
+    </FixedLayer>
   )
 }
 

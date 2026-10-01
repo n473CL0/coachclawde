@@ -26,7 +26,11 @@ export function useKeyboardInset() {
       frame = requestAnimationFrame(() => {
         // A pinch-zoom also shrinks the visual viewport; that isn't a keyboard.
         const zoomed = vv.scale > 1.01
-        const gap = Math.round(window.innerHeight - vv.height - vv.offsetTop)
+        // Measured against the fixed layer that sheets live in: the real
+        // screen height in the installed iPhone app (where the reported
+        // viewport can stop short), otherwise the viewport.
+        const base = document.getElementById('fixed-layer')?.clientHeight || window.innerHeight
+        const gap = Math.round(base - vv.height - vv.offsetTop)
         // Ignore small differences (toolbar collapse, rounding).
         const open = !zoomed && gap > 80
         root.style.setProperty('--kb', open ? `${gap}px` : '0px')

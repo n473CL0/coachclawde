@@ -16,7 +16,7 @@ export function BottomNav() {
 
   return (
     <FixedLayer>
-      <nav aria-label="Primary" className="fixed tabbar-dock @3xl/app:hidden">
+      <nav aria-label="Primary" className="absolute tabbar-dock @3xl/app:hidden">
         <div className="flex h-full rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/85 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50">
           {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
             const active = location.pathname === path
