@@ -33,7 +33,7 @@ export function OpenClaudeButton({
   async function handleOpenApp() {
     setAppMissing(false)
     await copy()
-    const opened = await openClaudeApp()
+    const opened = await openClaudeApp(text)
     if (opened) onOpened?.()
     else setAppMissing(true)
   }
@@ -42,7 +42,7 @@ export function OpenClaudeButton({
     // Start the copy before the new tab steals focus, but open the tab
     // synchronously within the tap so it isn't popup-blocked.
     const copying = copy()
-    openClaudeWeb()
+    openClaudeWeb(text)
     onOpened?.()
     await copying
   }

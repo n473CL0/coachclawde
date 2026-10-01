@@ -1,4 +1,17 @@
-import { format, formatDistanceToNow, isToday, isTomorrow, isPast, isThisWeek, parseISO } from 'date-fns'
+import { differenceInYears, format, formatDistanceToNow, isToday, isTomorrow, isPast, isThisWeek, isValid, parseISO } from 'date-fns'
+
+/** True for a plausible date of birth: a real yyyy-mm-dd date from 1900 up to today. */
+export function isValidBirthDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const d = parseISO(value)
+  return isValid(d) && value >= '1900-01-01' && d <= new Date()
+}
+
+/** Whole years old on `now`, or undefined when there's no usable birth date. */
+export function ageFromBirthDate(birthDate: string | undefined, now: Date = new Date()): number | undefined {
+  if (!birthDate || !isValidBirthDate(birthDate)) return undefined
+  return differenceInYears(now, parseISO(birthDate))
+}
 
 export function getWeekday(dateStr: string): string {
   const d = parseISO(dateStr)

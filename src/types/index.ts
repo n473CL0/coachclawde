@@ -41,8 +41,11 @@ export interface UserProfile {
   sex: 'male' | 'female';
   heightCm: number;
   weightKg: number;
-  /** Age in years, captured during onboarding. Optional for older profiles. */
-  age?: number;
+  /**
+   * Local-ISO date of birth (yyyy-mm-dd), from onboarding or Settings. Optional
+   * for older profiles. Use `ageFromBirthDate` for the age.
+   */
+  birthDate?: string;
   programWeek: number;
   injuries: string[];
   goals: string[];
