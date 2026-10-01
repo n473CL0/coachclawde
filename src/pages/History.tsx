@@ -28,7 +28,7 @@ export function History() {
     return (
       <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
         <PageHeader title="History" />
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 pb-24">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 pb-tabbar">
           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#241712] to-[#141414] ring-1 ring-[#d97756]/25 flex items-center justify-center">
             <ClaudeMark size={48} sweat />
           </div>
@@ -45,7 +45,7 @@ export function History() {
     <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
       <PageHeader title="History" subtitle={`${completed.length} session${completed.length !== 1 ? 's' : ''} completed`} />
 
-      <div className="flex flex-col gap-6 px-4 pt-4 pb-32">
+      <div className="flex flex-col gap-6 px-4 pt-4 pb-tabbar">
         {grouped.map(({ weekLabel, sessions }) => (
           <div key={weekLabel}>
             <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">{weekLabel}</p>

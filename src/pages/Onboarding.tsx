@@ -121,8 +121,8 @@ export function Onboarding() {
           </div>
 
           {/* Footer nav */}
-          <div className="px-5 pb-safe">
-            <div className="flex items-center gap-3 pb-5">
+          <div className="px-5 pb-edge">
+            <div className="flex items-center gap-3">
               <Button variant="ghost" onClick={() => setStep(STEPS[stepIndex - 1])} aria-label="Back">
                 <ChevronLeft size={18} />
                 Back

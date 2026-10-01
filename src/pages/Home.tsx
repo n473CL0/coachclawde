@@ -45,7 +45,7 @@ export function Home() {
   const program = getProgramProgress(profile)
 
   return (
-    <div className="flex flex-col pb-24 min-h-svh bg-[#0a0a0a]">
+    <div className="flex flex-col pb-tabbar min-h-svh bg-[#0a0a0a]">
       {/* Header */}
       <div className="px-4 pt-safe">
         {/* Top bar with plan action */}

@@ -35,7 +35,7 @@ export function Program() {
         }
       />
 
-      <div className="flex flex-col gap-6 px-4 pt-4 pb-32">
+      <div className="flex flex-col gap-6 px-4 pt-4 pb-tabbar">
         <Reveal>
           <ProgramBarChart />
         </Reveal>

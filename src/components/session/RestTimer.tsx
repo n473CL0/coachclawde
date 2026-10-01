@@ -13,7 +13,7 @@ export function RestTimerOverlay() {
   const strokeDashoffset = circumference * Math.min(1, Math.max(0, progress))
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end justify-center pb-10">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end justify-center pb-edge">
       <div className="bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 w-72 flex flex-col items-center gap-5 slide-up">
         <p className="text-xs text-[#6a6a6a] uppercase tracking-widest font-medium">Rest</p>
         <p className="text-sm text-[#a8a29e]">{label}</p>

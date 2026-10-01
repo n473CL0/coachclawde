@@ -63,7 +63,7 @@ export function ProgramEdit() {
         right={<SyncIndicator />}
       />
 
-      <div className="flex flex-col gap-5 px-4 pt-4 pb-32">
+      <div className="flex flex-col gap-5 px-4 pt-4 pb-tabbar">
         <Card>
           <CardSection className="flex flex-col gap-5">
             <ChipGroup
@@ -279,7 +279,7 @@ function SportsModal({
             <X size={20} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-3 pb-6">
+        <div className="flex-1 overflow-y-auto px-3 pb-edge">
           {OTHER_SPORTS.map((s) => {
             const active = selected.includes(s)
             return (

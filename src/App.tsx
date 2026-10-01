@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { AuthProvider } from './auth/AuthProvider'
 import { RequireAuth } from './auth/RequireAuth'
 import { BottomNav } from './components/layout/BottomNav'
+import { SideNav } from './components/layout/SideNav'
 import { useAppStore } from './store/useAppStore'
 import { Login } from './pages/Login'
 import { Onboarding } from './pages/Onboarding'
@@ -21,15 +22,18 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="w-full max-w-md mx-auto min-h-svh relative bg-[#0a0a0a] overflow-x-clip">
+        {/* The `app` container drives the phone ↔ iPad layout switch: container
+            queries (`@3xl/app:`) rather than media queries, so the shell
+            responds to the space it actually has. */}
+        <div className="@container/app w-full min-h-svh relative bg-[#0a0a0a] overflow-x-clip">
           <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<PhoneColumn><Login /></PhoneColumn>} />
             <Route
               path="/*"
               element={
                 <RequireAuth>
                   <Routes>
-                    <Route path="/onboarding" element={<Onboarding />} />
+                    <Route path="/onboarding" element={<PhoneColumn><Onboarding /></PhoneColumn>} />
                     <Route
                       path="/*"
                       element={
@@ -60,23 +64,37 @@ function RequireOnboarded({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
+/** Single centred phone-width column, for the screens without navigation. */
+function PhoneColumn({ children }: { children: ReactNode }) {
+  return <div className="w-full max-w-md mx-auto min-h-svh relative">{children}</div>
+}
+
+/**
+ * Signed-in shell. Phones: one column with the floating tab bar. At 48rem+
+ * (iPad, wide windows): sidebar on the left and a wider content column.
+ */
 function MainApp() {
   return (
-    <>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/plan" element={<WeekPlanner />} />
-        <Route path="/session/:id" element={<Session />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/progress" element={<Progress />} />
-        <Route path="/progress/best-efforts" element={<BestEfforts />} />
-        <Route path="/program" element={<Program />} />
-        <Route path="/program/edit" element={<ProgramEdit />} />
-        <Route path="/settings" element={<Settings />} />
-      </Routes>
+    <div className="flex min-h-svh">
+      <SideNav />
+      <main className="app-main flex-1 min-w-0 @3xl/app:pr-(--safe-right)">
+        <div className="w-full max-w-md @3xl/app:max-w-xl mx-auto min-h-svh relative">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/plan" element={<WeekPlanner />} />
+            <Route path="/session/:id" element={<Session />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/progress/best-efforts" element={<BestEfforts />} />
+            <Route path="/program" element={<Program />} />
+            <Route path="/program/edit" element={<ProgramEdit />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </div>
+      </main>
       <BottomNav />
       <ReleaseNotesGate />
-    </>
+    </div>
   )
 }
 

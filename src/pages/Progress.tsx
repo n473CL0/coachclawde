@@ -64,7 +64,7 @@ export function Progress() {
         }
       />
 
-      <div className="flex flex-col gap-6 w-full px-4 pt-4 pb-32">
+      <div className="flex flex-col gap-6 w-full px-4 pt-4 pb-tabbar">
         {/* Program progress — tap to configure & see week-by-week history */}
         <Reveal>
           <Card accent onClick={() => navigate('/program')}>

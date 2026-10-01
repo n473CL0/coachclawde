@@ -84,7 +84,11 @@ are marked as seen when they finish onboarding.
   (route guard that pulls the signed-in user's data on sign-in and resets the
   store on sign-out). `src/pages/Login.tsx` is the sign-in screen.
 - `src/pages/` — one component per tab (`Home`, `WeekPlanner`, `Session`,
-  `Progress`, `History`, `Settings`), wired in `src/App.tsx` with `BottomNav`.
+  `Progress`, `History`, `Settings`), wired in `src/App.tsx` with `BottomNav` (floating tab bar, phones) and
+  `SideNav` (sidebar, when the `app` container is 48rem+ — iPad / landscape).
+  Edge offsets come from the layout tokens in `src/index.css` (`--safe-*`,
+  `--tabbar-*`): use `pb-tabbar` / `pb-action-bar` / `pb-edge` / `pt-safe` /
+  `px-safe` instead of hardcoding `pb-24`-style guesses. See `docs/DEVICE-FIT.md`.
   `Onboarding` is the first-run flow: an in-app chat (`components/onboarding/
   ChatOnboarding` driven by the script in `lib/onboardingChat`), then "About
   you", then finish.

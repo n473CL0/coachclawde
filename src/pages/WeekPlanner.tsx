@@ -212,7 +212,7 @@ export function WeekPlanner() {
   const orderedDays = [...selectedDays].sort((a, b) => dayIndex(a) - dayIndex(b))
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a] pb-24">
+    <div className="flex flex-col min-h-svh bg-[#0a0a0a] pb-edge">
       <PageHeader
         title="Plan Your Week"
         subtitle={weekLabel}
@@ -403,7 +403,7 @@ export function WeekPlanner() {
                 {promptText}
               </pre>
             </div>
-            <div className="px-4 pb-6 pt-2 flex flex-col gap-2">
+            <div className="px-4 pb-edge pt-2 flex flex-col gap-2">
               <OpenClaudeButton
                 text={promptText}
                 onCopied={flashCopied}
@@ -450,7 +450,7 @@ export function WeekPlanner() {
                 </div>
               )}
             </div>
-            <div className="px-4 pb-6 pt-3 flex gap-3">
+            <div className="px-4 pb-edge pt-3 flex gap-3">
               <Button variant="secondary" onClick={() => setShowImport(false)} fullWidth>Cancel</Button>
               <Button onClick={handleImport} disabled={!importJson.trim()} loading={importing} fullWidth>
                 Import Week

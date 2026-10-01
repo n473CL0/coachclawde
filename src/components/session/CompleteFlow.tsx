@@ -65,7 +65,7 @@ export function CompleteFlow({ sessionTitle, isLastSessionOfWeek, onComplete, on
               </button>
             </div>
 
-            <div className="px-5 pt-4 pb-6 flex flex-col gap-5">
+            <div className="px-5 pt-4 pb-edge flex flex-col gap-5">
               {/* Feelings rating */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -136,7 +136,7 @@ export function CompleteFlow({ sessionTitle, isLastSessionOfWeek, onComplete, on
               </div>
             </div>
 
-            <div className="px-5 pt-4 pb-6 flex flex-col gap-5">
+            <div className="px-5 pt-4 pb-edge flex flex-col gap-5">
               {/* Week energy */}
               <div>
                 <p className="text-sm font-medium text-[#a8a29e] mb-3">Overall week energy level?</p>
