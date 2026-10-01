@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Lock, Pause, Play, Plus, SkipForward, Volume2, X } from 'lucide-react'
+import { Lock, Pause, Play, Plus, SkipForward, Trash2, Volume2, X } from 'lucide-react'
 import type { CardioType, LoggedInterval, LoggedStep, SessionOutcome } from '../../types'
 import { FixedLayer } from '../layout/FixedLayer'
 import { Button } from '../shared/Button'
+import { ClaudeMark } from '../shared/ClaudeMark'
+import { ConfirmDialog } from '../shared/ConfirmDialog'
 import { DurationStepper } from '../shared/Stepper'
 import { WorkoutStrip } from './WorkoutStrip'
 import { RpePicker } from './QuickLogSheet'
@@ -16,6 +18,7 @@ import {
 import { describeDistance, resolveTarget, type RunZones } from '../../lib/zones'
 import { computeSplit, distanceToMeters, distanceUnit, formatClock, metersToDistance } from '../../lib/cardioUtils'
 import { useWakeLock } from '../../hooks/useWakeLock'
+import { markRunTourSeen, runTourSeen } from '../../lib/tutorials'
 
 export interface RunResult {
   loggedSteps: LoggedStep[]
@@ -26,23 +29,26 @@ export interface RunResult {
   generalNotes?: string
 }
 
-type Phase = 'check' | 'running' | 'paused' | 'review'
+type Phase = 'check' | 'tour' | 'running' | 'paused' | 'review'
 
 /**
  * Run Mode: plays a structured workout. It times every step, plays a tone at
  * each change (scheduled on the audio clock, see lib/runEngine), takes LAP
  * for distance reps, keeps the screen on, and ends with a pre-filled review
- * so saving is one tap. Screen-on only: cues with the phone locked are a
- * later phase.
+ * so saving is one tap (or discarding, which closes without saving).
+ * Screen-on only: cues with the phone locked are a later phase. The first
+ * interval session gets Clawde's tour of LAP and Lock before the clock starts.
  */
 export function RunMode({
-  title, flat, modality, zones, onSave, onClose,
+  title, flat, modality, zones, onSave, onDiscard, onClose,
 }: {
   title: string
   flat: FlatStep[]
   modality: CardioType
   zones?: RunZones
   onSave: (result: RunResult) => void
+  /** Leave from the review without saving anything. */
+  onDiscard: () => void
   onClose: () => void
 }) {
   const [phase, setPhase] = useState<Phase>('check')
@@ -51,6 +57,9 @@ export function RunMode({
   const [locked, setLocked] = useState(false)
   const [records, setRecords] = useState<LoggedStep[]>([])
   const [confirmEnd, setConfirmEnd] = useState(false)
+  const [tourStep, setTourStep] = useState(0)
+  // Intervals are where LAP and Lock matter, so that's when the tour shows.
+  const [tourFirst] = useState(() => flat.some((f) => f.rep) && !runTourSeen())
 
   // Timing lives in refs: performance.now() milliseconds.
   const idxRef = useRef(0)
@@ -165,11 +174,31 @@ export function RunMode({
     sessionStart.current = t
     stepStart.current = t
     cycleStart.current = t
+    pauseAt.current = null
+    pausedTotal.current = 0
     idxRef.current = 0
     recs.current = []
     setIdx(0)
     setPhase('running')
     replan()
+  }
+
+  /** Shows the first step, clock frozen, with Clawde's tour over it. */
+  function beginTour() {
+    const t = performance.now()
+    sessionStart.current = t
+    stepStart.current = t
+    cycleStart.current = t
+    pauseAt.current = t
+    idxRef.current = 0
+    setIdx(0)
+    setTourStep(0)
+    setPhase('tour')
+  }
+
+  function endTour() {
+    markRunTourSeen()
+    start()
   }
 
   const lap = useCallback(() => {
@@ -236,7 +265,7 @@ export function RunMode({
   if (phase === 'review') {
     return (
       <Shell>
-        <RunReview flat={flat} records={records} modality={modality} zones={zones} title={title} onSave={onSave} />
+        <RunReview flat={flat} records={records} modality={modality} zones={zones} title={title} onSave={onSave} onDiscard={onDiscard} />
       </Shell>
     )
   }
@@ -268,10 +297,16 @@ export function RunMode({
               </p>
             </div>
             <p className="text-xs text-[#6a6a6a] leading-relaxed">
-              The screen stays on while Run Mode is open. Keep the app in front: cues stop if you lock the phone or switch apps.
+              The screen stays on while Run Mode is open. Keep the app in front: cues stop if you lock the phone or
+              switch apps, so use the <b className="text-[#a8a29e]">Lock</b> button in Run Mode instead.
             </p>
+            {!tourFirst && (
+              <button onClick={beginTour} className="self-start text-xs font-semibold text-[#d97756] hover:text-[#e58a6b] -my-1 py-1">
+                Show me how LAP and Lock work
+              </button>
+            )}
           </div>
-          <Button size="lg" fullWidth onClick={start}>
+          <Button size="lg" fullWidth onClick={tourFirst ? beginTour : start}>
             <Play size={18} /> Start
           </Button>
         </div>
@@ -290,6 +325,8 @@ export function RunMode({
   const next = flat[idx + 1]
   const color = EFFORT_COLOR[step.step.effort]
   const meters = step.step.end.by === 'distance' ? step.step.end.meters : undefined
+  const demoLap = phase === 'tour' && tourStep === 0
+  const showLap = lapStep || demoLap
   const target = step.step.target
     ? { primary: step.step.target, secondary: undefined as string | undefined }
     : resolveTarget(step.step.effort, modality, zones, meters)
@@ -336,12 +373,12 @@ export function RunMode({
           onClick={lap}
           disabled={!lapStep || phase !== 'running'}
           className={`mt-auto shrink-0 h-28 short:h-20 rounded-3xl font-extrabold transition-transform active:scale-[0.98] ${
-            lapStep
+            showLap
               ? 'bg-[#d97756] text-white text-3xl tracking-[0.14em] shadow-lg shadow-[#d97756]/25'
               : 'bg-[#161616] text-[#6a6a6a] text-sm tracking-normal font-semibold border border-[#2a2a2a]'
-          }`}
+          } ${demoLap ? 'relative z-40 ring-4 ring-[#d97756]/40 ring-offset-4 ring-offset-[#0a0a0a]' : ''}`}
         >
-          {lapStep ? 'LAP' : 'Ends by itself · no tap needed'}
+          {showLap ? 'LAP' : 'Ends by itself · no tap needed'}
         </button>
 
         <div className="flex justify-around shrink-0">
@@ -354,11 +391,15 @@ export function RunMode({
           {step.step.role === 'recover' && d != null && phase === 'running' && (
             <Tool onClick={plus30} icon={<Plus size={16} />} label="30 s" />
           )}
-          <Tool onClick={() => setLocked(true)} icon={<Lock size={16} />} label="Lock" />
+          <Tool onClick={() => setLocked(true)} icon={<Lock size={16} />} label="Lock" highlight={phase === 'tour' && tourStep === 1} />
         </div>
       </div>
 
       {locked && <PocketScreen onUnlock={() => setLocked(false)} />}
+
+      {phase === 'tour' && (
+        <RunTour step={tourStep} onStep={setTourStep} onDone={endTour} />
+      )}
 
       {confirmEnd && (
         <div className="absolute inset-0 z-10 bg-black/80 flex items-center justify-center px-6">
@@ -392,12 +433,66 @@ function CloseButton({ onClick }: { onClick: () => void }) {
   )
 }
 
-function Tool({ onClick, icon, label }: { onClick: () => void; icon: React.ReactNode; label: string }) {
+function Tool({ onClick, icon, label, highlight }: { onClick: () => void; icon: React.ReactNode; label: string; highlight?: boolean }) {
   return (
-    <button onClick={onClick} className="flex items-center gap-1.5 text-sm text-[#a8a29e] hover:text-[#f5f5f0] py-2.5 px-3 rounded-xl hover:bg-[#1a1a1a]">
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 text-sm py-2.5 px-3 rounded-xl hover:bg-[#1a1a1a] ${
+        highlight ? 'relative z-40 bg-[#1a1a1a] text-[#f5f5f0] ring-2 ring-[#d97756]' : 'text-[#a8a29e] hover:text-[#f5f5f0]'
+      }`}
+    >
       {icon}
       {label}
     </button>
+  )
+}
+
+const TOUR = [
+  {
+    title: 'This is your LAP button',
+    body: 'When a rep ends at a distance it turns orange, like now. Tap it as you pass the mark and I\'ll start the next step. Timed reps end by themselves: just listen for the tone.',
+    tip: 'Got a keyboard? Space or L works too.',
+  },
+  {
+    title: 'Don\'t lock your phone. Tap Lock.',
+    body: 'If the phone locks or you switch apps, my tones stop. Lock blacks out the screen and ignores pocket taps instead, so your music keeps playing and my tones play over it.',
+    tip: 'Slide the bar along to unlock when you need me.',
+  },
+]
+
+/**
+ * Clawde's first-interval tour, over the frozen first step. The highlighted
+ * control is lifted above the dimmed backdrop (z-40 over this z-30 layer).
+ */
+function RunTour({ step, onStep, onDone }: { step: number; onStep: (n: number) => void; onDone: () => void }) {
+  const s = TOUR[step]
+  const last = step === TOUR.length - 1
+  return (
+    <div className="absolute inset-0 z-30 bg-black/70 px-5 pt-safe" role="dialog" aria-modal="true" aria-label="How Run Mode works">
+      <div className="mt-6 rounded-3xl bg-[#161616] border border-[#2a2a2a] p-4 flex flex-col gap-3 fade-in" key={step}>
+        <div className="flex items-start gap-3">
+          <ClaudeMark size={44} className="shrink-0" />
+          <div className="min-w-0">
+            <p className="text-2xs font-semibold text-[#d97756] uppercase tracking-widest">
+              Clawde's tip · {step + 1} of {TOUR.length}
+            </p>
+            <p className="text-base font-semibold text-[#f5f5f0] mt-0.5 leading-snug">{s.title}</p>
+          </div>
+        </div>
+        <p className="text-sm text-[#e5e5e0] leading-relaxed">{s.body}</p>
+        <p className="text-xs text-[#6a6a6a] leading-relaxed">{s.tip}</p>
+        <div className="flex gap-2 pt-1">
+          {step > 0 ? (
+            <Button variant="ghost" onClick={() => onStep(step - 1)} fullWidth>Back</Button>
+          ) : (
+            <Button variant="ghost" onClick={onDone} fullWidth>Skip</Button>
+          )}
+          <Button onClick={last ? onDone : () => onStep(step + 1)} fullWidth>
+            {last ? <><Play size={16} /> Start</> : 'Next'}
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -436,7 +531,7 @@ function PocketScreen({ onUnlock }: { onUnlock: () => void }) {
  * tap; editing is only for what changed (min/sec steppers, not free text).
  */
 function RunReview({
-  flat, records, modality, zones, title, onSave,
+  flat, records, modality, zones, title, onSave, onDiscard,
 }: {
   flat: FlatStep[]
   records: LoggedStep[]
@@ -444,7 +539,9 @@ function RunReview({
   zones?: RunZones
   title: string
   onSave: (r: RunResult) => void
+  onDiscard: () => void
 }) {
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [rows, setRows] = useState<LoggedInterval[]>(() => runLogToIntervals(flat, records))
   const [rpe, setRpe] = useState<number | undefined>()
   const [outcome, setOutcome] = useState<SessionOutcome>('as-planned')
@@ -559,6 +656,22 @@ function RunReview({
       >
         Save session
       </Button>
+      <Button variant="ghost" fullWidth onClick={() => setConfirmDiscard(true)} className="-mt-2">
+        Don't save
+      </Button>
+
+      {confirmDiscard && (
+        <ConfirmDialog
+          icon={<Trash2 size={18} />}
+          title="Discard this run?"
+          confirmLabel="Discard"
+          cancelLabel="Keep it"
+          onConfirm={onDiscard}
+          onCancel={() => setConfirmDiscard(false)}
+        >
+          Nothing from this run will be saved, and the session stays open to do again.
+        </ConfirmDialog>
+      )}
     </div>
   )
 }

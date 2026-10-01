@@ -65,7 +65,7 @@ export function Home() {
       {/* Header */}
       <div className="px-4 pt-safe">
         {/* Top bar with plan action */}
-        <div className="flex items-center justify-end gap-2 pt-2 h-9">
+        <div className="flex items-center justify-end gap-2 pt-2">
           <button
             onClick={() => setShowLog(true)}
             aria-label="Log a session"
@@ -84,7 +84,7 @@ export function Home() {
         </div>
 
         {/* Centered greeting hero — Clawde, seamless on the background */}
-        <div className="flex flex-col items-center text-center pt-2 pb-5">
+        <div className="flex flex-col items-center text-center pt-8 short:pt-5 pb-6">
           <div className="relative mb-3">
             <div
               className="absolute inset-0 -m-3 rounded-full bg-[#d97756]/15 blur-2xl"

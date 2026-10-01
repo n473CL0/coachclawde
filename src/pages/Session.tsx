@@ -56,8 +56,10 @@ export function Session() {
   const flat = useMemo(() => (planned?.workout ? flattenWorkout(planned.workout) : []), [planned])
   const rows = useMemo(() => loggableSteps(flat), [flat])
   const [showRun, setShowRun] = useState(false)
+  // The log Run Mode started, if it started one (so discarding can undo it).
+  const [runLogId, setRunLogId] = useState<string | null>(null)
   const { startTimer } = useRestTimer()
-  const { syncSession } = useAutoSync()
+  const { syncSession, removeSession } = useAutoSync()
   const [activeExerciseIdx, setActiveExerciseIdx] = useState(0)
   const [showComplete, setShowComplete] = useState(false)
   const [showQuickLog, setShowQuickLog] = useState(false)
@@ -154,8 +156,18 @@ export function Session() {
   }
 
   function openRunMode() {
-    if (!loggedSession) startSession()
+    if (!loggedSession) setRunLogId(startSession()?.id ?? null)
     setShowRun(true)
+  }
+
+  /** Run Mode review → "Don't save": nothing is kept, the session is as it was. */
+  function handleRunDiscard() {
+    if (runLogId) {
+      void removeSession(runLogId)
+      setLoggedSession(null)
+      setRunLogId(null)
+    }
+    setShowRun(false)
   }
 
   /** Run Mode finished: store what it timed and complete the session. */
@@ -176,6 +188,7 @@ export function Session() {
     updateLoggedSession(log.id, updates)
     setLoggedSession({ ...log, ...updates })
     syncSession(log.id)
+    setRunLogId(null)
     setShowRun(false)
     // The last session of the week still gets its (optional) invitation.
     if (isLastSession) setShowInvite(true)
@@ -538,6 +551,7 @@ export function Session() {
           modality={cardioType}
           zones={zones}
           onSave={handleRunSave}
+          onDiscard={handleRunDiscard}
           onClose={() => setShowRun(false)}
         />
       )}
