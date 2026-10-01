@@ -8,7 +8,10 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight } from 'lucide-react'
+import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift } from 'lucide-react'
+import { WhatsNewSheet } from '../components/shared/WhatsNew'
+import { APP_VERSION } from '../lib/appVersion'
+import { RELEASES } from '../lib/releaseNotes'
 
 export function Settings() {
   const navigate = useNavigate()
@@ -22,6 +25,7 @@ export function Settings() {
   const [height, setHeight] = useState(String(profile.heightCm))
   const [sex, setSex] = useState<'male' | 'female'>(profile.sex)
   const [profileSaved, setProfileSaved] = useState(false)
+  const [showWhatsNew, setShowWhatsNew] = useState(false)
 
   function handleSaveProfile() {
     // Never wipe a previously-set name with a blank field.
@@ -177,7 +181,28 @@ export function Settings() {
             </button>
           </Card>
         </div>
+
+        {/* What's new */}
+        <div>
+          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">About</p>
+          <Card>
+            <button onClick={() => setShowWhatsNew(true)} className="w-full text-left">
+              <CardSection className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+                  <Gift size={18} className="text-[#d97756]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[#f5f5f0]">What's new</p>
+                  <p className="text-xs text-[#6a6a6a] mt-0.5">Coach Claude v{APP_VERSION} · release notes</p>
+                </div>
+                <ChevronRight size={16} className="text-[#4a4a4a] shrink-0" />
+              </CardSection>
+            </button>
+          </Card>
+        </div>
       </div>
+
+      {showWhatsNew && <WhatsNewSheet releases={RELEASES} onClose={() => setShowWhatsNew(false)} />}
     </div>
   )
 }

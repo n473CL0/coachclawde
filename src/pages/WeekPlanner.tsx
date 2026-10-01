@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
+import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { Card, CardSection } from '../components/shared/Card'
 import { buildWeekPlanPrompt } from '../lib/promptBuilder'
 import { importPlanFromJson } from '../lib/export'
@@ -16,8 +17,9 @@ import {
   toLocalISODate,
 } from '../lib/weekUtils'
 import type { DayOfWeek } from '../types'
-import { Copy, Check, Download, AlertCircle, X, CalendarClock } from 'lucide-react'
+import { Copy, Check, Download, AlertCircle, X, CalendarClock, ExternalLink } from 'lucide-react'
 import { OpenClaudeButton } from '../components/shared/OpenClaudeButton'
+import { openClaudeApp } from '../lib/openClaude'
 import { format } from 'date-fns'
 
 const SESSION_LENGTH_OPTIONS = [30, 45, 60, 75, 90] as const
@@ -53,7 +55,25 @@ export function WeekPlanner() {
   const [importJson, setImportJson] = useState('')
   const [importError, setImportError] = useState('')
   const [importing, setImporting] = useState(false)
+  // Generate hands off to the Claude app; these track that round trip.
+  const [launching, setLaunching] = useState(false)
+  const [appMissing, setAppMissing] = useState(false)
+  const [awaitingImport, setAwaitingImport] = useState(false)
   const { sync } = useAutoSync()
+
+  // Coming back from the Claude app with a plan to paste: open the import
+  // sheet straight away so it's one tap to paste.
+  useEffect(() => {
+    if (!awaitingImport) return
+    const onReturn = () => {
+      if (document.visibilityState !== 'visible') return
+      setAwaitingImport(false)
+      setShowPrompt(false)
+      setShowImport(true)
+    }
+    document.addEventListener('visibilitychange', onReturn)
+    return () => document.removeEventListener('visibilitychange', onReturn)
+  }, [awaitingImport])
 
   // The Monday the plan targets. Days already past this week force next week;
   // otherwise the plan stays in the current week.
@@ -90,20 +110,55 @@ export function WeekPlanner() {
     setSelectedDays((prev) => prev.filter((d) => !isDayPastThisWeek(d, today)))
   }
 
-  async function handleGeneratePrompt() {
+  function buildPrompt() {
     const prompt = buildWeekPlanPrompt(selectedDays, notes, sessionMinutes, existingPlan, weekStart, profile, loggedSessions)
     setPromptText(prompt)
-    setShowPrompt(true)
-    // Auto-copy to clipboard so the user can paste straight into Claude.
+    return prompt
+  }
+
+  async function copyPrompt(prompt: string): Promise<boolean> {
     try {
       await navigator.clipboard.writeText(prompt)
       setCopied(true)
       setTimeout(() => setCopied(false), 2500)
+      return true
     } catch {
-      // Clipboard may be unavailable (e.g. insecure context) — the modal still
-      // shows the prompt with a manual copy button as a fallback.
+      // Clipboard may be unavailable (e.g. insecure context).
       setCopied(false)
+      return false
     }
+  }
+
+  /**
+   * One tap: build the prompt, copy it, and jump straight into the Claude app
+   * so the athlete only has to paste. Falls back to the prompt sheet (with a
+   * claude.ai link) when the clipboard or the app isn't available.
+   */
+  async function handleGeneratePrompt() {
+    const prompt = buildPrompt()
+    setAppMissing(false)
+    const copiedOk = await copyPrompt(prompt)
+    if (!copiedOk) {
+      setShowPrompt(true)
+      return
+    }
+    setLaunching(true)
+    const opened = await openClaudeApp()
+    setLaunching(false)
+    // Always leave the prompt sheet up behind the hand-off: "opened" is only a
+    // guess (on desktop, the browser's "Open Claude?" dialog counts), so the
+    // athlete needs the prompt and the claude.ai link if they cancel.
+    setAppMissing(!opened)
+    setShowPrompt(true)
+    if (opened) setAwaitingImport(true)
+  }
+
+  /** Show the prompt instead of launching Claude (e.g. to paste elsewhere). */
+  async function handleShowPrompt() {
+    const prompt = buildPrompt()
+    setAppMissing(false)
+    setShowPrompt(true)
+    await copyPrompt(prompt)
   }
 
   async function handleCopy() {
@@ -259,15 +314,25 @@ export function WeekPlanner() {
 
         {/* Action buttons */}
         <div className="flex flex-col gap-3">
-          <Button
-            onClick={handleGeneratePrompt}
-            disabled={selectedDays.length === 0}
-            fullWidth
-            size="lg"
-          >
-            <Copy size={18} />
-            Generate &amp; Copy Prompt
-          </Button>
+          <div className="flex flex-col gap-1">
+            <Button
+              onClick={handleGeneratePrompt}
+              disabled={selectedDays.length === 0}
+              loading={launching}
+              fullWidth
+              size="lg"
+            >
+              {!launching && <ExternalLink size={18} />}
+              {launching ? 'Opening Claude…' : 'Generate & Open Claude'}
+            </Button>
+            <button
+              onClick={handleShowPrompt}
+              disabled={selectedDays.length === 0}
+              className="self-center text-xs text-[#6a6a6a] hover:text-[#a8a29e] py-1.5 px-3 disabled:opacity-40"
+            >
+              or just copy the prompt
+            </button>
+          </div>
 
           {existingPlan && (
             <div className="bg-[#d97756]/10 rounded-2xl border border-[#d97756]/20 px-4 py-3 flex items-start gap-3">
@@ -291,9 +356,9 @@ export function WeekPlanner() {
             {[
               ['1', 'Select your training days above'],
               ['2', 'Pick a session length and add any notes (injuries, events, energy)'],
-              ['3', 'Generate prompt — your profile & recent history are bundled in and it’s copied to your clipboard automatically'],
-              ['4', 'Paste into Claude (the prompt includes everything it needs — rules, schema and your history)'],
-              ['5', 'Copy the JSON back here to import your week'],
+              ['3', 'Tap Generate — your prompt (profile, recent history, rules) is copied and the Claude app opens'],
+              ['4', 'Paste it into a new chat and send'],
+              ['5', 'Copy the JSON Claude replies with, come back, and paste it into the import sheet'],
             ].map(([n, text]) => (
               <div key={n} className="flex items-start gap-3">
                 <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{n}</span>
@@ -313,7 +378,9 @@ export function WeekPlanner() {
           >
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-[#f5f5f0]">Claude Prompt Ready</h3>
+                <h3 className="text-base font-semibold text-[#f5f5f0]">
+                  {appMissing ? "Claude app didn't open" : 'Claude Prompt Ready'}
+                </h3>
                 {copied && (
                   <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
                     <Check size={13} /> Copied
@@ -325,9 +392,11 @@ export function WeekPlanner() {
               </button>
             </div>
             <p className="text-xs text-[#6a6a6a] px-5 pb-3">
-              {copied
-                ? 'Copied to your clipboard — paste it into Claude.'
-                : 'Copy this and paste it into Claude.'}
+              {appMissing
+                ? 'Your prompt is copied. Open Claude in your browser (or try the app again) and paste it into a new chat.'
+                : copied
+                  ? 'Copied to your clipboard — paste it into Claude.'
+                  : 'Copy this and paste it into Claude.'}
             </p>
             <div className="flex-1 overflow-y-auto mx-4 mb-4">
               <pre className="bg-[#0a0a0a] rounded-2xl border border-[#2a2a2a] p-4 text-xs text-[#a8a29e] whitespace-pre-wrap font-mono leading-relaxed">
@@ -335,7 +404,12 @@ export function WeekPlanner() {
               </pre>
             </div>
             <div className="px-4 pb-6 pt-2 flex flex-col gap-2">
-              <OpenClaudeButton text={promptText} onCopied={flashCopied} />
+              <OpenClaudeButton
+                text={promptText}
+                onCopied={flashCopied}
+                appMissing={appMissing}
+                onOpened={() => setAwaitingImport(true)}
+              />
               <Button variant="ghost" onClick={handleCopy} fullWidth>
                 {copied ? <Check size={16} /> : <Copy size={16} />}
                 {copied ? 'Copied!' : 'Copy again'}
@@ -388,27 +462,16 @@ export function WeekPlanner() {
 
       {/* Move-to-next-week confirmation */}
       {confirmDay && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setConfirmDay(null)}>
-          <div
-            className="w-full max-w-sm bg-[#111] rounded-3xl border border-[#2a2a2a] p-6 flex flex-col gap-4 fade-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                <CalendarClock size={20} className="text-[#d97756]" />
-              </div>
-              <h3 className="text-base font-semibold text-[#f5f5f0]">Plan for next week?</h3>
-            </div>
-            <p className="text-sm text-[#a8a29e] leading-relaxed">
-              {confirmDay} has already passed this week. Selecting it will plan your whole week for
-              next week instead.
-            </p>
-            <div className="flex gap-3 pt-1">
-              <Button variant="secondary" onClick={() => setConfirmDay(null)} fullWidth>Cancel</Button>
-              <Button onClick={confirmPlanNextWeek} fullWidth>Plan next week</Button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          icon={<CalendarClock size={20} />}
+          title="Plan for next week?"
+          confirmLabel="Plan next week"
+          onConfirm={confirmPlanNextWeek}
+          onCancel={() => setConfirmDay(null)}
+        >
+          {confirmDay} has already passed this week. Selecting it will plan your whole week for
+          next week instead.
+        </ConfirmDialog>
       )}
     </div>
   )

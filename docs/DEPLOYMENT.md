@@ -57,7 +57,8 @@ You now also have a Supabase project dashboard at https://supabase.com/dashboard
    query**.
 2. Run **every file in [`supabase/migrations/`](../supabase/migrations/) in
    numerical order** — paste each one's contents and click **Run**:
-   `0001_init.sql`, `0002_onboarding.sql`, `0003_fix_new_user_onboarding.sql`.
+   `0001_init.sql`, `0002_onboarding.sql`, `0003_fix_new_user_onboarding.sql`,
+   `0004_profile_age.sql`.
 3. Confirm under **Table Editor** that `profiles`, `week_plans` and
    `logged_sessions` exist, and under **Authentication → Policies** that each has
    an "owner-only" RLS policy.
@@ -67,6 +68,10 @@ signs up, so the app always has a profile to read. **`0003` is not optional** �
 without it that row is marked as already-onboarded, and every new account skips
 the onboarding slideshow and lands in the app with an empty profile (no
 injuries, no goals), which the plan generator depends on.
+
+**`0004` must be applied before deploying the build that asks for age.** The
+app writes an `age` column on every profile save; without the column each save
+fails with an unknown-column error.
 
 *(Optional, if you prefer the CLI: `npm i -g supabase`, `supabase link
 --project-ref <ref>`, then `supabase db push`.)*
@@ -266,7 +271,7 @@ again — it isn't tracked any more, and the tag keeps the originals safe.
       sign-in link" option — unless you deliberately set
       `VITE_ENABLE_MAGIC_LINK=true`.
 - [ ] Sign out → redirected back to login; local data cleared.
-- [ ] Plan → **Generate & Copy Prompt** → the prompt now contains your profile +
+- [ ] Plan → **Generate & Open Claude** → the prompt now contains your profile +
       a summarised history block (not an empty stub).
 - [ ] Complete a session → Settings shows "Synced just now"; confirm a new row in
       Supabase `logged_sessions`.

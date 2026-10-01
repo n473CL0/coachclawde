@@ -8,10 +8,12 @@ import { ExerciseTile } from '../components/session/ExerciseTile'
 import { IntervalRow } from '../components/session/IntervalRow'
 import { RestTimerOverlay } from '../components/session/RestTimer'
 import { CompleteFlow } from '../components/session/CompleteFlow'
+import { RoutineCard } from '../components/session/RoutineCard'
 import { useRestTimer } from '../hooks/useRestTimer'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { formatDuration, formatRestTime } from '../lib/dateUtils'
 import { cardioLabel, inferCardioType } from '../lib/cardioUtils'
+import { warmExerciseDb } from '../lib/exerciseGuide'
 import type { CardioType, Intensity, LoggedExercise, LoggedInterval, LoggedSession, PlannedSession, Rating, WeekReflection } from '../types'
 import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { nanoid } from '../lib/nanoid'
@@ -73,6 +75,12 @@ export function Session() {
     if (id) setActiveSession(id)
     return () => setActiveSession(null)
   }, [id, setActiveSession])
+
+  // Fetch the movement-guide library now, while there's likely signal, so the
+  // help buttons work (from the service-worker cache) mid-workout.
+  useEffect(() => {
+    if (planned?.type !== 'cardio') warmExerciseDb()
+  }, [planned?.type])
 
   if (!planned) {
     return (
@@ -144,6 +152,9 @@ export function Session() {
     // whole table) and only on completion (not per keystroke) to keep writes
     // tiny — see useAutoSync. Fire-and-forget.
     syncSession(loggedSession.id)
+    // Re-ticking a corrected set on an already-finished session shouldn't
+    // kick off a rest timer.
+    if (existingLog?.status === 'complete') return
     const exercise = planned.exercises[exerciseIdx]
     const restSeconds = exercise?.sets[setIndex]?.restSeconds ?? 90
     if (restSeconds > 0) {
@@ -158,6 +169,13 @@ export function Session() {
         : `Up next: ${exercise.name} · set ${setIndex + 2}`
       startTimer(restSeconds, label)
     }
+  }
+
+  /** Reopens a completed set so a mistyped rep count or weight can be fixed. */
+  function uncompleteSet(exerciseIdx: number, setIndex: number) {
+    if (!loggedSession) return
+    updateExerciseSet(exerciseIdx, setIndex, { completed: false, actualSeconds: undefined })
+    syncSession(loggedSession.id)
   }
 
   function updateInterval(intervalIdx: number, updates: Partial<LoggedInterval>) {
@@ -263,10 +281,9 @@ export function Session() {
         </div>
 
         {/* Warmup */}
-        {planned.warmup && (
-          <div className="mx-4 mb-4 bg-[#1a1a1a] rounded-2xl px-4 py-3 border border-[#2a2a2a]">
-            <p className="text-xs font-semibold text-[#6a6a6a] uppercase tracking-widest mb-1">Warmup</p>
-            <p className="text-sm text-[#a8a29e]">{planned.warmup}</p>
+        {(!!planned.warmup || !!planned.warmupExercises?.length) && (
+          <div className="mx-4 mb-4">
+            <RoutineCard title="Warmup" summary={planned.warmup} items={planned.warmupExercises} />
           </div>
         )}
 
@@ -306,6 +323,7 @@ export function Session() {
                 logged={loggedSession.loggedExercises![i]}
                 onUpdateSet={(setIdx, updates) => updateExerciseSet(i, setIdx, updates)}
                 onSetComplete={(setIdx, payload) => completeSet(i, setIdx, payload)}
+                onSetUncomplete={(setIdx) => uncompleteSet(i, setIdx)}
                 isActive={i === activeExerciseIdx}
                 onActivate={() => setActiveExerciseIdx(i)}
               />
@@ -372,10 +390,9 @@ export function Session() {
         )}
 
         {/* Cooldown */}
-        {planned.cooldown && loggedSession && (
-          <div className="mx-4 mt-4 bg-[#1a1a1a] rounded-2xl px-4 py-3 border border-[#2a2a2a]">
-            <p className="text-xs font-semibold text-[#6a6a6a] uppercase tracking-widest mb-1">Cooldown</p>
-            <p className="text-sm text-[#a8a29e]">{planned.cooldown}</p>
+        {(!!planned.cooldown || !!planned.cooldownExercises?.length) && loggedSession && (
+          <div className="mx-4 mt-4">
+            <RoutineCard title="Cooldown" summary={planned.cooldown} items={planned.cooldownExercises} />
           </div>
         )}
       </div>

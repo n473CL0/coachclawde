@@ -2,8 +2,12 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'node:fs'
+import { RELEASES } from './src/lib/releaseNotes'
 
-export default defineConfig(({ mode }) => {
+const APP_VERSION: string = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version
+
+export default defineConfig(({ mode, command }) => {
   // Vite only inlines VITE_-prefixed env vars into the client bundle. The
   // Supabase Vercel Marketplace integration injects its credentials under
   // non-prefixed names (e.g. SUPABASE_URL) — and Next-flavoured ones too — so the
@@ -39,8 +43,19 @@ export default defineConfig(({ mode }) => {
     }`,
   )
 
+  // Every shipped version must come with release notes for testers — fail the
+  // build if package.json was bumped without a matching entry.
+  if (command === 'build' && RELEASES[0]?.version !== APP_VERSION) {
+    throw new Error(
+      `[coach-claude] package.json is v${APP_VERSION} but the newest release note is ` +
+        `v${RELEASES[0]?.version ?? '(none)'}. Add a v${APP_VERSION} entry at the top of ` +
+        'RELEASES in src/lib/releaseNotes.ts.',
+    )
+  }
+
   return {
   define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(SUPABASE_URL),
     'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(SUPABASE_ANON_KEY),
     'import.meta.env.VITE_ENABLE_MAGIC_LINK': JSON.stringify(ENABLE_MAGIC_LINK),
@@ -73,6 +88,17 @@ export default defineConfig(({ mode }) => {
             urlPattern: /^https:\/\/fonts\./,
             handler: 'CacheFirst',
             options: { cacheName: 'fonts', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+          {
+            // Movement-guide library (free-exercise-db): the ~1 MB exercise
+            // JSON and its start/end photos, so guides work offline mid-workout.
+            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/gh\/yuhonas\/free-exercise-db@/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'exercise-guides',
+              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
           },
         ],
       },

@@ -15,6 +15,7 @@ import { Program } from './pages/Program'
 import { ProgramEdit } from './pages/ProgramEdit'
 import { BestEfforts } from './pages/BestEfforts'
 import { Settings } from './pages/Settings'
+import { ReleaseNotesGate } from './components/shared/WhatsNew'
 
 function App() {
   return (
@@ -50,7 +51,7 @@ function App() {
 
 /**
  * First-run gate: until the athlete has completed onboarding, every in-app route
- * redirects to the onboarding slideshow. Existing accounts are treated as
+ * redirects to the onboarding chat. Existing accounts are treated as
  * onboarded (see the Supabase column default / `rowToProfile`).
  */
 function RequireOnboarded({ children }: { children: ReactNode }) {
@@ -74,6 +75,7 @@ function MainApp() {
         <Route path="/settings" element={<Settings />} />
       </Routes>
       <BottomNav />
+      <ReleaseNotesGate />
     </>
   )
 }

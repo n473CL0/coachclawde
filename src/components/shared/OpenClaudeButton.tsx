@@ -9,8 +9,17 @@ import { openClaudeApp, openClaudeWeb } from '../../lib/openClaude'
  * open, reveals a link to claude.ai in the browser instead. The browser link is
  * always a direct tap so it isn't popup-blocked.
  */
-export function OpenClaudeButton({ text, onCopied }: { text: string; onCopied?: () => void }) {
-  const [appMissing, setAppMissing] = useState(false)
+export function OpenClaudeButton({
+  text, onCopied, appMissing: appMissingInitially = false, onOpened,
+}: {
+  text: string
+  onCopied?: () => void
+  /** Start with the browser fallback surfaced (the app already failed to open). */
+  appMissing?: boolean
+  /** Called once Claude (app or browser) has been opened. */
+  onOpened?: () => void
+}) {
+  const [appMissing, setAppMissing] = useState(appMissingInitially)
 
   async function copy() {
     try {
@@ -25,7 +34,8 @@ export function OpenClaudeButton({ text, onCopied }: { text: string; onCopied?: 
     setAppMissing(false)
     await copy()
     const opened = await openClaudeApp()
-    if (!opened) setAppMissing(true)
+    if (opened) onOpened?.()
+    else setAppMissing(true)
   }
 
   async function handleOpenWeb() {
@@ -33,6 +43,7 @@ export function OpenClaudeButton({ text, onCopied }: { text: string; onCopied?: 
     // synchronously within the tap so it isn't popup-blocked.
     const copying = copy()
     openClaudeWeb()
+    onOpened?.()
     await copying
   }
 
