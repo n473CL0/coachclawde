@@ -26,6 +26,17 @@ export interface Release {
   fromFeedback: string[]
   /** Anything else worth mentioning. */
   alsoNew?: string[]
+  /**
+   * Optional call to action shown as a button in "What's new" (newest
+   * release only), e.g. to try a reworked feature.
+   */
+  action?: {
+    label: string
+    /** In-app route the button opens. */
+    to: string
+    /** One line above the button saying why. */
+    note?: string
+  }
 }
 
 export const RELEASES: Release[] = [
@@ -54,6 +65,11 @@ export const RELEASES: Release[] = [
       'Already set up? A three-question check-in upgrades your goal. Nothing you’ve logged changes.',
       'Turn off check-in suggestions, or delete your health-screen answers, in Settings.',
     ],
+    action: {
+      label: 'Redo onboarding',
+      to: '/onboarding',
+      note: 'Training for something? Redo onboarding so your plans are built around it. It takes about a minute, and your history stays.',
+    },
   },
   {
     version: '1.0.1',
