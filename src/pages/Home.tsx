@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { toLocalISODate } from '../lib/weekUtils'
@@ -8,16 +9,28 @@ import { ClaudeMark } from '../components/shared/ClaudeMark'
 import { Reveal } from '../components/shared/Reveal'
 import { useScrollDirection } from '../hooks/useScrollDirection'
 import { getProgramProgress } from '../lib/programProgress'
-import { Calendar, ChevronRight, Dumbbell, Waves, Zap, CheckCircle, CalendarPlus, Trophy, Sparkles } from 'lucide-react'
+import { Calendar, ChevronRight, Dumbbell, Waves, Zap, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus } from 'lucide-react'
+import { QuickLogSheet } from '../components/session/QuickLogSheet'
+import { buildQuickLog, type QuickLogInput } from '../lib/quickLog'
+import { useAutoSync } from '../hooks/useAutoSync'
 import { getWeekday, formatDuration } from '../lib/dateUtils'
 import { format } from 'date-fns'
 import type { Intensity, PlannedSession, SessionType } from '../types'
 
 export function Home() {
   const navigate = useNavigate()
-  const { getCurrentWeekPlan, loggedSessions, profile } = useAppStore()
+  const { getCurrentWeekPlan, loggedSessions, profile, addLoggedSession } = useAppStore()
   const plan = getCurrentWeekPlan()
   const { bump } = useScrollDirection()
+  const { syncSession } = useAutoSync()
+  const [showLog, setShowLog] = useState(false)
+
+  function handleQuickLog(input: QuickLogInput) {
+    const log = buildQuickLog(input)
+    addLoggedSession(log)
+    setShowLog(false)
+    void syncSession(log.id)
+  }
 
   const today = toLocalISODate(new Date())
 
@@ -49,7 +62,15 @@ export function Home() {
       {/* Header */}
       <div className="px-4 pt-safe">
         {/* Top bar with plan action */}
-        <div className="flex items-center justify-end pt-2 h-9">
+        <div className="flex items-center justify-end gap-2 pt-2 h-9">
+          <button
+            onClick={() => setShowLog(true)}
+            aria-label="Log a session"
+            className="h-9 px-3 flex items-center gap-1.5 rounded-2xl bg-[#1a1a1a] text-[#6a6a6a] hover:text-[#f5f5f0] transition-colors text-xs font-medium"
+          >
+            <Plus size={16} />
+            Log a session
+          </button>
           <button
             onClick={() => navigate('/plan')}
             aria-label="Plan your week"
@@ -146,6 +167,8 @@ export function Home() {
           </Reveal>
         )}
       </div>
+
+      {showLog && <QuickLogSheet onSave={handleQuickLog} onClose={() => setShowLog(false)} />}
     </div>
   )
 }

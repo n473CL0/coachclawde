@@ -41,10 +41,12 @@ of the bundle.
 - `npm run dev` — local dev server (HMR).
 - `npm run lint` — ESLint. Must pass clean.
 - `npm run build` — `tsc -b && vite build`. **This is the only typecheck gate**
-  (there is no separate `typecheck` script and no test runner).
+  (there is no separate `typecheck` script).
+- `npm test` — Vitest, for the pure logic in `src/lib` (`*.test.ts` next to the
+  module). Tests run in Node; there are no component tests.
 
-**Before committing any code change, run `npm run lint` and `npm run build` and
-make sure both are green.** On Claude Code on the web,
+**Before committing any code change, run `npm run lint`, `npm run build` and
+`npm test` and make sure all three are green.** On Claude Code on the web,
 `.claude/hooks/session-start.sh` installs dependencies at session start, so these
 work out of the box.
 

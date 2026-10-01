@@ -201,6 +201,22 @@ export interface LoggedSession {
   painNotes?: string;
   generalNotes?: string;
   weekReflection?: WeekReflection;
+  /** Session RPE, 1–10 (Borg CR-10). Times minutes gives the session load. */
+  rpe?: number;
+  /** How the session went against the plan. Absent on older logs. */
+  outcome?: SessionOutcome;
+  /** What was done instead, when `outcome` is 'substituted' (or a session logged with no plan). */
+  substitute?: SubstituteActivity;
+}
+
+export type SessionOutcome = 'as-planned' | 'modified' | 'substituted';
+
+/** A quick-logged activity: "Did something else?" or "Log a session". */
+export interface SubstituteActivity {
+  activity: string;
+  minutes: number;
+  distanceMeters?: number;
+  notes?: string;
 }
 
 export interface TimerState {
