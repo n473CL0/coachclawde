@@ -40,7 +40,7 @@ export const RELEASES: Release[] = [
       'Every exercise has a ? button with a how-to guide and photos, plus a YouTube search as backup.',
       "Tick a set without entering reps and we'll check it wasn't an accident.",
       'Logged a set wrong? Tap its tick again to reopen it and fix the reps or weight.',
-      'Generate & Open Claude copies your prompt and opens the Claude app in one tap.',
+      'Generate & Open Claude opens the Claude app with your prompt already filled in.',
     ],
     alsoNew: [
       'When you come back from Claude, the import sheet is open and ready to paste.',

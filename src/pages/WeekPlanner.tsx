@@ -143,7 +143,7 @@ export function WeekPlanner() {
       return
     }
     setLaunching(true)
-    const opened = await openClaudeApp()
+    const opened = await openClaudeApp(prompt)
     setLaunching(false)
     // Always leave the prompt sheet up behind the hand-off: "opened" is only a
     // guess (on desktop, the browser's "Open Claude?" dialog counts), so the
@@ -356,8 +356,8 @@ export function WeekPlanner() {
             {[
               ['1', 'Select your training days above'],
               ['2', 'Pick a session length and add any notes (injuries, events, energy)'],
-              ['3', 'Tap Generate — your prompt (profile, recent history, rules) is copied and the Claude app opens'],
-              ['4', 'Paste it into a new chat and send'],
+              ['3', 'Tap Generate — the Claude app opens with your prompt (profile, recent history, rules) ready to send'],
+              ['4', 'Send it (if the chat is empty, just paste — the prompt is on your clipboard too)'],
               ['5', 'Copy the JSON Claude replies with, come back, and paste it into the import sheet'],
             ].map(([n, text]) => (
               <div key={n} className="flex items-start gap-3">
@@ -393,7 +393,7 @@ export function WeekPlanner() {
             </div>
             <p className="text-xs text-[#6a6a6a] px-5 pb-3">
               {appMissing
-                ? 'Your prompt is copied. Open Claude in your browser (or try the app again) and paste it into a new chat.'
+                ? 'Your prompt is copied. Open Claude in your browser (or try the app again) — it should be filled in; if not, paste it.'
                 : copied
                   ? 'Copied to your clipboard — paste it into Claude.'
                   : 'Copy this and paste it into Claude.'}

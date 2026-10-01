@@ -8,9 +8,10 @@ tailored to your profile, injuries and history.
 
 1. In the app, pick your training days and add any notes, then **Generate & Open
    Claude**. The prompt (your profile, a summarised recent history, the
-   programming rules and the `WeekPlan` schema) is copied and the Claude app opens.
-2. Paste it into a new chat. The prompt is self-contained, so it works in any
-   Claude chat — no repo access needed.
+   programming rules and the `WeekPlan` schema) opens pre-filled in a new Claude
+   chat (it's on your clipboard too, in case the chat comes up empty).
+2. Send it. The prompt is self-contained, so it works in any Claude chat — no
+   repo access needed.
 3. **Import** the JSON back into the app and train. Logged sessions sync to your
    account automatically.
 
