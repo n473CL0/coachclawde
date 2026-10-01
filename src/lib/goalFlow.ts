@@ -744,6 +744,12 @@ const EVENT_SPORTS: Record<EventKind, string[]> = {
 }
 const LIKE_SPORTS: Record<string, string> = { walking: 'Walking', running: 'Running', cycling: 'Cycling', swimming: 'Swimming' }
 
+/**
+ * Mobility work lives in every warm-up and cool-down. Separate mobility
+ * sessions are only added when the athlete asked for them (yoga & mobility,
+ * or "fewer injuries" for their sport), so a lifter's training days are never
+ * swapped for stretching.
+ */
 function programOf(goal: GoalProfile, style: CoachingStyle, now: Date): ProgramConfig {
   const a = (goal.answers ?? {}) as FlowAnswers
   const goals = new Set<ProgramGoal>()
@@ -754,7 +760,6 @@ function programOf(goal: GoalProfile, style: CoachingStyle, now: Date): ProgramC
       goals.add('get-fit')
       types.add('cardio')
       if (goal.constraints.strengthWork) types.add('weights')
-      types.add('mobility')
       sports = EVENT_SPORTS[goal.event?.kind ?? 'other']
       break
     case 'fitness': {
@@ -773,7 +778,7 @@ function programOf(goal: GoalProfile, style: CoachingStyle, now: Date): ProgramC
       break
     case 'strength':
       goals.add('get-strong')
-      types.add('weights').add('mobility')
+      types.add('weights')
       break
     case 'sport': {
       goals.add('get-fit')

@@ -27,6 +27,14 @@ The app is **multi-user** and each athlete's data lives in a per-user database (
 
 Always apply the Critical Programming Rules below and progressive overload against the current working weights given in the prompt.
 
+The app **tailors each prompt** to the athlete: it only includes the rules,
+session types, schema fields and examples that fit what they set up (training
+types, equipment, goal, dietary needs). A gym-only lifter's prompt never
+mentions cardio, a runner without strength work gets no lifting rules, and a
+home athlete's equipment is a hard rule. This file is the full, general
+reference; when the prompt is narrower, follow the prompt (e.g. only use the
+session types it lists).
+
 ### WeekPlan JSON Schema
 
 ```typescript
@@ -40,7 +48,10 @@ Always apply the Critical Programming Rules below and progressive overload again
 }
 
 PlannedSession {
-  id: string,                     // unique, e.g. "session-mon-upper"
+  id: string,                     // unique, with the date, e.g.
+                                  // "session-2026-06-16-upper" (the app also
+                                  // scopes ids to their week, so a repeated
+                                  // id never matches an old week's log)
   date: string,                   // ISO date
   dayOfWeek: DayOfWeek,
   type: "weights" | "cardio" | "active-recovery",

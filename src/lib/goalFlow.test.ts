@@ -132,7 +132,7 @@ describe('toGoalProfile', () => {
   it('derives the legacy ProgramConfig, with the block length from the date', () => {
     const patch = profilePatchFromGoal(toGoalProfile(PERSONAS['Half marathon, time goal, knee niggle'].answers, ctx), { now: ctx.now })
     expect(patch.program).toEqual({
-      goals: ['get-fit'], exerciseTypes: ['cardio', 'weights', 'mobility'], facilities: ['full-gym'], sports: ['Running'],
+      goals: ['get-fit'], exerciseTypes: ['cardio', 'weights'], facilities: ['full-gym'], sports: ['Running'],
       coachingStyle: 'balanced', lengthWeeks: 24, startDate: '2026-09-28', daysPerWeek: 4,
     })
     expect(patch.experienceLevel).toBe('intermediate')

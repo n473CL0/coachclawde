@@ -307,7 +307,7 @@ export function Session() {
   const totalIntervals = loggedSession?.loggedIntervals?.length ?? 0
   const completedIntervals = loggedSession?.loggedIntervals?.filter((iv) => iv.completed).length ?? 0
 
-  const progressPercent = planned.type === 'weights'
+  const progressPercent = planned.type !== 'cardio'
     ? totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0
     : totalIntervals > 0 ? Math.round((completedIntervals / totalIntervals) * 100) : 0
 
@@ -337,7 +337,7 @@ export function Session() {
             <Clock size={13} />
             {formatDuration(planned.estimatedMinutes)}
           </div>
-          {planned.type === 'weights' && planned.exercises && (
+          {planned.type !== 'cardio' && !!planned.exercises?.length && (
             <div className="flex items-center gap-1.5 text-xs text-[#6a6a6a]">
               <Dumbbell size={13} />
               {planned.exercises.length} exercises
@@ -391,7 +391,7 @@ export function Session() {
         )}
 
         {/* Weights session */}
-        {planned.type === 'weights' && loggedSession?.loggedExercises && (
+        {planned.type !== 'cardio' && !!loggedSession?.loggedExercises?.length && (
           <div className="px-4 flex flex-col gap-3">
             <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1">Exercises</p>
             {planned.exercises?.map((ex, i) => (
