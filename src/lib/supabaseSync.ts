@@ -131,6 +131,16 @@ export async function pushLoggedSession(userId: string, session: LoggedSession) 
   if (error) throw new Error(`Failed to save session: ${error.message}`)
 }
 
+/** Deletes one logged session row (the athlete removed it from History). */
+export async function deleteLoggedSession(userId: string, sessionId: string) {
+  const { error } = await client()
+    .from('logged_sessions')
+    .delete()
+    .eq('user_id', userId)
+    .eq('id', sessionId)
+  if (error) throw new Error(`Failed to delete session: ${error.message}`)
+}
+
 // --- check-ins --------------------------------------------------------------
 
 export async function pushCheckIns(userId: string, checkIns: CheckIn[]) {

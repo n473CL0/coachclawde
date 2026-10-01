@@ -1,17 +1,22 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { Badge } from '../components/shared/Badge'
-import { ChevronRight, Dumbbell, Waves, Star } from 'lucide-react'
+import { ChevronRight, Dumbbell, Waves, Star, Trash2 } from 'lucide-react'
+import { ConfirmDialog } from '../components/shared/ConfirmDialog'
+import { useAutoSync } from '../hooks/useAutoSync'
 import { ClaudeMark } from '../components/shared/ClaudeMark'
 import { formatSessionDate, formatDuration } from '../lib/dateUtils'
-import type { Intensity } from '../types'
+import type { Intensity, LoggedSession } from '../types'
 import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
 
 export function History() {
   const navigate = useNavigate()
   const { loggedSessions, weekPlans } = useAppStore()
+  const { removeSession } = useAutoSync()
+  const [toDelete, setToDelete] = useState<LoggedSession | null>(null)
 
   const completed = [...loggedSessions]
     .filter((s) => s.status === 'complete')
@@ -85,6 +90,14 @@ export function History() {
 
                       <div className="shrink-0 flex items-center gap-2">
                         {planned && <span className="text-xs text-[#4a4a4a]">{formatDuration(planned.estimatedMinutes)}</span>}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setToDelete(session) }}
+                          aria-label={`Delete ${session.title}`}
+                          className="p-2 -m-1 rounded-xl text-[#4a4a4a] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 size={15} />
+                        </button>
                         <ChevronRight size={14} className="text-[#3a3a3a]" />
                       </div>
                     </CardSection>
@@ -95,6 +108,18 @@ export function History() {
           </div>
         ))}
       </div>
+
+      {toDelete && (
+        <ConfirmDialog
+          icon={<Trash2 size={20} />}
+          title="Delete this session?"
+          confirmLabel="Delete"
+          onConfirm={() => { void removeSession(toDelete.id); setToDelete(null) }}
+          onCancel={() => setToDelete(null)}
+        >
+          {toDelete.title} on {formatSessionDate(toDelete.date)} will be removed from your history and progress. This can't be undone.
+        </ConfirmDialog>
+      )}
     </div>
   )
 }

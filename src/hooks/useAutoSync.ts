@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useAuth } from '../auth/AuthProvider'
-import { pushAll, pushCheckIns, pushWeekPlans, pushLoggedSessions, pushLoggedSession, pushProfile, pullAll } from '../lib/supabaseSync'
+import { pushAll, pushCheckIns, pushWeekPlans, pushLoggedSessions, pushLoggedSession, pushProfile, pullAll, deleteLoggedSession } from '../lib/supabaseSync'
 import type { CheckIn, UserProfile, WeekPlan, LoggedSession } from '../types'
 
 export type SyncTarget = 'sessions' | 'plans' | 'profile' | 'checkIns' | 'all'
@@ -94,6 +94,25 @@ export function useAutoSync() {
     [user, setSyncStatus, markSynced, fail]
   )
 
+  /**
+   * Deletes a logged session locally and from the database. Local goes first
+   * so it disappears at once (and still goes when signed out).
+   */
+  const removeSession = useCallback(
+    async (sessionId: string) => {
+      useAppStore.getState().removeLoggedSession(sessionId)
+      if (!user) return
+      setSyncStatus('syncing')
+      try {
+        await deleteLoggedSession(user.id, sessionId)
+        markSynced()
+      } catch (e: unknown) {
+        fail(e, 'Delete failed')
+      }
+    },
+    [user, setSyncStatus, markSynced, fail]
+  )
+
   const pull = useCallback(async () => {
     if (!user) return
     setSyncStatus('syncing')
@@ -105,5 +124,5 @@ export function useAutoSync() {
     }
   }, [user, applyRemote, setSyncStatus, markSynced, fail])
 
-  return { sync, syncSession, pull, isConfigured: !!user }
+  return { sync, syncSession, removeSession, pull, isConfigured: !!user }
 }
