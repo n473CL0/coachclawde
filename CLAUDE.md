@@ -4,11 +4,14 @@ This repo is a workout tracking PWA. Claude generates personalised weekly workou
 
 ## Onboarding
 
-Onboarding happens entirely in the app: a scripted chat with Clawde
-(`src/lib/onboardingChat.ts`) asks about goals, experience, training types,
-frequency, equipment, injuries and coaching style, then an "About you"
-screen collects name, age and body stats. The answers are written straight
-into the profile — there is no onboarding prompt to answer here any more.
+Onboarding happens entirely in the app: a deterministic chat with Clawde
+walks a goal tree (`src/lib/goalFlow.ts`): one "why are you here?" question
+(an event, fitness, physique, strength, a sport, or "I have my own plan")
+routes to a short branch, then time, kit and a health screen, ending on a
+"here's what I heard" card. It builds a `GoalProfile` (event and date, aim,
+starting point, recent result, constraints, health flags) and derives the
+legacy profile fields from it. Weekly check-ins (`src/lib/checkIn.ts`) keep it
+current. There is no onboarding prompt to answer here.
 
 ## How to Generate a Week Plan
 
@@ -16,8 +19,10 @@ When the user pastes a prompt from the app (generated via Home → Plan → Gene
 
 The app is **multi-user** and each athlete's data lives in a per-user database (not in this repo), so the pasted prompt is **self-contained**: it embeds the athlete's profile, injuries, goals, program preferences and a *summarised* recent training history. Read those straight from the pasted prompt:
 
+- **What they're training for, block phases, starting point** → the prompt's "Goal" section (when present)
 - **Athlete profile, injuries, goals, program preferences** → the prompt's "Athlete profile" section
-- **Recent training history & current working weights** → the prompt's "Training history (summary)" section
+- **Pace zones and what they can measure with** → the prompt's "Cardio: paces & what I can measure" section
+- **Recent training history, notes, swaps, working weights and the latest check-in** → the prompt's "Training history (summary)" section
 - **Programming rules & the WeekPlan schema** → this file (`CLAUDE.md`)
 
 Always apply the Critical Programming Rules below and progressive overload against the current working weights given in the prompt.
@@ -133,6 +138,11 @@ the modality they choose, or to RPE when it has no zones. The easy warm-up and
 cool-down running are workout steps so they're timed; drills and strides stay
 in `warmupExercises`. A continuous run is just steps back to back.
 
+Athletes who follow their own plan (tracker mode) paste a **"Convert my
+training plan"** prompt instead. Convert it into a `WeekPlan` exactly as
+written: don't reprogram it, and flag anything that conflicts with their
+injuries with a "⚠️" in `coachNotes` rather than rewriting it.
+
 ## Athlete Data
 
 Everything you need is embedded in the pasted prompt — there is no athlete data
@@ -184,7 +194,7 @@ rather than assuming any particular injury.
    - **Equipment must be easy to alternate between.** Only pair exercises that share the same station/equipment or sit right next to each other. Don't pair two different machines, or a machine with a bench/rack — the athlete shouldn't have to move across the gym (or tie up a machine others are waiting on) to swap between sets. Dumbbell/bodyweight pairs, or two movements on one cable stack or bench, are ideal.
    - **Keep it in one contiguous block.** Place the paired exercises adjacent in the `exercises` array and never scatter a superset's movements among other exercises — all of a superset's exercises come one after another so the athlete isn't flipping back and forth. Note the pairing in `coachNotes` (e.g. "Superset with the next exercise — alternate sets").
 6. **TIMED EXERCISES**: For holds like planks, side planks, dead hangs or wall sits, set `durationSeconds` on each set (and no weight). The app gives the athlete a stopwatch.
-7. **PERIODISE ACROSS THE BLOCK**: The prompt gives "Week N of M" for the athlete's program block. Deload (~40% less volume, lighter loads, RPE ≤ 7) roughly every 4th–6th week, or sooner if recent history shows fatigue; build through the middle and push a little harder in the final week or two. Say in the summary if it's a deload week.
+7. **PERIODISE ACROSS THE BLOCK**: The prompt gives "Week N of M" for the athlete's program block. When the prompt has a **Goal** section, follow its phase skeleton (Base → Build → Peak → Taper, computed by the app from the weeks to race day) and its deload flag for this week; it's deliberate and deterministic. Otherwise, deload (~40% less volume, lighter loads, RPE ≤ 7) roughly every 4th–6th week, or sooner if recent history shows fatigue; build through the middle and push a little harder in the final week or two. Say in the summary if it's a deload week.
 8. **FIT THE SESSION LENGTH & DATES**: The prompt gives a target session length and the exact date for each training day. Use those dates verbatim (one session per listed day) and size each session to the target, with an honest `estimatedMinutes`.
 9. **DETAILED WARM-UP & COOL-DOWN (required on every session)**: The athlete follows these move by move in the app, which shows the one-line summary and expands it into a numbered checklist with a movement guide per move.
    - `warmup`: one-line summary. `warmupExercises`: the full warm-up **in order**, 4–8 moves, ~8–12 min (counted in `estimatedMinutes`), through these phases:
@@ -197,8 +207,9 @@ rather than assuming any particular injury.
    - Warm-up and cool-down moves aren't logged, so don't repeat them in `exercises`.
    The app's prompt (`src/lib/promptBuilder.ts`) carries the same spec plus a worked JSON example. Keep the two in sync.
 10. **STANDARD EXERCISE NAMES**: Name every exercise and warm-up/cool-down move with its common gym name (e.g. "Dumbbell Bench Press", "Romanian Deadlift", "Cat Stretch"). The app matches names against an exercise library (free-exercise-db) to show a movement guide, with a YouTube search as backup. Put variations and cues in `coachNotes` / `notes`, not the name.
-11. **PRESCRIBE ONLY WHAT CAN BE MEASURED**: The prompt's "Runs with" line says what the athlete measures with. With a phone only (or unknown), end reps by **time**, never by distance. Distance reps need a GPS watch or a track; on a treadmill give speeds in km/h as `target`. Cardio always goes in `workout`, not `intervals`.
-12. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
+11. **APPLY THE LATEST CHECK-IN**: When the history includes a "Latest check-in", apply it: shorter sessions, a lighter week, intensity up or down, injury status (worse → conservative, and advise getting it assessed), and next week's events. The athlete answered those questions for this plan.
+12. **PRESCRIBE ONLY WHAT CAN BE MEASURED**: The prompt's "Runs with" line says what the athlete measures with. With a phone only (or unknown), end reps by **time**, never by distance. Distance reps need a GPS watch or a track; on a treadmill give speeds in km/h as `target`. Cardio always goes in `workout`, not `intervals`.
+13. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
 
 ## Session Export
 

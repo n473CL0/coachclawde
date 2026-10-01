@@ -8,6 +8,7 @@ import { FixedLayer } from './components/layout/FixedLayer'
 import { useAppStore } from './store/useAppStore'
 import { Login } from './pages/Login'
 import { Onboarding } from './pages/Onboarding'
+import { CheckIn } from './pages/CheckIn'
 import { Home } from './pages/Home'
 import { WeekPlanner } from './pages/WeekPlanner'
 import { Session } from './pages/Session'
@@ -44,6 +45,7 @@ function App() {
                 <RequireAuth>
                   <Routes>
                     <Route path="/onboarding" element={<PhoneColumn><Onboarding /></PhoneColumn>} />
+                    <Route path="/check-in" element={<RequireOnboarded><PhoneColumn><CheckIn /></PhoneColumn></RequireOnboarded>} />
                     <Route
                       path="/*"
                       element={

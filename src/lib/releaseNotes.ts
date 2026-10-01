@@ -16,7 +16,7 @@
  */
 
 export interface Release {
-  /** Semver, matching package.json, e.g. "1.0.1". */
+  /** Semver, matching package.json, e.g. "1.1.0". */
   version: string
   /** ISO date the update shipped. */
   date: string
@@ -29,6 +29,29 @@ export interface Release {
 }
 
 export const RELEASES: Release[] = [
+  {
+    version: '1.1.0',
+    date: '2026-10-01',
+    headline: 'Run Mode, real goals and weekly check-ins, shaped by your feedback.',
+    fromFeedback: [
+      'Run Mode times your intervals for you. Press Start and it plays a tone at every change: rising for go, falling for recover, and pips just before. No more second stopwatch.',
+      'For distance reps, press the big LAP button when you reach the distance and it records your time.',
+      'After a run, your log is already filled in from the timer. Check it, add one effort score, save.',
+      'Logging by hand is easier: the number the plan already knows is filled in, and times use + and − buttons instead of typing "mm:ss".',
+      'Did something else? Log a bike ride, a class or a swim instead of the planned session, and it counts. "Log a session" on Home works with no plan at all.',
+      'Your session notes, pain notes and swaps now reach Claude when it plans your next week.',
+      'The rest timer beeps when rest is over (and buzzes on Android), and your screen stays on during a workout.',
+    ],
+    alsoNew: [
+      'Onboarding starts with why you’re here (a race, a habit, a holiday, your sport, or your own plan), asks only what changes your plan, and ends with a card you can correct.',
+      'Training for an event? Give a recent race time and the app works out your paces, and Claude plans the weeks up to race day.',
+      'A one-minute check-in at the end of the week, only when you want it. Every answer changes next week’s plan.',
+      'Got a plan from a coach or a book? Paste it and Claude converts it for the app, or just log as you go.',
+      'Plans only ask for what you can measure: with just a phone, reps are set by time.',
+      'Already set up? A three-question check-in upgrades your goal. Nothing you’ve logged changes.',
+      'Turn off check-in suggestions, or delete your health-screen answers, in Settings.',
+    ],
+  },
   {
     version: '1.0.1',
     date: '2026-09-30',

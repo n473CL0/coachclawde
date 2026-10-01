@@ -3,6 +3,7 @@ import { WorkoutCard } from '../components/session/WorkoutCard'
 import { RunMode, type RunResult } from '../components/session/RunMode'
 import { flattenWorkout, initialLoggedIntervals, loggableSteps, stepLabel, type FlatStep } from '../lib/workout'
 import { athleteZones } from '../lib/goalProfile'
+import { wantsCheckIns } from '../lib/checkInTriggers'
 import { resolveTarget, type RunZones } from '../lib/zones'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
@@ -25,7 +26,7 @@ import { useAutoSync } from '../hooks/useAutoSync'
 import { formatDuration } from '../lib/dateUtils'
 import { cardioLabel, inferCardioType } from '../lib/cardioUtils'
 import { warmExerciseDb } from '../lib/exerciseGuide'
-import type { CardioType, Intensity, LoggedExercise, LoggedInterval, LoggedSession, PlannedSession, WeekReflection } from '../types'
+import type { CardioType, Intensity, LoggedExercise, LoggedInterval, LoggedSession, PlannedSession } from '../types'
 import type { IntervalRowSpec } from '../components/session/IntervalRow'
 import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, Play } from 'lucide-react'
 import { nanoid } from '../lib/nanoid'
@@ -48,7 +49,7 @@ export function Session() {
   // of a fixed route. `location.key === 'default'` means this is the first entry
   // in the history stack (e.g. a deep link), so fall back to Home.
   const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/'))
-  const { weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession, profile } = useAppStore()
+  const { weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession, profile, dismissCheckIn } = useAppStore()
   const zones = athleteZones(profile)
   // The cardio workout as the ordered steps Run Mode plays; manual rows are
   // the non-recovery steps (legacy plans were converted on read).
@@ -89,8 +90,9 @@ export function Session() {
     if (!weekPlan || !id) return false
     const completedIds = loggedSessions.filter((ls) => ls.status === 'complete').map((ls) => ls.plannedSessionId)
     const remaining = weekPlan.sessions.filter((s) => s.id !== id && !completedIds.includes(s.id))
-    return remaining.length === 0
-  }, [weekPlan, id, loggedSessions])
+    // No invitation for athletes who turned check-ins off (or just track).
+    return remaining.length === 0 && wantsCheckIns(profile)
+  }, [weekPlan, id, loggedSessions, profile])
 
   // Keep the screen on while a workout is being logged.
   useWakeLock(!!loggedSession && loggedSession.status !== 'complete' && !showRun)
@@ -268,10 +270,15 @@ export function Session() {
     syncSession(loggedSession.id)
   }
 
-  function handleReflection(weekReflection: WeekReflection) {
-    if (!loggedSession) return
-    updateLoggedSession(loggedSession.id, { weekReflection })
-    syncSession(loggedSession.id)
+  // The week-done invitation opens a check-in, or snoozes until the next trigger.
+  const reviewWeek = weekPlan?.weekStartDate ?? ''
+  function openCheckIn() {
+    setShowComplete(false)
+    navigate(`/check-in?trigger=week-complete&week=${reviewWeek}`, { replace: true })
+  }
+  function declineCheckIn() {
+    dismissCheckIn(`week:${reviewWeek}`)
+    finishAndLeave()
   }
 
   function finishAndLeave() {
@@ -504,7 +511,8 @@ export function Session() {
           sessionTitle={planned.title}
           isLastSessionOfWeek={isLastSession}
           onSave={handleSessionSave}
-          onReflect={handleReflection}
+          onCheckIn={openCheckIn}
+          onNotNow={declineCheckIn}
           onFinish={finishAndLeave}
           onDismiss={() => setShowComplete(false)}
         />
@@ -516,7 +524,8 @@ export function Session() {
           isLastSessionOfWeek
           initialStep="invite"
           onSave={() => {}}
-          onReflect={handleReflection}
+          onCheckIn={openCheckIn}
+          onNotNow={declineCheckIn}
           onFinish={finishAndLeave}
           onDismiss={finishAndLeave}
         />

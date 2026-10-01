@@ -6,19 +6,23 @@ import { Button } from '../components/shared/Button'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { BottomSheet, SheetCloseButton } from '../components/shared/BottomSheet'
 import { Card, CardSection } from '../components/shared/Card'
-import { buildWeekPlanPrompt } from '../lib/promptBuilder'
+import { buildConvertPlanPrompt, buildWeekPlanPrompt } from '../lib/promptBuilder'
+import { applyCheckIn, plannerPrefill } from '../lib/checkIn'
+import { plannerInvitation } from '../lib/checkInTriggers'
+import type { CheckIn, RunsWith, UserProfile } from '../types'
 import { importPlanFromJson } from '../lib/export'
 import { useAutoSync } from '../hooks/useAutoSync'
 import {
   WEEK_DAYS_MON,
   addDays,
+  getMonday,
   getNextMonday,
   isDayPastThisWeek,
   resolveWeekStart,
   toLocalISODate,
 } from '../lib/weekUtils'
 import type { DayOfWeek } from '../types'
-import { Copy, Check, Download, AlertCircle, CalendarClock, ExternalLink } from 'lucide-react'
+import { Copy, Check, Download, AlertCircle, CalendarClock, ExternalLink, MessageCircle, Sparkles } from 'lucide-react'
 import { OpenClaudeButton } from '../components/shared/OpenClaudeButton'
 import { openClaudeApp } from '../lib/openClaude'
 import { format } from 'date-fns'
@@ -27,25 +31,45 @@ const SESSION_LENGTH_OPTIONS = [30, 45, 60, 75, 90] as const
 
 export function WeekPlanner() {
   const navigate = useNavigate()
-  const { getCurrentWeekPlan, weekPlans, addWeekPlan, updateWeekPlan, profile, loggedSessions } = useAppStore()
+  const { getCurrentWeekPlan, weekPlans, addWeekPlan, updateWeekPlan, profile, loggedSessions, checkIns, checkInDismissed, dismissCheckIn, setProfile } = useAppStore()
 
   const today = new Date()
   const seedPlan = getCurrentWeekPlan()
+  const tracker = !!profile.goal?.tracker
 
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(seedPlan?.availableDays ?? [])
-  const [notes, setNotes] = useState(seedPlan?.userNotes ?? '')
-  // Target minutes per session, seeded from the current plan's average so a
-  // replan keeps the same length by default.
+  // A recent check-in pre-fills the planner for the week after the one it
+  // reviewed: days (one fewer if asked), session length and notes.
+  const [prefill] = useState(() => {
+    const ci = latestWeeklyCheckIn(checkIns)
+    const stale = ci && today.getTime() - Date.parse(ci.createdAt) > 10 * 24 * 60 * 60 * 1000
+    if (!ci || stale || (seedPlan && seedPlan.weekStartDate > ci.weekStartDate)) return null
+    const reviewed = weekPlans.find((p) => p.weekStartDate === ci.weekStartDate)
+    const p = plannerPrefill(ci)
+    const days = reviewed?.availableDays ?? []
+    return {
+      days: p.fewerDays && days.length > 1 ? days.slice(0, -1) : days,
+      minutes: p.sessionMinutes,
+      notes: p.notes.join(' '),
+      nextWeek: ci.weekStartDate === toLocalISODate(getMonday(today)),
+      hasChanges: !!(p.sessionMinutes || p.fewerDays || p.notes.length),
+    }
+  })
+
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(prefill?.days.length ? prefill.days : seedPlan?.availableDays ?? [])
+  const [notes, setNotes] = useState(prefill ? prefill.notes : seedPlan?.userNotes ?? '')
+  // Target minutes per session: from the check-in, else the current plan's
+  // average so a replan keeps the same length by default.
   const [sessionMinutes, setSessionMinutes] = useState<number>(() => {
+    if (prefill?.minutes) return prefill.minutes
     const mins = seedPlan?.sessions.map((s) => s.estimatedMinutes).filter((m) => m > 0) ?? []
-    if (!mins.length) return 60
+    if (!mins.length) return profile.goal?.constraints.sessionMinutes ?? 60
     const avg = mins.reduce((a, b) => a + b, 0) / mins.length
     return SESSION_LENGTH_OPTIONS.reduce<number>((best, o) => (Math.abs(o - avg) < Math.abs(best - avg) ? o : best), 60)
   })
   // Whether the athlete has explicitly opted to plan next week (e.g. they want
   // to train on a weekday that has already passed this week).
   const [planNextWeek, setPlanNextWeek] = useState(
-    seedPlan ? seedPlan.weekStartDate === toLocalISODate(getNextMonday(today)) : false
+    prefill ? prefill.nextWeek : seedPlan ? seedPlan.weekStartDate === toLocalISODate(getNextMonday(today)) : false
   )
   // Day pending a "this will move the plan to next week" confirmation.
   const [confirmDay, setConfirmDay] = useState<DayOfWeek | null>(null)
@@ -111,8 +135,13 @@ export function WeekPlanner() {
     setSelectedDays((prev) => prev.filter((d) => !isDayPastThisWeek(d, today)))
   }
 
+  // Step 0: suggest a check-in for the week before the one being planned.
+  const checkInWeek = plannerInvitation({ profile, weekPlans, loggedSessions, checkIns, dismissed: checkInDismissed }, weekStartISO)
+
   function buildPrompt() {
-    const prompt = buildWeekPlanPrompt(selectedDays, notes, sessionMinutes, existingPlan, weekStart, profile, loggedSessions)
+    const prompt = tracker
+      ? buildConvertPlanPrompt(notes, selectedDays, weekStart, profile)
+      : buildWeekPlanPrompt(selectedDays, notes, sessionMinutes, existingPlan, weekStart, profile, loggedSessions, checkIns)
     setPromptText(prompt)
     return prompt
   }
@@ -221,6 +250,29 @@ export function WeekPlanner() {
       />
 
       <div className="flex flex-col gap-5 px-4 pt-4">
+        {checkInWeek && !tracker && (
+          <div className="rounded-3xl bg-[#161616] border border-[#d97756]/30 p-4 flex items-start gap-3 fade-in">
+            <MessageCircle size={18} className="text-[#d97756] mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-[#f5f5f0]">Quick check-in first?</p>
+              <p className="text-sm text-[#a8a29e] mt-0.5">About a minute on last week. It shapes this plan.</p>
+              <div className="flex gap-2 mt-3">
+                <Button size="sm" onClick={() => navigate(`/check-in?trigger=planner&week=${checkInWeek}&key=planner:${checkInWeek}`)}>Check in</Button>
+                <Button size="sm" variant="ghost" onClick={() => dismissCheckIn(`planner:${checkInWeek}`)}>Skip to planning</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {prefill?.hasChanges && (
+          <div className="flex items-center gap-2 text-xs text-[#a8a29e] px-1">
+            <Sparkles size={14} className="text-[#d97756]" />
+            Pre-filled from your check-in. Change anything you like.
+          </div>
+        )}
+
+        {!tracker && <RunsWithCard profile={profile} onSave={(p) => { setProfile(p); void sync('profile') }} />}
+
         {/* Day selector */}
         <Card>
           <CardSection>
@@ -275,7 +327,7 @@ export function WeekPlanner() {
         </Card>
 
         {/* Session length */}
-        <Card>
+        {!tracker && <Card>
           <CardSection>
             <p className="text-sm font-medium text-[#a8a29e] mb-3">How long per session?</p>
             {/* Equal-width chips that wrap to a second row at large text sizes. */}
@@ -298,17 +350,19 @@ export function WeekPlanner() {
               ))}
             </div>
           </CardSection>
-        </Card>
+        </Card>}
 
-        {/* Notes */}
+        {/* Notes (tracker mode: the pasted plan) */}
         <Card>
           <CardSection>
-            <p className="text-sm font-medium text-[#a8a29e] mb-3">Any extra context for Claude?</p>
+            <p className="text-sm font-medium text-[#a8a29e] mb-3">{tracker ? 'Paste this week of your plan' : 'Any extra context for Claude?'}</p>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Going out Wednesday night, make Thursday light. Left shoulder feeling tight this week."
-              rows={3}
+              placeholder={tracker
+                ? 'e.g. Mon: 5 × 1 km @ 10K pace, 2 min jog. Wed: 40 min easy. Sat: long run 14 km.'
+                : 'e.g. Going out Wednesday night, make Thursday light. Left shoulder feeling tight this week.'}
+              rows={tracker ? 8 : 3}
               className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] resize-none focus:outline-none focus:border-[#d97756]/50 transition-colors"
             />
           </CardSection>
@@ -325,7 +379,7 @@ export function WeekPlanner() {
               size="lg"
             >
               {!launching && <ExternalLink size={18} />}
-              {launching ? 'Opening Claude…' : 'Generate & Open Claude'}
+              {launching ? 'Opening Claude…' : tracker ? 'Convert with Claude' : 'Generate & Open Claude'}
             </Button>
             <button
               onClick={handleShowPrompt}
@@ -462,5 +516,61 @@ export function WeekPlanner() {
         </ConfirmDialog>
       )}
     </div>
+  )
+}
+
+/** The newest weekly check-in (not reactive or migration). */
+function latestWeeklyCheckIn(checkIns: CheckIn[]): CheckIn | undefined {
+  return [...checkIns]
+    .filter((c) => c.trigger !== 'reactive' && c.trigger !== 'migration')
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+}
+
+const RUNS_WITH: { value: RunsWith; label: string }[] = [
+  { value: 'phone', label: 'Just my phone' },
+  { value: 'watch', label: 'GPS watch' },
+  { value: 'track', label: 'A track' },
+  { value: 'treadmill', label: 'Treadmill' },
+]
+
+/**
+ * A deferred onboarding question asked where it matters: before Claude plans
+ * intervals, what can the athlete measure with? (A phone can't end an 800 m rep.)
+ */
+function RunsWithCard({ profile, onSave }: { profile: UserProfile; onSave: (patch: Partial<UserProfile>) => void }) {
+  const [picked, setPicked] = useState<RunsWith[]>([])
+  const due = profile.goal?.deferred.includes('runs-with') && profile.program?.exerciseTypes.includes('cardio')
+  if (!due) return null
+  function save() {
+    const now = new Date()
+    const checkIn: CheckIn = {
+      id: 'runs-with', weekStartDate: toLocalISODate(getMonday(now)), createdAt: now.toISOString(), trigger: 'planner',
+      answers: {}, actions: [{ kind: 'deferred', id: 'runs-with', value: picked.length ? picked : ['phone'] }], summary: '',
+    }
+    onSave(applyCheckIn(profile, checkIn, now))
+  }
+  return (
+    <Card>
+      <CardSection>
+        <p className="text-sm font-medium text-[#a8a29e]">Before Claude plans your runs: what do you run with?</p>
+        <p className="text-xs text-[#6a6a6a] mt-1 mb-3">With just a phone, reps are set by time, because a phone can’t tell you when you’ve run 800 m.</p>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {RUNS_WITH.map((o) => {
+            const on = picked.includes(o.value)
+            return (
+              <button
+                key={o.value}
+                aria-pressed={on}
+                onClick={() => setPicked((p) => (on ? p.filter((x) => x !== o.value) : [...p, o.value]))}
+                className={`px-3.5 py-2 rounded-2xl text-sm font-medium ${on ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a]'}`}
+              >
+                {o.label}
+              </button>
+            )
+          })}
+        </div>
+        <Button size="sm" onClick={save} disabled={!picked.length}>Save</Button>
+      </CardSection>
+    </Card>
   )
 }

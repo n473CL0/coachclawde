@@ -53,7 +53,7 @@ describe('summarizeHistory', () => {
     expect(summarizeHistory([s], { now: NOW })).toMatch(/energy 2\/5; summary: Busy week; wants to focus on: Shorter sessions/)
     const withCheckIn = summarizeHistory([s], { now: NOW, latestCheckIn: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] })
     expect(withCheckIn).not.toMatch(/week reflection/)
-    expect(withCheckIn.split('**Latest check-in:**')[1].trim().split('\n')).toHaveLength(6)
+    expect(withCheckIn.split('**Latest check-in (apply these when planning):**')[1].trim().split('\n')).toHaveLength(6)
   })
 })
 

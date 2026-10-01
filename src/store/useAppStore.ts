@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { AppState, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
+import type { AppState, CheckIn, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
 import { normalizePlan } from '../lib/workout'
@@ -11,12 +11,21 @@ interface AppStore extends AppState {
   updateWeekPlan: (id: string, updates: Partial<WeekPlan>) => void
   addLoggedSession: (session: LoggedSession) => void
   updateLoggedSession: (id: string, updates: Partial<LoggedSession>) => void
+  /** Adds a check-in, or replaces one with the same id. */
+  saveCheckIn: (checkIn: CheckIn) => void
+  /**
+   * Check-in invitations the athlete dismissed on this device, as keys like
+   * "week:2026-09-28" or "milestone:block-end". Local only: at most one
+   * nudge per trigger, never a nag.
+   */
+  checkInDismissed: string[]
+  dismissCheckIn: (key: string) => void
   setActiveSession: (id: string | null) => void
   setTimer: (timer: TimerState) => void
   clearTimer: () => void
   getCurrentWeekPlan: () => WeekPlan | undefined
   getLastNSessions: (n: number) => LoggedSession[]
-  restoreFromRemote: (data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[] }) => void
+  restoreFromRemote: (data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[]; checkIns?: CheckIn[] }) => void
   /** Wipe in-memory + persisted data (used on sign-out so accounts don't leak on a shared device). */
   reset: () => void
 }
@@ -34,8 +43,16 @@ export const useAppStore = create<AppStore>()(
       profile: DEFAULT_PROFILE,
       weekPlans: [],
       loggedSessions: [],
+      checkIns: [],
+      checkInDismissed: [],
       activeSessionId: null,
       timer: DEFAULT_TIMER,
+
+      saveCheckIn: (checkIn) =>
+        set((s) => ({ checkIns: [...s.checkIns.filter((c) => c.id !== checkIn.id), checkIn] })),
+
+      dismissCheckIn: (key) =>
+        set((s) => (s.checkInDismissed.includes(key) ? s : { checkInDismissed: [...s.checkInDismissed, key] })),
 
       setProfile: (updates) =>
         set((s) => ({ profile: { ...s.profile, ...updates, updatedAt: new Date().toISOString() } })),
@@ -91,12 +108,16 @@ export const useAppStore = create<AppStore>()(
         // Stored plans may predate structured workouts: convert on read.
         weekPlans: data.weekPlans.map(normalizePlan),
         loggedSessions: data.loggedSessions,
+        // Older databases may not have the check_ins table yet; keep local ones.
+        ...(data.checkIns ? { checkIns: data.checkIns } : {}),
       }),
 
       reset: () => set({
         profile: DEFAULT_PROFILE,
         weekPlans: [],
         loggedSessions: [],
+        checkIns: [],
+        checkInDismissed: [],
         activeSessionId: null,
         timer: DEFAULT_TIMER,
       }),
@@ -106,12 +127,20 @@ export const useAppStore = create<AppStore>()(
       // Plans cached before structured workouts get one on rehydrate.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>
-        return { ...current, ...p, weekPlans: (p.weekPlans ?? current.weekPlans).map(normalizePlan) }
+        return {
+          ...current,
+          ...p,
+          weekPlans: (p.weekPlans ?? current.weekPlans).map(normalizePlan),
+          checkIns: p.checkIns ?? [],
+          checkInDismissed: (p as { checkInDismissed?: string[] }).checkInDismissed ?? [],
+        }
       },
       partialize: (state) => ({
         profile: state.profile,
         weekPlans: state.weekPlans,
         loggedSessions: state.loggedSessions,
+        checkIns: state.checkIns,
+        checkInDismissed: state.checkInDismissed,
       }),
     }
   )

@@ -8,7 +8,9 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift } from 'lucide-react'
+import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck } from 'lucide-react'
+import { ConfirmDialog } from '../components/shared/ConfirmDialog'
+import { goalOrLegacy } from '../lib/goalProfile'
 import { WhatsNewSheet } from '../components/shared/WhatsNew'
 import { APP_VERSION } from '../lib/appVersion'
 import { getDeviceShape } from '../lib/deviceShape'
@@ -31,6 +33,28 @@ export function Settings() {
   const age = ageFromBirthDate(birthDate)
   const [profileSaved, setProfileSaved] = useState(false)
   const [showWhatsNew, setShowWhatsNew] = useState(false)
+  const [confirmHealth, setConfirmHealth] = useState(false)
+  const checkInsOn = !profile.goal?.checkInsOff
+  const healthFlags = profile.goal?.health.flags ?? []
+
+  function setCheckIns(on: boolean) {
+    const goal = goalOrLegacy(profile)
+    setProfile({ goal: { ...goal, checkInsOff: !on, updatedAt: new Date().toISOString() } })
+    void sync('profile')
+  }
+
+  /**
+   * Health-screen answers are special-category data: let the athlete delete
+   * them. Injuries stay (they're edited by the athlete and safety-critical),
+   * but the medical flags and conservative mode go.
+   */
+  function deleteHealthInfo() {
+    if (!profile.goal) return
+    const flags = profile.injuries.length ? (['injury'] as const) : []
+    setProfile({ goal: { ...profile.goal, health: { ...profile.goal.health, flags: [...flags], conservative: undefined, cleared: undefined }, updatedAt: new Date().toISOString() } })
+    void sync('profile')
+    setConfirmHealth(false)
+  }
 
   function handleSaveProfile() {
     // Never wipe a previously-set name with a blank field.
@@ -182,6 +206,50 @@ export function Settings() {
           </Card>
         </div>
 
+        {/* Check-ins & health */}
+        <div>
+          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Check-ins & privacy</p>
+          <Card>
+            <CardSection className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+                <MessageCircle size={18} className="text-[#d97756]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#f5f5f0]">Suggest weekly check-ins</p>
+                <p className="text-xs text-[#6a6a6a] mt-0.5">A one-minute chat at the end of the week. Never required.</p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={checkInsOn}
+                aria-label="Suggest weekly check-ins"
+                onClick={() => setCheckIns(!checkInsOn)}
+                className={`w-12 h-7 rounded-full p-0.5 transition-colors shrink-0 ${checkInsOn ? 'bg-[#d97756]' : 'bg-[#2a2a2a]'}`}
+              >
+                <span className={`block w-6 h-6 rounded-full bg-white transition-transform ${checkInsOn ? 'translate-x-5' : ''}`} />
+              </button>
+            </CardSection>
+            <div className="border-t border-[#2a2a2a]" />
+            <CardSection className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+                <ShieldCheck size={18} className="text-[#d97756]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#f5f5f0]">Health screen</p>
+                <p className="text-xs text-[#6a6a6a] mt-0.5 leading-relaxed">
+                  {healthFlags.some((f) => f !== 'injury')
+                    ? 'We keep only which boxes you ticked (never any details) so plans stay safe. You can delete them.'
+                    : 'Nothing stored beyond your injury list. We only ever keep which boxes you tick, never details.'}
+                </p>
+                {healthFlags.some((f) => f !== 'injury') && (
+                  <Button variant="danger" size="sm" className="mt-3" onClick={() => setConfirmHealth(true)}>
+                    Delete health information
+                  </Button>
+                )}
+              </div>
+            </CardSection>
+          </Card>
+        </div>
+
         {/* Onboarding */}
         <div>
           <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Onboarding</p>
@@ -194,7 +262,7 @@ export function Settings() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#f5f5f0]">Redo onboarding</p>
                   <p className="text-xs text-[#6a6a6a] mt-0.5">
-                    Rebuild your background and start a fresh program block.
+                    Start over with a new goal. Your history stays.
                   </p>
                 </div>
                 <ChevronRight size={16} className="text-[#4a4a4a] shrink-0" />
@@ -225,6 +293,18 @@ export function Settings() {
       </div>
 
       {showWhatsNew && <WhatsNewSheet releases={RELEASES} onClose={() => setShowWhatsNew(false)} />}
+      {confirmHealth && (
+        <ConfirmDialog
+          icon={<ShieldCheck size={20} />}
+          title="Delete health information?"
+          confirmLabel="Delete"
+          onConfirm={deleteHealthInfo}
+          onCancel={() => setConfirmHealth(false)}
+        >
+          This removes the medical flags from your health screen, and plans stop being kept extra conservative.
+          Your injury list stays (edit it by redoing onboarding).
+        </ConfirmDialog>
+      )}
     </div>
   )
 }

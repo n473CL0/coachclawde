@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { UserProfile, WeekPlan, LoggedSession, ProgramConfig, ExperienceLevel, GoalProfile } from '../types'
+import type { CheckIn, UserProfile, WeekPlan, LoggedSession, ProgramConfig, ExperienceLevel, GoalProfile } from '../types'
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error'
 
@@ -131,28 +131,49 @@ export async function pushLoggedSession(userId: string, session: LoggedSession) 
   if (error) throw new Error(`Failed to save session: ${error.message}`)
 }
 
+// --- check-ins --------------------------------------------------------------
+
+export async function pushCheckIns(userId: string, checkIns: CheckIn[]) {
+  if (checkIns.length === 0) return
+  const rows = checkIns.map((c) => ({
+    user_id: userId,
+    id: c.id,
+    week_start_date: c.weekStartDate,
+    trigger: c.trigger,
+    check_in: c,
+    created_at: c.createdAt,
+    updated_at: new Date().toISOString(),
+  }))
+  const { error } = await client().from('check_ins').upsert(rows, { onConflict: 'user_id,id' })
+  if (error) throw new Error(`Failed to save check-ins: ${error.message}`)
+}
+
 // --- combined ---------------------------------------------------------------
 
 export async function pushAll(
   userId: string,
-  data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[] }
+  data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[]; checkIns: CheckIn[] }
 ) {
   // Profile first (cheap, always present), then the bulkier collections.
   await pushProfile(userId, data.profile)
   await pushWeekPlans(userId, data.weekPlans)
   await pushLoggedSessions(userId, data.loggedSessions)
+  await pushCheckIns(userId, data.checkIns)
 }
 
 export async function pullAll(userId: string): Promise<{
   profile: UserProfile | null
   weekPlans: WeekPlan[]
   loggedSessions: LoggedSession[]
+  /** Undefined when the check_ins table doesn't exist yet (migration 0006 not applied). */
+  checkIns?: CheckIn[]
 }> {
   const c = client()
-  const [profileRes, plansRes, sessionsRes] = await Promise.all([
+  const [profileRes, plansRes, sessionsRes, checkInsRes] = await Promise.all([
     c.from('profiles').select('*').eq('id', userId).maybeSingle(),
     c.from('week_plans').select('plan').eq('user_id', userId),
     c.from('logged_sessions').select('session').eq('user_id', userId),
+    c.from('check_ins').select('check_in').eq('user_id', userId),
   ])
   if (profileRes.error) throw new Error(profileRes.error.message)
   if (plansRes.error) throw new Error(plansRes.error.message)
@@ -162,5 +183,7 @@ export async function pullAll(userId: string): Promise<{
     profile: profileRes.data ? rowToProfile(profileRes.data as ProfileRow) : null,
     weekPlans: (plansRes.data ?? []).map((r) => r.plan as WeekPlan),
     loggedSessions: (sessionsRes.data ?? []).map((r) => r.session as LoggedSession),
+    // A missing table mustn't block sign-in: check-ins are an extra.
+    checkIns: checkInsRes.error ? undefined : (checkInsRes.data ?? []).map((r) => r.check_in as CheckIn),
   }
 }

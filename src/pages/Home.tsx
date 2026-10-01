@@ -9,7 +9,8 @@ import { ClaudeMark } from '../components/shared/ClaudeMark'
 import { Reveal } from '../components/shared/Reveal'
 import { useScrollDirection } from '../hooks/useScrollDirection'
 import { getProgramProgress } from '../lib/programProgress'
-import { Calendar, ChevronRight, Dumbbell, Waves, Zap, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus } from 'lucide-react'
+import { Calendar, ChevronRight, Dumbbell, Waves, Zap, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus, MessageCircle, X } from 'lucide-react'
+import { homeInvitation, type HomeInvitation } from '../lib/checkInTriggers'
 import { QuickLogSheet } from '../components/session/QuickLogSheet'
 import { buildQuickLog, type QuickLogInput } from '../lib/quickLog'
 import { useAutoSync } from '../hooks/useAutoSync'
@@ -19,7 +20,9 @@ import type { Intensity, PlannedSession, SessionType } from '../types'
 
 export function Home() {
   const navigate = useNavigate()
-  const { getCurrentWeekPlan, loggedSessions, profile, addLoggedSession } = useAppStore()
+  const { getCurrentWeekPlan, loggedSessions, profile, addLoggedSession, weekPlans, checkIns, checkInDismissed, dismissCheckIn } = useAppStore()
+  const invite = homeInvitation({ profile, weekPlans, loggedSessions, checkIns, dismissed: checkInDismissed }, new Date())
+  const tracker = profile.goal?.tracker
   const plan = getCurrentWeekPlan()
   const { bump } = useScrollDirection()
   const { syncSession } = useAutoSync()
@@ -99,12 +102,22 @@ export function Home() {
       </div>
 
       <div className="flex flex-col gap-4 px-4">
-        {program.isComplete && (
-          <ProgramCompleteBanner length={program.length} onRestart={() => navigate('/onboarding')} />
+        {program.isComplete && !(invite?.kind === 'milestone' && invite.key.startsWith('milestone:block-end')) && (
+          <ProgramCompleteBanner length={program.length} onRestart={() => navigate('/check-in?trigger=milestone')} />
+        )}
+
+        {invite && (
+          <InvitationCard
+            invite={invite}
+            onOpen={() => navigate(`/check-in?trigger=${invite.trigger}&week=${invite.weekStart}&key=${encodeURIComponent(invite.key)}`)}
+            onDismiss={() => dismissCheckIn(invite.key)}
+          />
         )}
 
         {!plan ? (
-          <NoPlanCTA onPlan={() => navigate('/plan')} />
+          tracker?.intake === 'log'
+            ? <TrackerLogCTA onLog={() => setShowLog(true)} onConvert={() => navigate('/plan')} />
+            : <NoPlanCTA tracker={!!tracker} onPlan={() => navigate('/plan')} />
         ) : weekDone ? (
           <WeekCompleteBanner onPlan={() => navigate('/plan')} />
         ) : (
@@ -173,7 +186,46 @@ export function Home() {
   )
 }
 
-function NoPlanCTA({ onPlan }: { onPlan: () => void }) {
+/** A suggested check-in (or the tracker's weekly summary). Never blocks anything. */
+function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation; onOpen: () => void; onDismiss: () => void }) {
+  const summary = invite.kind === 'summary'
+  return (
+    <div className="fade-in rounded-3xl bg-[#161616] border border-[#d97756]/30 p-4 flex items-start gap-3">
+      <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+        {summary ? <CheckCircle size={18} className="text-[#d97756]" /> : <MessageCircle size={18} className="text-[#d97756]" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-[#f5f5f0]">{invite.title}</p>
+        <p className="text-sm text-[#a8a29e] mt-0.5 leading-relaxed">{invite.text}</p>
+        {!summary && (
+          <div className="flex gap-2 mt-3">
+            <Button size="sm" onClick={onOpen}>{invite.kind === 'migration' ? 'Let’s go' : 'Check in'}</Button>
+            <Button size="sm" variant="ghost" onClick={onDismiss}>Not now</Button>
+          </div>
+        )}
+      </div>
+      <button onClick={onDismiss} aria-label="Dismiss" className="w-9 h-9 -mr-1 -mt-1 flex items-center justify-center rounded-full text-[#4a4a4a] hover:text-[#a8a29e] shrink-0">
+        <X size={16} />
+      </button>
+    </div>
+  )
+}
+
+/** Tracker athletes who log as they go: logging is the main action. */
+function TrackerLogCTA({ onLog, onConvert }: { onLog: () => void; onConvert: () => void }) {
+  return (
+    <div className="fade-in rounded-3xl bg-gradient-to-br from-[#d97756]/10 to-[#1a1a1a] border border-[#d97756]/20 p-6 flex flex-col items-center text-center gap-4">
+      <div>
+        <h2 className="text-xl font-bold text-[#f5f5f0]">Your plan, your way</h2>
+        <p className="text-sm text-[#6a6a6a] mt-1 leading-relaxed">Log each session as you do it. I'll keep score and send a short weekly summary.</p>
+      </div>
+      <Button onClick={onLog} size="lg" fullWidth><Plus size={18} /> Log a session</Button>
+      <button onClick={onConvert} className="text-xs text-[#6a6a6a] hover:text-[#a8a29e]">or paste your plan and convert it</button>
+    </div>
+  )
+}
+
+function NoPlanCTA({ onPlan, tracker }: { onPlan: () => void; tracker?: boolean }) {
   return (
     <div className="fade-in">
       <div className="rounded-3xl bg-gradient-to-br from-[#d97756]/10 to-[#1a1a1a] border border-[#d97756]/20 p-6 flex flex-col items-center text-center gap-4">
@@ -181,14 +233,16 @@ function NoPlanCTA({ onPlan }: { onPlan: () => void }) {
           <Calendar size={28} className="text-[#d97756]" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-[#f5f5f0]">Plan Your Week</h2>
+          <h2 className="text-xl font-bold text-[#f5f5f0]">{tracker ? 'Bring in your plan' : 'Plan Your Week'}</h2>
           <p className="text-sm text-[#6a6a6a] mt-1 leading-relaxed">
-            Select your available training days, add any notes, and let Claude create your personalised workout plan.
+            {tracker
+              ? 'Paste this week of your plan and Claude converts it for the app, so you can log it here.'
+              : 'Select your available training days, add any notes, and let Claude create your personalised workout plan.'}
           </p>
         </div>
         <Button onClick={onPlan} size="lg" fullWidth>
           <Calendar size={18} />
-          Plan This Week
+          {tracker ? 'Convert my plan' : 'Plan This Week'}
         </Button>
       </div>
     </div>
@@ -222,13 +276,13 @@ function ProgramCompleteBanner({ length, onRestart }: { length: number; onRestar
       <div>
         <h2 className="text-xl font-bold text-[#f5f5f0]">Program complete! 🎉</h2>
         <p className="text-sm text-[#6a6a6a] mt-1 leading-relaxed">
-          You've finished your {length}-week block. Let's set up your next one — reassess your
-          goals and where you're at, and Coach Claude will build a fresh program.
+          You've finished your {length}-week block. A quick check-in on how it went, then your
+          next block starts. No need to set everything up again.
         </p>
       </div>
       <Button onClick={onRestart} size="lg" fullWidth>
         <Sparkles size={18} />
-        Start a new program
+        Check in & start the next block
       </Button>
     </div>
   )

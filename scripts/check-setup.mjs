@@ -51,7 +51,7 @@ async function countRows(table) {
 async function main() {
   // --- schema ---------------------------------------------------------------
   console.log('\nSchema')
-  const tables = ['profiles', 'week_plans', 'logged_sessions']
+  const tables = ['profiles', 'week_plans', 'logged_sessions', 'check_ins']
   const counts = {}
   let schemaOk = true
   for (const t of tables) {
@@ -64,8 +64,18 @@ async function main() {
       console.log(`  ✓ ${t.padEnd(16)} ${r.count} row(s)`)
     }
   }
+  // v1.1: the goal_profile column (migration 0005).
+  {
+    const { error } = await supabase.from('profiles').select('goal_profile', { head: true, count: 'exact' })
+    if (error) {
+      schemaOk = false
+      console.log(`  ✗ ${'profiles.goal_profile'.padEnd(16)} ${error.message}`)
+    } else {
+      console.log(`  ✓ ${'profiles.goal_profile'}`)
+    }
+  }
   if (!schemaOk) {
-    console.log('\n  → Run the files in supabase/migrations/ in order (0001, 0002, 0003)')
+    console.log('\n  → Run the files in supabase/migrations/ in order (0001 … 0006)')
     console.log('    in the Supabase SQL editor, then re-run this check.\n')
     process.exit(1)
   }

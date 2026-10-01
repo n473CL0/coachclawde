@@ -205,7 +205,7 @@ export function summarizeHistory(sessions: LoggedSession[], opts: HistoryOptions
   }
 
   if (opts.latestCheckIn?.length) {
-    sections.push('**Latest check-in:**\n' + opts.latestCheckIn.slice(0, 6).map((l) => `- ${l}`).join('\n'))
+    sections.push('**Latest check-in (apply these when planning):**\n' + opts.latestCheckIn.slice(0, 6).map((l) => `- ${l}`).join('\n'))
   } else {
     const reflection = latestReflection(completed, nowMs)
     if (reflection) sections.push(`**Latest week reflection:**\n- ${reflection}`)
