@@ -5,6 +5,7 @@ import { summarizeHistory } from './historySummary'
 import { getProgramProgress } from './programProgress'
 import { ageFromBirthDate } from './dateUtils'
 import { daysPerWeekLabel } from './programOptions'
+import { measurementLine, zonesLine } from './goalProfile'
 
 /**
  * Builds the prompt the user pastes into Claude.
@@ -95,6 +96,10 @@ ${dayLines || '  - —'}
 ### Program preferences
 ${programBlock}
 
+### Cardio: paces & what I can measure
+- ${zonesLine(profile)}
+- ${measurementLine(profile)}
+
 ## Training history (summary)
 ${summarizeHistory(loggedSessions)}
 
@@ -150,6 +155,12 @@ Apply all of these. The safety rules override every preference above.
    "Cat Stretch") — the app looks each name up in an exercise library to show
    me a movement guide. Put variations and cues in \`coachNotes\` / \`notes\`,
    not in the name.
+10. **Cardio is a structured \`workout\`:** Describe every cardio session as
+    \`workout\` steps (see "Cardio workouts" below), not \`intervals\`. Pick an
+    effort word for each step; the app turns it into my pace or feel. Only
+    prescribe what I can measure (see "what I can measure" above). The app
+    times every step and cues me with tones, so there's no need to
+    pre-calculate splits.
 
 Match the tone of my chosen coaching style in your written summary and how hard
 you push intensity/RPE targets.
@@ -248,7 +259,7 @@ PlannedSession {
   cooldown: string,               // REQUIRED: one-line summary of the cool-down
   cooldownExercises: RoutineItem[], // REQUIRED: the full cool-down, 3–5 moves
   exercises?: PlannedExercise[],  // for weights sessions
-  intervals?: PlannedInterval[],  // for cardio sessions
+  workout?: WorkoutItem[],        // for cardio sessions (see below)
   cardioOptions?: CardioType[]    // cardio only: modalities to choose between at
                                   // the start. First entry is the default. Drives
                                   // split units (run → /km, row → /500m, swim →
@@ -283,20 +294,56 @@ PlannedSet {
                                   // weight.
 }
 
-PlannedInterval {
-  label: string,                  // e.g. "6km erg piece"
-  repeats: number,
-  targetPace?: string,            // e.g. "2:05/500m" or "4:45/km"
-  targetDuration?: string,        // e.g. "22:00"
-  targetDistance?: string,        // e.g. "5km" or "2000m"
-  restSeconds: number,
-  notes?: string
+WorkoutItem = WorkoutStep | RepeatBlock
+
+WorkoutStep {
+  kind: "step",
+  role: "warmup" | "work" | "recover" | "steady" | "cooldown",
+  end: { by: "time", seconds: number }      // ends by itself
+     | { by: "distance", meters: number }   // I press LAP at the distance
+     | { by: "lap" },                       // ends when I press LAP
+  effort: "recovery" | "easy" | "steady" | "marathon" | "threshold"
+        | "interval" | "repetition" | "sprint",
+  target?: string,                // only to override the app's pace, e.g.
+                                  // "rate 20", "200 W", "12 km/h"
+  recovery?: "stand" | "walk" | "jog",   // for recover steps
+  cue?: string                    // short coaching cue
+}
+
+RepeatBlock {
+  kind: "repeat",
+  times: number,
+  steps: WorkoutItem[],           // nest at most 2 deep: 2 × (4 × 400 m)
+  everySeconds?: number,          // send-off cycle, e.g. swim "on 1:45"
+  skipLastRecovery?: boolean      // no recovery after the final rep
 }
 \`\`\`
 
-I log each cardio interval as **distance + time** and the app computes the split
-itself, so you don't need to pre-calculate pace — just give sensible
-\`targetDistance\` / \`targetDuration\` / \`targetPace\` cues.
+## Cardio workouts
+
+The app plays the workout in **Run Mode**: it times every step and plays a
+tone at each change, so I never need a separate stopwatch. Build it like this:
+
+- The easy running (or rowing, cycling…) warm-up and cool-down are workout
+  steps (\`role: "warmup"\` / \`"cooldown"\`) so Run Mode times them. Drills and
+  strides stay in \`warmupExercises\`, done before I press Start.
+- A continuous run is just steps back to back, e.g. 30′ easy then 10′ steady.
+- Pick effort words, not paces: the app converts them to my pace zones for
+  the modality I choose, or to RPE when it has no zones.
+- Respect what I can measure: with only a phone, end reps by **time**.
+
+Example ("15 min easy, 6 × 3 min at interval effort with 90 s jog, 10 min easy"):
+
+\`\`\`json
+"workout": [
+  { "kind": "step", "role": "warmup", "end": { "by": "time", "seconds": 900 }, "effort": "easy" },
+  { "kind": "repeat", "times": 6, "skipLastRecovery": true, "steps": [
+    { "kind": "step", "role": "work", "end": { "by": "time", "seconds": 180 }, "effort": "interval", "cue": "Quick feet, relaxed shoulders" },
+    { "kind": "step", "role": "recover", "end": { "by": "time", "seconds": 90 }, "effort": "recovery", "recovery": "jog" }
+  ]},
+  { "kind": "step", "role": "cooldown", "end": { "by": "time", "seconds": 600 }, "effort": "easy" }
+]
+\`\`\`
 
 Apply progressive overload against the current working weights above.`
 }

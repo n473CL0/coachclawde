@@ -50,7 +50,10 @@ PlannedSession {
                                   // (optional in src/types so pre-v1.0.1 plans
                                   // still load, but every new plan includes them)
   exercises?: PlannedExercise[],  // for weights sessions
-  intervals?: PlannedInterval[],  // for cardio sessions
+  workout?: WorkoutItem[],        // for cardio sessions (structured; see below)
+  intervals?: PlannedInterval[],  // LEGACY cardio format — don't write it in
+                                  // new plans; the app converts old ones to
+                                  // `workout` on import and when it reads them
   cardioOptions?: CardioType[]    // cardio only: modalities the athlete may
                                   // choose between at the start of the session.
                                   // First entry is the default. Drives split
@@ -87,20 +90,48 @@ PlannedSet {
                                   // label. Do NOT give timed exercises a weight.
 }
 
+WorkoutItem = WorkoutStep | RepeatBlock
+
+WorkoutStep {
+  kind: "step",
+  role: "warmup" | "work" | "recover" | "steady" | "cooldown",
+  end: { by: "time", seconds: number }      // ends by itself
+     | { by: "distance", meters: number }   // athlete presses LAP at the distance
+     | { by: "lap" },                       // ends when the athlete presses LAP
+  effort: "recovery" | "easy" | "steady" | "marathon" | "threshold"
+        | "interval" | "repetition" | "sprint",
+  target?: string,                // override the app's pace: "rate 20", "200 W", "12 km/h"
+  recovery?: "stand" | "walk" | "jog",   // recover steps
+  cue?: string                    // short coaching cue
+}
+
+RepeatBlock {
+  kind: "repeat",
+  times: number,
+  steps: WorkoutItem[],           // nest at most 2 deep: 2 × (4 × 400 m)
+  everySeconds?: number,          // send-off cycle (swim "on 1:45", EMOM)
+  skipLastRecovery?: boolean      // no recovery after the final repetition
+}
+
+// Legacy only — kept so old plans load. Don't write it in new plans.
 PlannedInterval {
-  label: string,                  // e.g. "6km erg piece"
+  label: string,
   repeats: number,
-  targetPace?: string,            // e.g. "2:05/500m" or "4:45/km"
-  targetDuration?: string,        // e.g. "22:00"
-  targetDistance?: string,        // e.g. "5km" or "2000m"
+  targetPace?: string,
+  targetDuration?: string,
+  targetDistance?: string,
   restSeconds: number,
   notes?: string
 }
 ```
 
-The athlete logs each cardio interval as **distance + time**; the app computes
-the split itself, so you don't need to pre-calculate pace — just give sensible
-`targetDistance` / `targetDuration` / `targetPace` cues.
+Cardio sessions run in the app's **Run Mode**: it times every `workout` step,
+plays a tone at each change (rising = go, falling = recover, pips before each
+change) and fills in the log itself. Pick **effort words**; the app resolves
+them to the athlete's pace zones (from the "Pace zones" line in the prompt) for
+the modality they choose, or to RPE when it has no zones. The easy warm-up and
+cool-down running are workout steps so they're timed; drills and strides stay
+in `warmupExercises`. A continuous run is just steps back to back.
 
 ## Athlete Data
 
@@ -166,7 +197,8 @@ rather than assuming any particular injury.
    - Warm-up and cool-down moves aren't logged, so don't repeat them in `exercises`.
    The app's prompt (`src/lib/promptBuilder.ts`) carries the same spec plus a worked JSON example. Keep the two in sync.
 10. **STANDARD EXERCISE NAMES**: Name every exercise and warm-up/cool-down move with its common gym name (e.g. "Dumbbell Bench Press", "Romanian Deadlift", "Cat Stretch"). The app matches names against an exercise library (free-exercise-db) to show a movement guide, with a YouTube search as backup. Put variations and cues in `coachNotes` / `notes`, not the name.
-11. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
+11. **PRESCRIBE ONLY WHAT CAN BE MEASURED**: The prompt's "Runs with" line says what the athlete measures with. With a phone only (or unknown), end reps by **time**, never by distance. Distance reps need a GPS watch or a track; on a treadmill give speeds in km/h as `target`. Cardio always goes in `workout`, not `intervals`.
+12. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
 
 ## Session Export
 

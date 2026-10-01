@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { AppState, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
+import { normalizePlan } from '../lib/workout'
 
 interface AppStore extends AppState {
   setProfile: (profile: Partial<UserProfile>) => void
@@ -40,11 +41,11 @@ export const useAppStore = create<AppStore>()(
         set((s) => ({ profile: { ...s.profile, ...updates, updatedAt: new Date().toISOString() } })),
 
       addWeekPlan: (plan) =>
-        set((s) => ({ weekPlans: [...s.weekPlans, plan] })),
+        set((s) => ({ weekPlans: [...s.weekPlans, normalizePlan(plan)] })),
 
       updateWeekPlan: (id, updates) =>
         set((s) => ({
-          weekPlans: s.weekPlans.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+          weekPlans: s.weekPlans.map((p) => (p.id === id ? normalizePlan({ ...p, ...updates }) : p)),
         })),
 
       addLoggedSession: (session) =>
@@ -87,7 +88,8 @@ export const useAppStore = create<AppStore>()(
 
       restoreFromRemote: (data) => set({
         profile: data.profile,
-        weekPlans: data.weekPlans,
+        // Stored plans may predate structured workouts: convert on read.
+        weekPlans: data.weekPlans.map(normalizePlan),
         loggedSessions: data.loggedSessions,
       }),
 
@@ -101,6 +103,11 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'coach-claude-store',
+      // Plans cached before structured workouts get one on rehydrate.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>
+        return { ...current, ...p, weekPlans: (p.weekPlans ?? current.weekPlans).map(normalizePlan) }
+      },
       partialize: (state) => ({
         profile: state.profile,
         weekPlans: state.weekPlans,

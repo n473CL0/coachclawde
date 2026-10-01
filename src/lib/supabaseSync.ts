@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { UserProfile, WeekPlan, LoggedSession, ProgramConfig, ExperienceLevel } from '../types'
+import type { UserProfile, WeekPlan, LoggedSession, ProgramConfig, ExperienceLevel, GoalProfile } from '../types'
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error'
 
@@ -26,6 +26,8 @@ interface ProfileRow {
   program: ProgramConfig | null
   experience_level: ExperienceLevel | null
   onboarded: boolean | null
+  /** Added by migration 0005; absent on databases that haven't run it. */
+  goal_profile?: GoalProfile | null
   updated_at: string
 }
 
@@ -44,6 +46,7 @@ function rowToProfile(row: ProfileRow): UserProfile {
     dietaryNotes: row.dietary_notes ?? [],
     program: row.program ?? undefined,
     experienceLevel: row.experience_level ?? undefined,
+    goal: row.goal_profile ?? undefined,
     // Existing accounts predate onboarding — treat a missing flag as done so
     // they're never forced back through the first-run slideshow.
     onboarded: row.onboarded ?? true,
@@ -70,6 +73,7 @@ export async function pushProfile(userId: string, profile: UserProfile) {
       program: profile.program ?? null,
       experience_level: profile.experienceLevel ?? null,
       onboarded: profile.onboarded ?? false,
+      goal_profile: profile.goal ?? null,
       updated_at: profile.updatedAt,
     })
   if (error) throw new Error(`Failed to save profile: ${error.message}`)

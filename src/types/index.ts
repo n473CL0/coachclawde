@@ -36,6 +36,101 @@ export interface ProgramConfig {
   daysPerWeek?: number;
 }
 
+// --- Goal profile ------------------------------------------------------------
+
+export type Pursuit = 'event' | 'fitness' | 'physique' | 'strength' | 'sport' | 'tracker';
+export type EventKind = '5k' | '10k' | 'half' | 'marathon' | 'trail' | 'tri' | 'sportive' | 'hyrox' | 'other';
+export type HealthFlag = 'injury' | 'condition' | 'pregnancy' | 'cardiac';
+/** What the athlete can measure a rep with. Until one beyond 'phone' is known, reps are set by time. */
+export type RunsWith = 'phone' | 'watch' | 'track' | 'treadmill';
+export type DeferredId = 'runs-with' | 'coaching-tone' | 'nutrition' | 'focus-areas' | 'long-run-day';
+export type InjuryStatus = 'active' | 'improving' | 'worse';
+
+export interface FixedDay {
+  day: DayOfWeek;
+  kind: 'training' | 'match';
+}
+
+export interface RecentResult {
+  meters: number;
+  seconds: number;
+  /** Local ISO date it was run, when known. */
+  date?: string;
+}
+
+/**
+ * Why the athlete is here and where they're starting from. Onboarding creates
+ * it, check-ins update it, the plan prompt embeds it and Run Mode uses its
+ * zones. The legacy `ProgramConfig`/profile fields are derived from it.
+ *
+ * Health is special-category data: only flags are stored, never diagnoses.
+ * Injuries stay verbatim in `UserProfile.injuries` (safety-critical).
+ */
+export interface GoalProfile {
+  version: 1;
+  /** 'onboarding' = built by the goal tree; 'legacy' = mapped best-effort from a pre-v1.1 profile. */
+  origin: 'onboarding' | 'legacy';
+  pursuit: Pursuit;
+  /** One plain sentence, shown on the confirmation card and sent to Claude. */
+  statement: string;
+  event?: {
+    kind: EventKind;
+    name?: string;
+    /** Local ISO date; absent = "no date yet". */
+    date?: string;
+    aim: 'get-round' | 'finish-strong' | 'time';
+    targetSeconds?: number;
+  };
+  physique?: { change: 'lose-fat' | 'build-muscle' | 'recomp'; byDate?: string };
+  strength?: {
+    kind: 'all-round' | 'lifts' | 'bodyweight' | 'job-or-sport';
+    lifts?: { name: string; kg: number; reps: number }[];
+  };
+  sport?: { name: string; season: 'off' | 'pre' | 'in' | 'none'; fixed: FixedDay[]; wants: string[] };
+  tracker?: { source: 'coach' | 'app-or-book' | 'self'; intake: 'convert' | 'log'; involvement: 'silent' | 'light' | 'check-ins' };
+  starting: {
+    /** Derived from the facts below, never asked. */
+    level: ExperienceLevel;
+    activity?: 'sitting' | 'light' | '1-2x' | '3x+';
+    runKmPerWeek?: [number, number];
+    /** Hours a week, for non-running endurance events. */
+    trainingHoursPerWeek?: [number, number];
+    lifting?: 'none' | 'on-off' | 'under-1y' | '1y+';
+    /** A recent race or timed run → pace zones. */
+    recentResult?: RecentResult;
+  };
+  constraints: {
+    daysPerWeek: number;
+    sessionMinutes: number;
+    facilities: ProgramFacility[];
+    /** Strength work alongside an event. */
+    strengthWork?: boolean;
+    runsWith?: RunsWith[];
+    longRunDay?: DayOfWeek;
+  };
+  health: {
+    flags: HealthFlag[];
+    /** Medical flag raised: keep everything conservative until cleared. */
+    conservative?: boolean;
+    /** Athlete said a GP/physio has already cleared them. */
+    cleared?: boolean;
+    /** Per-injury status from check-ins, keyed by the injury line. */
+    injuryStatus?: Record<string, InjuryStatus>;
+    /** Injuries marked "gone" at a check-in. */
+    pastInjuries?: string[];
+  };
+  /** Questions deliberately not asked yet; one rides along with each check-in. */
+  deferred: DeferredId[];
+  /** Nudge to pace zones from check-ins (C5), in %; + = faster. */
+  zoneOffsetPct?: number;
+  /** "Don't suggest check-ins" (Settings). */
+  checkInsOff?: boolean;
+  /** The onboarding answers, so the tree can be re-entered at any node. */
+  answers?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserProfile {
   name: string;
   sex: 'male' | 'female';
@@ -55,6 +150,8 @@ export interface UserProfile {
   program?: ProgramConfig;
   /** Self-rated training experience, set during onboarding. */
   experienceLevel?: ExperienceLevel;
+  /** Why they're here and where they start from. Absent on profiles onboarded before v1.1. */
+  goal?: GoalProfile;
   /**
    * Whether the athlete has completed first-run onboarding. Absent/false means
    * the in-app onboarding chat is shown before the app. Set true on completion.
@@ -85,6 +182,45 @@ export interface PlannedExercise {
    *  old plans still type-check; no longer requested in the prompt. */
   shoulderSafe?: boolean;
 }
+
+// --- Structured workouts (cardio) -------------------------------------------
+
+/** Effort words Claude picks; the app resolves them to paces/splits/feel. */
+export type Effort = 'recovery' | 'easy' | 'steady' | 'marathon' | 'threshold' | 'interval' | 'repetition' | 'sprint';
+export type StepRole = 'warmup' | 'work' | 'recover' | 'steady' | 'cooldown';
+/** What ends a step: a time, a distance (athlete presses LAP), or the athlete. */
+export type StepEnd =
+  | { by: 'time'; seconds: number }
+  | { by: 'distance'; meters: number }
+  | { by: 'lap' };
+
+export interface WorkoutStep {
+  kind: 'step';
+  role: StepRole;
+  end: StepEnd;
+  effort: Effort;
+  /** Explicit target overriding the computed one, e.g. "rate 20" or "4:10/km". */
+  target?: string;
+  /** How to recover, for `recover` steps. */
+  recovery?: 'stand' | 'walk' | 'jog';
+  /** Short coach cue, e.g. "Relaxed shoulders". */
+  cue?: string;
+  /** Free-text label kept from a converted legacy interval. */
+  label?: string;
+}
+
+export interface RepeatBlock {
+  kind: 'repeat';
+  times: number;
+  /** Nests at most 2 deep: 2 × (4 × 400 m). */
+  steps: WorkoutItem[];
+  /** Send-off cycle: each repetition starts every N seconds (swim "on 1:45", EMOM). */
+  everySeconds?: number;
+  /** Drop the recovery after the final repetition. */
+  skipLastRecovery?: boolean;
+}
+
+export type WorkoutItem = WorkoutStep | RepeatBlock;
 
 export interface PlannedInterval {
   label: string;
@@ -118,7 +254,10 @@ export interface PlannedSession {
   estimatedMinutes: number;
   intensity: Intensity;
   exercises?: PlannedExercise[];
+  /** Legacy cardio format. Converted to `workout` on import and when read. */
   intervals?: PlannedInterval[];
+  /** Structured cardio workout: what Run Mode times and cues. */
+  workout?: WorkoutItem[];
   /**
    * For cardio sessions that could be done as more than one modality. When
    * present (and length > 1) the athlete picks which one at session start,
@@ -174,6 +313,19 @@ export interface LoggedInterval {
   /** Elapsed time in seconds — combined with actualDistanceMeters to derive a split. */
   actualSeconds?: number;
   completed: boolean;
+  /** The workout step this row logs (see `LoggedStep.path`). Absent on legacy logs. */
+  stepPath?: string;
+}
+
+/** One step as Run Mode timed it. */
+export interface LoggedStep {
+  /** Position in the workout, e.g. "1.3.0" = item 1, repetition 3, step 0. */
+  path: string;
+  role: StepRole;
+  startedAt: string;
+  seconds: number;
+  meters?: number;
+  endedBy: 'time' | 'lap' | 'skip';
 }
 
 export interface WeekReflection {
@@ -207,6 +359,8 @@ export interface LoggedSession {
   outcome?: SessionOutcome;
   /** What was done instead, when `outcome` is 'substituted' (or a session logged with no plan). */
   substitute?: SubstituteActivity;
+  /** Every step as Run Mode timed it. */
+  loggedSteps?: LoggedStep[];
 }
 
 export type SessionOutcome = 'as-planned' | 'modified' | 'substituted';

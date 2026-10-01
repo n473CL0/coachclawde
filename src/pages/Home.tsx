@@ -260,7 +260,7 @@ function NextSessionCard({ session, onClick }: { session: PlannedSession; onClic
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#2a2a2a]">
             <StatPill label={formatDuration(session.estimatedMinutes)} icon="⏱" />
             {session.exercises && <StatPill label={`${session.exercises.length} exercises`} icon="💪" />}
-            {session.intervals && <StatPill label={`${session.intervals.length} intervals`} icon="🚣" />}
+            {session.type === 'cardio' && !!session.workout?.length && <StatPill label="Run Mode ready" icon="🏃" />}
           </div>
         </CardSection>
       </div>

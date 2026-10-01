@@ -1,4 +1,5 @@
-import type { AppState, RoutineItem } from '../types'
+import type { AppState, PlannedSession, RoutineItem, WeekPlan } from '../types'
+import { normalizeSession, normalizeWorkout } from './workout'
 
 function downloadJson(filename: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -41,7 +42,7 @@ function normalizeRoutine(items: unknown): RoutineItem[] | undefined {
   return out.length ? out : undefined
 }
 
-export function importPlanFromJson(jsonString: string) {
+export function importPlanFromJson(jsonString: string): WeekPlan {
   const data = JSON.parse(jsonString)
   if (!data.id || !data.weekStartDate || !Array.isArray(data.sessions)) {
     throw new Error('Invalid plan format: missing required fields (id, weekStartDate, sessions)')
@@ -61,6 +62,13 @@ export function importPlanFromJson(jsonString: string) {
       if (items) s[key] = items
       else delete s[key]
     }
+    // Structured workouts are validated; legacy `intervals` get a workout too.
+    if ('workout' in s) {
+      const workout = normalizeWorkout(s.workout)
+      if (workout) s.workout = workout
+      else delete s.workout
+    }
   }
-  return data
+  data.sessions = (data.sessions as PlannedSession[]).map(normalizeSession)
+  return data as WeekPlan
 }

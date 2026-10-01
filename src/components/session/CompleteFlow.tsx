@@ -21,18 +21,20 @@ interface CompleteFlowProps {
   /** Close the sheet after saving (navigates away). */
   onFinish: () => void
   onDismiss: () => void
+  /** Start on the invitation (the session was saved elsewhere, e.g. Run Mode). */
+  initialStep?: 'session' | 'invite'
 }
 
 /**
  * Saving a session. On the last session of the week the sheet then *invites*
  * a short reflection: it's optional, never a forced extra step.
  */
-export function CompleteFlow({ sessionTitle, isLastSessionOfWeek, onSave, onReflect, onFinish, onDismiss }: CompleteFlowProps) {
+export function CompleteFlow({ sessionTitle, isLastSessionOfWeek, onSave, onReflect, onFinish, onDismiss, initialStep = 'session' }: CompleteFlowProps) {
   const [feelings, setFeelings] = useState<Rating>(3)
   const [painNotes, setPainNotes] = useState('')
   const [generalNotes, setGeneralNotes] = useState('')
   const [outcome, setOutcome] = useState<SessionOutcome>('as-planned')
-  const [step, setStep] = useState<'session' | 'invite' | 'week'>('session')
+  const [step, setStep] = useState<'session' | 'invite' | 'week'>(initialStep)
 
   // Week reflection fields
   const [weekEnergy, setWeekEnergy] = useState<Rating>(3)
