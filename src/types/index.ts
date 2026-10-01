@@ -68,7 +68,7 @@ export interface RecentResult {
  */
 export interface GoalProfile {
   version: 1;
-  /** 'onboarding' = built by the goal tree; 'legacy' = mapped best-effort from a pre-v1.1 profile. */
+  /** 'onboarding' = built by the goal tree; 'legacy' = mapped best-effort from a pre-v1.0.2 profile. */
   origin: 'onboarding' | 'legacy';
   pursuit: Pursuit;
   /** One plain sentence, shown on the confirmation card and sent to Claude. */
@@ -127,7 +127,7 @@ export interface GoalProfile {
   zoneOffsetPct?: number;
   /** "Don't suggest check-ins" (Settings). */
   checkInsOff?: boolean;
-  /** A pre-v1.1 athlete has done the three-question upgrade check-in. */
+  /** A pre-v1.0.2 athlete has done the three-question upgrade check-in. */
   migrated?: boolean;
   /** The onboarding answers, so the tree can be re-entered at any node. */
   answers?: Record<string, unknown>;
@@ -154,7 +154,7 @@ export interface UserProfile {
   program?: ProgramConfig;
   /** Self-rated training experience, set during onboarding. */
   experienceLevel?: ExperienceLevel;
-  /** Why they're here and where they start from. Absent on profiles onboarded before v1.1. */
+  /** Why they're here and where they start from. Absent on profiles onboarded before v1.0.2. */
   goal?: GoalProfile;
   /**
    * Whether the athlete has completed first-run onboarding. Absent/false means

@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------------------------
--- 0006_check_ins — weekly check-ins (v1.1). One row per check-in: the week it
+-- 0006_check_ins — weekly check-ins (v1.0.2). One row per check-in: the week it
 -- reviewed, why it was offered, the answers, the actions the app applied and
 -- the plain-English summary the next plan prompt embeds.
 --
@@ -7,7 +7,7 @@
 -- only ever read and write their own rows. The rich object is JSONB so
 -- src/types/index.ts (CheckIn) stays the single source of truth.
 --
--- Apply before deploying v1.1. Until it exists, check-ins stay on the device
+-- Apply before deploying v1.0.2. Until it exists, check-ins stay on the device
 -- (the app tolerates the missing table when pulling) and the sync indicator
 -- shows an error when one is saved.
 -- ---------------------------------------------------------------------------

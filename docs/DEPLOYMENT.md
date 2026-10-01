@@ -76,7 +76,7 @@ each save (and "Sync now") fails with *Could not find the 'birth_date' column
 of 'profiles' in the schema cache*. Running the migration fixes it — no app
 change or re-login needed.
 
-**`0005` and `0006` must be applied before deploying v1.1.** `0005` adds the
+**`0005` and `0006` must be applied before deploying v1.0.2.** `0005` adds the
 `goal_profile` column that every profile save writes (same failure as `0004`
 if it's missing). `0006` adds the `check_ins` table, owner-only like
 `logged_sessions`; without it check-ins stay on the device and the sync

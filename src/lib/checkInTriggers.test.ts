@@ -41,7 +41,7 @@ describe('homeInvitation', () => {
     expect(homeInvitation(st({ profile: { ...migrated, goal: { ...migrated.goal!, checkInsOff: true } } }), monday)).toBeNull()
   })
 
-  it('offers pre-v1.1 athletes the goal upgrade first', () => {
+  it('offers pre-v1.0.2 athletes the goal upgrade first', () => {
     expect(homeInvitation(st({ profile: base }), monday)?.kind).toBe('migration')
   })
 

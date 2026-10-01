@@ -16,7 +16,7 @@
  */
 
 export interface Release {
-  /** Semver, matching package.json, e.g. "1.1.0". */
+  /** Semver, matching package.json, e.g. "1.0.2". */
   version: string
   /** ISO date the update shipped. */
   date: string
@@ -30,11 +30,11 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
-    version: '1.1.0',
+    version: '1.0.2',
     date: '2026-10-01',
     headline: 'Run Mode, real goals and weekly check-ins, shaped by your feedback.',
     fromFeedback: [
-      'Run Mode times your intervals for you. Press Start and it plays a tone at every change: rising for go, falling for recover, and pips just before. No more second stopwatch.',
+      'Run Mode times your intervals for you. Press Start and it plays a tone at every change: rising for go, falling for recover, and pips just before. No more second stopwatch. Keep the app open while you run (cues stop if you lock the phone), and on iPhone turn Silent mode off to hear them.',
       'For distance reps, press the big LAP button when you reach the distance and it records your time.',
       'After a run, your log is already filled in from the timer. Check it, add one effort score, save.',
       'Logging by hand is easier: the number the plan already knows is filled in, and times use + and − buttons instead of typing "mm:ss".',

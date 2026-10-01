@@ -50,7 +50,7 @@ export function wantsCheckIns(profile: UserProfile): boolean {
   return true
 }
 
-/** Pre-v1.1 athletes are offered the three-question goal upgrade. */
+/** Pre-v1.0.2 athletes are offered the three-question goal upgrade. */
 export function needsMigration(profile: UserProfile): boolean {
   return !!profile.onboarded && (!profile.goal || (profile.goal.origin === 'legacy' && !profile.goal.migrated))
 }

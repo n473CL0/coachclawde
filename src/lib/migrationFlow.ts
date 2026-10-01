@@ -5,7 +5,7 @@ import { goalFromLegacyProfile } from './goalProfile'
 
 /**
  * "Upgrade your goal" (§3.9): three questions for athletes onboarded before
- * v1.1, so nobody is forced back through onboarding. Their current profile is
+ * v1.0.2, so nobody is forced back through onboarding. Their current profile is
  * mapped best-effort (get-strong → strength, look-great → physique, get-fit →
  * fitness) and these answers fill in what the mapping can't know.
  */

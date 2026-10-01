@@ -44,7 +44,7 @@ export function Onboarding() {
   const from = params.get('from')
   const why = params.get('why')
   const stored = (known?.goal?.origin === 'onboarding' ? known.goal.answers : undefined) as FlowAnswers | undefined
-  // Re-entry: at a node of a stored tree, or (for a pre-v1.1 athlete) at a branch.
+  // Re-entry: at a node of a stored tree, or (for a pre-v1.0.2 athlete) at a branch.
   const atNode = !!(from && stored && GOAL_FLOW.nodes[from])
   const atBranch = !!(known && why && ['event', 'fitness', 'physique', 'strength', 'sport', 'tracker'].includes(why))
   const reentry = atNode || atBranch

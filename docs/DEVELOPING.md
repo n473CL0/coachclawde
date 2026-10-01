@@ -52,7 +52,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.1.0**) and is injected
+The app version lives in `package.json` (currently **1.0.2**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -128,7 +128,7 @@ are marked as seen when they finish onboarding.
   (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `export`, `nanoid`, `programOptions`
   (shared labels for the program preference enums).
   `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
-- **Runners & athletes (v1.1, design in `docs/RUNNERS-AND-ATHLETES.md`):**
+- **Runners & athletes (v1.0.2, design in `docs/RUNNERS-AND-ATHLETES.md`):**
   - `lib/flow` — the flow-as-data engine (`walk`, `rewindTo`, `enumeratePaths`)
     behind every chat. Deterministic, no AI. `components/onboarding/ChatFlow`
     renders any flow.
@@ -139,7 +139,7 @@ are marked as seen when they finish onboarding.
     `lib/goalProfile` — zones / measurement helpers and the legacy mapping.
   - `lib/checkIn` (rules C1–C10, budget, actions), `lib/checkInTriggers`
     (when to suggest one), `lib/migrationFlow` (the three-question upgrade for
-    pre-v1.1 athletes), `pages/CheckIn`.
+    pre-v1.0.2 athletes), `pages/CheckIn`.
   - `lib/workout` (structured workouts, legacy `intervals[]` conversion,
     notation), `lib/zones` (VDOT pace zones), `lib/runEngine` (Run Mode cue
     timing), `lib/audioCues` (Web Audio tones, `transient` audio session,

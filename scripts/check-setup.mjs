@@ -64,7 +64,7 @@ async function main() {
       console.log(`  ✓ ${t.padEnd(16)} ${r.count} row(s)`)
     }
   }
-  // v1.1: the goal_profile column (migration 0005).
+  // v1.0.2: the goal_profile column (migration 0005).
   {
     const { error } = await supabase.from('profiles').select('goal_profile', { head: true, count: 'exact' })
     if (error) {

@@ -75,7 +75,7 @@ const PURSUIT_STATEMENT: Record<Pursuit, string> = {
 }
 
 /**
- * Best-effort GoalProfile for a profile onboarded before v1.1
+ * Best-effort GoalProfile for a profile onboarded before v1.0.2
  * (get-strong → strength, look-great → physique, get-fit → fitness). Nothing
  * is invented: unknowns stay unset, and the migration check-in fills them in.
  */
