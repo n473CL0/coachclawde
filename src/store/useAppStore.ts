@@ -23,6 +23,7 @@ interface AppStore extends AppState {
   updateWeekPlan: (id: string, updates: Partial<WeekPlan>) => void
   addLoggedSession: (session: LoggedSession) => void
   updateLoggedSession: (id: string, updates: Partial<LoggedSession>) => void
+  removeLoggedSession: (id: string) => void
   /** Adds a check-in, or replaces one with the same id. */
   saveCheckIn: (checkIn: CheckIn) => void
   /**
@@ -85,6 +86,12 @@ export const useAppStore = create<AppStore>()(
           loggedSessions: s.loggedSessions.map((s) =>
             s.id === id ? { ...s, ...updates } : s
           ),
+        })),
+
+      removeLoggedSession: (id) =>
+        set((s) => ({
+          loggedSessions: s.loggedSessions.filter((l) => l.id !== id),
+          activeSessionId: s.activeSessionId === id ? null : s.activeSessionId,
         })),
 
       setActiveSession: (id) => set({ activeSessionId: id }),
