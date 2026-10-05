@@ -113,6 +113,10 @@ are marked as seen when they finish onboarding.
   ChatFlow` rendering the goal tree in `lib/goalFlow`), a confirmation card,
   then "About you", then finish. `?from=<node>` re-enters the tree for an
   onboarded athlete.
+- `components/layout/BetaBanner` — the WhatsApp feedback strip at the top of
+  the app (link in `lib/betaBanner`). It hides on the mid-task screens in
+  `lib/midTask` (workout, onboarding, check-in), the same list `lib/appUpdate`
+  won't reload on.
 - `src/components/session/MovementGuide` + `src/lib/exerciseGuide` — per-exercise
   help sheets from free-exercise-db (fetched from jsDelivr, cached by the service
   worker), fuzzy-matched by name with a YouTube-search fallback. `RoutineCard`
