@@ -61,11 +61,13 @@ html {
      (`--app-h`, from lib/deviceShape), because iOS can report a viewport that
      stops short of the bottom by the status bar's height.
    It is also the `app` size container for its children. Clicks pass through
-   to the page except on its children. */
+   to the page except on its children. z-index 41: above sticky page headers
+   (z-40), and level with the beta banner, which it beats by coming later in
+   the DOM, so sheets and dialogs cover the banner. */
 #fixed-layer {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 41;
   pointer-events: none;
   container: app / inline-size;
 }
@@ -316,6 +318,27 @@ html {
 }
 .claude-run {
   animation: claude-run 0.7s ease-in-out infinite;
+}
+
+/* Beta feedback banner (components/layout/BetaBanner): a full-width strip at
+   the very top that pushes the page down. In the installed iPhone app the
+   page runs under the status bar, so the banner starts below it, and it
+   overlaps the top safe-area padding of the screen under it (`pt-safe`, empty
+   by design) so that gap isn't doubled. Above sticky headers (z-40) so they
+   slide under it as the page scrolls, but under #fixed-layer's sheets and
+   dialogs (same z-index, later in the DOM). */
+.beta-banner {
+  position: relative;
+  z-index: 41;
+  display: block;
+  background: #1e3a8a;
+  color: #dbeafe;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  text-decoration: none;
+  padding: calc(7px + var(--safe-top)) max(16px, var(--safe-right)) 7px max(16px, var(--safe-left));
+  margin-bottom: calc(0.5rem - max(0.5rem, var(--safe-top)));
 }
 
 /* Clawde "flying" from the finish screen up to where it lives on the home

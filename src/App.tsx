@@ -7,6 +7,7 @@ import { RequireAuth } from './auth/RequireAuth'
 import { BottomNav } from './components/layout/BottomNav'
 import { SideNav } from './components/layout/SideNav'
 import { FixedLayer } from './components/layout/FixedLayer'
+import { BetaBannerSlot } from './components/layout/BetaBanner'
 import { useAppStore } from './store/useAppStore'
 import { Login } from './pages/Login'
 import { Onboarding } from './pages/Onboarding'
@@ -40,6 +41,7 @@ function App() {
           <FixedLayer>
             <div aria-hidden className="absolute top-0 inset-x-0 h-(--safe-top) bg-[#0a0a0a]/90 backdrop-blur-xl pointer-events-none" />
           </FixedLayer>
+          <BetaBannerSlot />
           <Routes>
             <Route path="/login" element={<PhoneColumn><Login /></PhoneColumn>} />
             <Route
