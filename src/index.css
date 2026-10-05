@@ -331,8 +331,9 @@ html {
   position: relative;
   z-index: 41;
   display: block;
-  background: #2a2f3b;
-  color: #e8e3d7;
+  background: #161616;
+  border-bottom: 1px solid #2a2a2a;
+  color: #a8a29e;
   font-size: 13px;
   line-height: 18px;
   text-align: center;

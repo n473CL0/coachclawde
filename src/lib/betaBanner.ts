@@ -4,7 +4,7 @@ import { isMidTaskPath } from './midTask'
 export const BETA_FEEDBACK_URL = 'https://chat.whatsapp.com/ExampleInvite'
 
 /** The banner's background, also used as the browser bar colour while it shows. */
-export const BETA_BANNER_BG = '#2a2f3b'
+export const BETA_BANNER_BG = '#161616'
 
 /**
  * The feedback banner opens WhatsApp, so it hides wherever leaving the app

@@ -22,7 +22,7 @@ export function BetaBanner() {
 
   return (
     <a className="beta-banner" href={BETA_FEEDBACK_URL} target="_blank" rel="noopener noreferrer">
-      This is a beta test. <strong className="font-semibold underline">Join the WhatsApp group</strong> to post
+      This is a beta test. <strong className="font-semibold text-[#d97756] underline underline-offset-2">Join the WhatsApp group</strong> to post
       feedback and ideas.
     </a>
   )
