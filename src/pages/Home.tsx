@@ -7,6 +7,7 @@ import { Button } from '../components/shared/Button'
 import { Badge } from '../components/shared/Badge'
 import { ClaudeMark } from '../components/shared/ClaudeMark'
 import { Reveal } from '../components/shared/Reveal'
+import { BetaFeedbackTile } from '../components/shared/BetaFeedbackTile'
 import { useScrollDirection } from '../hooks/useScrollDirection'
 import { getProgramProgress } from '../lib/programProgress'
 import { Calendar, ChevronRight, Dumbbell, Waves, Zap, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus, MessageCircle, X } from 'lucide-react'
@@ -179,6 +180,10 @@ export function Home() {
             </div>
           </Reveal>
         )}
+
+        <Reveal>
+          <BetaFeedbackTile />
+        </Reveal>
       </div>
 
       {showLog && <QuickLogSheet onSave={handleQuickLog} onClose={() => setShowLog(false)} />}

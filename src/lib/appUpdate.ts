@@ -1,5 +1,4 @@
 import { registerSW } from 'virtual:pwa-register'
-import { isMidTaskPath } from './midTask'
 
 /**
  * Keeps the installed app up to date.
@@ -27,10 +26,13 @@ const MIN_GAP_MS = 60 * 1000
 let pending = false
 let lastCheck = 0
 
+/** Screens where a reload would lose work in progress. */
+const UNSAFE_PATHS = ['/session/', '/onboarding', '/check-in']
+
 function isSafeToReload(): boolean {
   // Never mid-workout or mid-chat, even in the background: Run Mode keeps
   // time while the athlete glances at another app.
-  if (isMidTaskPath(location.pathname)) return false
+  if (UNSAFE_PATHS.some((p) => location.pathname.startsWith(p))) return false
   if (document.visibilityState === 'hidden') return true
   const el = document.activeElement
   if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return false
