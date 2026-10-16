@@ -35,10 +35,14 @@ export default defineConfig(({ mode, command }) => {
   // offering the button would mostly hand testers a link that never arrives.
   const ENABLE_MAGIC_LINK = pick('VITE_ENABLE_MAGIC_LINK', 'ENABLE_MAGIC_LINK')
 
+  // The testers' WhatsApp group invite. Kept out of the repo, which is public:
+  // anyone with the link could join and see the testers' phone numbers.
+  const BETA_FEEDBACK_URL = pick('VITE_BETA_FEEDBACK_URL', 'BETA_FEEDBACK_URL')
+
   // Surfaced in the Vercel build log so it's easy to confirm whether credentials
   // were present at build time (never prints the values themselves).
   console.log(
-    `[coach-claude] Supabase credentials ${
+    `[coach-clawde] Supabase credentials ${
       SUPABASE_URL && SUPABASE_ANON_KEY ? 'detected — auth enabled' : 'MISSING — app will run in local mode'
     }`,
   )
@@ -47,7 +51,7 @@ export default defineConfig(({ mode, command }) => {
   // build if package.json was bumped without a matching entry.
   if (command === 'build' && RELEASES[0]?.version !== APP_VERSION) {
     throw new Error(
-      `[coach-claude] package.json is v${APP_VERSION} but the newest release note is ` +
+      `[coach-clawde] package.json is v${APP_VERSION} but the newest release note is ` +
         `v${RELEASES[0]?.version ?? '(none)'}. Add a v${APP_VERSION} entry at the top of ` +
         'RELEASES in src/lib/releaseNotes.ts.',
     )
@@ -59,6 +63,7 @@ export default defineConfig(({ mode, command }) => {
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(SUPABASE_URL),
     'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(SUPABASE_ANON_KEY),
     'import.meta.env.VITE_ENABLE_MAGIC_LINK': JSON.stringify(ENABLE_MAGIC_LINK),
+    'import.meta.env.VITE_BETA_FEEDBACK_URL': JSON.stringify(BETA_FEEDBACK_URL),
   },
   plugins: [
     react(),
@@ -70,7 +75,7 @@ export default defineConfig(({ mode, command }) => {
       injectRegister: false,
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'Coach Claude',
+        name: 'Coach Clawde',
         short_name: 'Coach',
         description: 'AI-powered personal workout tracker',
         theme_color: '#0a0a0a',

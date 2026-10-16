@@ -20,7 +20,7 @@ export function buildMigrationFlow(profile: UserProfile): Flow {
       id: 'm.target',
       kind: 'single',
       coach: () => [
-        `Hi${profile.name ? ` ${profile.name.split(' ')[0]}` : ''}! Coach Claude can now plan around a real goal. Three quick questions, and nothing you’ve logged changes.`,
+        `Hi${profile.name ? ` ${profile.name.split(' ')[0]}` : ''}! Coach Clawde can now plan around a real goal. Three quick questions, and nothing you’ve logged changes.`,
         'Are you working towards an event or a date?',
       ],
       options: [

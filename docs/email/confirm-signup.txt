@@ -1,4 +1,4 @@
-Coach Claude — confirm your email
+Coach Clawde — confirm your email
 
 Welcome aboard! Confirm your email to activate your account. Here's what's
 waiting for you:
@@ -11,8 +11,8 @@ Confirm your email:
 
 {{ .ConfirmationURL }}
 
-If you didn't create a Coach Claude account, you can safely ignore this email.
+If you didn't create a Coach Clawde account, you can safely ignore this email.
 
 —
-Coach Claude
+Coach Clawde
 Your AI strength & conditioning coach.

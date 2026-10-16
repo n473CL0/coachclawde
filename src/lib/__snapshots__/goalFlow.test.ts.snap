@@ -25,7 +25,7 @@ exports[`§3.4 personas > snapshots each persona’s confirmation card 1`] = `
   ],
   "Has a coach’s plan": [
     "🎯 Goal: Track my own plan",
-    "📈 Starting point: You paste your plan; Claude converts it for the app",
+    "📈 Starting point: You paste your plan; Clawde converts it for the app",
     "🩹 Health: All good",
     "🔜 Next: A short weekly summary of what you did",
   ],

@@ -5,9 +5,10 @@ import { toLocalISODate } from '../lib/weekUtils'
 import { Card, CardSection } from '../components/shared/Card'
 import { Button } from '../components/shared/Button'
 import { Badge } from '../components/shared/Badge'
-import { ClaudeMark } from '../components/shared/ClaudeMark'
+import { ClawdeMark } from '../components/shared/ClawdeMark'
 import { Reveal } from '../components/shared/Reveal'
 import { BetaFeedbackTile } from '../components/shared/BetaFeedbackTile'
+import { BETA_FEEDBACK_URL } from '../lib/betaFeedback'
 import { useScrollDirection } from '../hooks/useScrollDirection'
 import { getProgramProgress } from '../lib/programProgress'
 import { Calendar, ChevronRight, Dumbbell, Waves, Zap, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus, MessageCircle, X } from 'lucide-react'
@@ -91,7 +92,7 @@ export function Home() {
               className="absolute inset-0 -m-3 rounded-full bg-[#d97756]/15 blur-2xl"
               aria-hidden
             />
-            <ClaudeMark size={68} cheer={bump} sweat={bump} className="relative" />
+            <ClawdeMark size={68} cheer={bump} sweat={bump} className="relative" />
           </div>
           <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium">
             {format(new Date(), 'EEEE, dd MMM')}
@@ -181,9 +182,11 @@ export function Home() {
           </Reveal>
         )}
 
-        <Reveal>
-          <BetaFeedbackTile />
-        </Reveal>
+        {BETA_FEEDBACK_URL && (
+          <Reveal>
+            <BetaFeedbackTile />
+          </Reveal>
+        )}
       </div>
 
       {showLog && <QuickLogSheet onSave={handleQuickLog} onClose={() => setShowLog(false)} />}
@@ -241,8 +244,8 @@ function NoPlanCTA({ onPlan, tracker }: { onPlan: () => void; tracker?: boolean 
           <h2 className="text-xl font-bold text-[#f5f5f0]">{tracker ? 'Bring in your plan' : 'Plan Your Week'}</h2>
           <p className="text-sm text-[#6a6a6a] mt-1 leading-relaxed">
             {tracker
-              ? 'Paste this week of your plan and Claude converts it for the app, so you can log it here.'
-              : 'Select your available training days, add any notes, and let Claude create your personalised workout plan.'}
+              ? 'Paste this week of your plan and Clawde converts it for the app, so you can log it here.'
+              : 'Select your available training days, add any notes, and let Clawde create your personalised workout plan.'}
           </p>
         </div>
         <Button onClick={onPlan} size="lg" fullWidth>

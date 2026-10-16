@@ -11,7 +11,7 @@ export type ProgramGoal = 'get-fit' | 'get-strong' | 'look-great';
 export type ProgramExerciseType = 'weights' | 'cardio' | 'mobility';
 /** Equipment / spaces the athlete has access to. */
 export type ProgramFacility = 'yoga-mat' | 'weights-at-home' | 'full-gym';
-/** How Claude should pitch its coaching voice. */
+/** How Clawde should pitch its coaching voice. */
 export type CoachingStyle = 'supportive' | 'balanced' | 'intense';
 /** The athlete's self-rated training experience, captured during onboarding. */
 export type ExperienceLevel = 'beginner' | 'returning' | 'intermediate' | 'advanced';

@@ -1,5 +1,9 @@
 import type { UserProfile } from '../types'
 
+/**
+ * The profile a new store starts with, until onboarding (or the database) fills
+ * it in. Deliberately blank: injuries, goals and background come from the athlete.
+ */
 export const DEFAULT_PROFILE: UserProfile = {
   name: 'Athlete',
   sex: 'male',

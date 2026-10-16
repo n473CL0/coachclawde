@@ -1,5 +1,5 @@
-// Reports the live state of the Supabase project, so the go-live checklist can
-// verify itself instead of asking you to remember what you've already done.
+// Reports the live state of the Supabase project: which env vars are set,
+// whether the schema is in place, and every account with its onboarding state.
 //
 // Read-only: it counts rows and lists accounts, and never writes anything.
 //
@@ -15,14 +15,13 @@ import { createClient } from '@supabase/supabase-js'
 const {
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
-  TARGET_USER_ID,
   VITE_SUPABASE_URL,
   VITE_SUPABASE_ANON_KEY,
 } = process.env
 
 const tick = (ok) => (ok ? '✓' : '✗')
 
-console.log('\nCoach Claude — setup check\n')
+console.log('\nCoach Clawde — setup check\n')
 
 // --- env --------------------------------------------------------------------
 console.log('Environment (.env.local)')
@@ -30,7 +29,6 @@ console.log(`  ${tick(!!VITE_SUPABASE_URL)} VITE_SUPABASE_URL        ${VITE_SUPA
 console.log(`  ${tick(!!VITE_SUPABASE_ANON_KEY)} VITE_SUPABASE_ANON_KEY   ${VITE_SUPABASE_ANON_KEY ? '(set)' : '(missing — the app needs this)'}`)
 console.log(`  ${tick(!!SUPABASE_URL)} SUPABASE_URL             ${SUPABASE_URL ?? '(missing — the scripts need this)'}`)
 console.log(`  ${tick(!!SUPABASE_SERVICE_ROLE_KEY)} SUPABASE_SERVICE_ROLE_KEY ${SUPABASE_SERVICE_ROLE_KEY ? '(set)' : '(missing — the scripts need this)'}`)
-console.log(`  ${tick(!!TARGET_USER_ID)} TARGET_USER_ID           ${TARGET_USER_ID ?? '(only needed for the legacy data import)'}`)
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.log('\nCannot check the database without SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.')
@@ -104,32 +102,6 @@ async function main() {
         : 'will onboard on first sign-in'
     const signedIn = u.last_sign_in_at ? `last in ${u.last_sign_in_at.slice(0, 10)}` : 'never signed in'
     console.log(`  • ${(u.email ?? u.id).padEnd(32)} ${state.padEnd(30)} ${signedIn}`)
-  }
-
-  // --- legacy data import ---------------------------------------------------
-  console.log('\nLegacy data import')
-  if (!TARGET_USER_ID) {
-    console.log('  – TARGET_USER_ID not set; skipping (set it to check your own import)')
-  } else {
-    const owned = async (table) => {
-      const { count } = await supabase
-        .from(table)
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', TARGET_USER_ID)
-      return count ?? 0
-    }
-    const plans = await owned('week_plans')
-    const sessions = await owned('logged_sessions')
-    const profile = profileById.get(TARGET_USER_ID)
-    console.log(`  ${tick(!!profile)} profile          ${profile ? `"${profile.name}"` : 'missing'}`)
-    console.log(`  ${tick(plans > 0)} week_plans       ${plans}  ${plans === 0 ? '(expected 7 after the import)' : ''}`)
-    console.log(`  ${tick(sessions > 0)} logged_sessions  ${sessions}  ${sessions === 0 ? '(expected 20 after the import)' : ''}`)
-    if (plans === 0 || sessions === 0) {
-      console.log('\n  → Not imported yet. Restore the files and run the importer:')
-      console.log('      DEL=$(git log --diff-filter=D --format=%H -1 -- data/)')
-      console.log('      git checkout "$DEL^" -- data/')
-      console.log('      node --env-file=.env.local scripts/migrate-data.mjs')
-    }
   }
 
   console.log(

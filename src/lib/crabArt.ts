@@ -1,5 +1,5 @@
 // Single source of truth for the Clawde crab mascot — a pixel-art crab
-// wearing a sweatband. Shared by the in-app <ClaudeMark> component and the
+// wearing a sweatband. Shared by the in-app <ClawdeMark> component and the
 // build-time app-icon generator (scripts/gen-icons.ts) so they never drift.
 //
 // Legend:

@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { useAppStore } from '../store/useAppStore'
-import { ClaudeMark } from '../components/shared/ClaudeMark'
+import { ClawdeMark } from '../components/shared/ClawdeMark'
 
 /**
  * Gates the app behind authentication and keeps the local store scoped to the
@@ -48,7 +48,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   if (loading || (identity && !pulled)) {
     return (
       <div className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
-        <ClaudeMark size={56} idle />
+        <ClawdeMark size={56} idle />
       </div>
     )
   }

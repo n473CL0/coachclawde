@@ -136,7 +136,7 @@ export function Settings() {
           <Card>
             <CardSection className="flex flex-col gap-3">
               <p className="text-xs text-[#6a6a6a] leading-relaxed">
-                Saved to your account and included in the plan prompt so Claude can program around your details.
+                Saved to your account and included in the plan prompt so Clawde can program around your details.
               </p>
               <Field label="Name">
                 <input
@@ -168,7 +168,7 @@ export function Settings() {
               </div>
               <Field
                 label="Date of birth"
-                hint={age !== undefined ? `${age} years old. Claude uses this to pitch your training.` : 'Optional. Claude uses your age to pitch your training.'}
+                hint={age !== undefined ? `${age} years old. Clawde uses this to pitch your training.` : 'Optional. Clawde uses your age to pitch your training.'}
               >
                 <input
                   type="date"
@@ -282,7 +282,7 @@ export function Settings() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#f5f5f0]">What's new</p>
-                  <p className="text-xs text-[#6a6a6a] mt-0.5">Coach Claude v{APP_VERSION} · release notes</p>
+                  <p className="text-xs text-[#6a6a6a] mt-0.5">Coach Clawde v{APP_VERSION} · release notes</p>
                 </div>
                 <ChevronRight size={16} className="text-[#4a4a4a] shrink-0" />
               </CardSection>

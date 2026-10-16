@@ -1,4 +1,4 @@
-Coach Claude — secure sign-in
+Coach Clawde — secure sign-in
 
 Let's get you back to training. Use the link below to sign in to your
 account. For your security, it works once and expires in 60 minutes.
@@ -9,5 +9,5 @@ Didn't request this? You can safely ignore this email — your account
 stays locked without the link above.
 
 —
-Coach Claude
+Coach Clawde
 Your AI strength & conditioning coach.

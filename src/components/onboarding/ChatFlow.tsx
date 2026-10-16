@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Check, Send } from 'lucide-react'
-import { ClaudeMark } from '../shared/ClaudeMark'
+import { ClawdeMark } from '../shared/ClawdeMark'
 import { Button } from '../shared/Button'
 import { TimeInput } from '../shared/TimeInput'
 import {
@@ -127,7 +127,7 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
 function Avatar({ visible }: { visible: boolean }) {
   return (
     <div className="w-8 shrink-0 flex items-end">
-      {visible && <ClaudeMark size={30} idle={false} />}
+      {visible && <ClawdeMark size={30} idle={false} />}
     </div>
   )
 }

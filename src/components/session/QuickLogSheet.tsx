@@ -80,7 +80,7 @@ export function QuickLogSheet({
         <div>
           <h3 className="text-lg font-bold text-[#f5f5f0]">{plannedTitle ? 'Did something else?' : 'Log a session'}</h3>
           <p className="text-sm text-[#6a6a6a] mt-0.5">
-            {plannedTitle ? `Instead of ${plannedTitle}. It counts, and Claude will see it.` : 'Anything you did outside the plan.'}
+            {plannedTitle ? `Instead of ${plannedTitle}. It counts, and Clawde will see it.` : 'Anything you did outside the plan.'}
           </p>
         </div>
         <SheetCloseButton onClose={onClose} />

@@ -1,4 +1,4 @@
-// Create (or re-password) Coach Claude beta accounts.
+// Create (or re-password) Coach Clawde beta accounts.
 //
 // Beta testers sign in with an email + password you hand them directly, so no
 // email delivery is involved — nothing to rate-limit, nothing to land in spam.

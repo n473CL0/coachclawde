@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { Button } from '../components/shared/Button'
-import { ClaudeMark } from '../components/shared/ClaudeMark'
+import { ClawdeMark } from '../components/shared/ClawdeMark'
 import { ChatFlow } from '../components/onboarding/ChatFlow'
 import { ConfirmCard } from '../components/onboarding/ConfirmCard'
 import { rewindTo, type FlowAnswers, type FlowValue } from '../lib/flow'
@@ -194,7 +194,7 @@ export function Onboarding() {
               ) : (
                 <Button onClick={handleFinish}>
                   <Sparkles size={18} />
-                  Enter Coach Claude
+                  Enter Coach Clawde
                 </Button>
               )}
             </div>
@@ -254,7 +254,7 @@ function AboutStep({
   )
   return (
     <div>
-      <StepHeading title="A bit about you" subtitle="Only your name is required. The rest helps Claude pitch your weights and pacing." />
+      <StepHeading title="A bit about you" subtitle="Only your name is required. The rest helps Clawde pitch your weights and pacing." />
       <div className="flex flex-col gap-5">
         <div>
           <FieldLabel>What should I call you? *</FieldLabel>
@@ -342,7 +342,7 @@ function FinishStep({ name }: { name: string }) {
       <div className="flex-1 flex flex-col items-center justify-center text-center gap-5 py-6">
         <div className="relative">
           <div className="absolute inset-0 -m-4 rounded-full bg-[#d97756]/15 blur-2xl" aria-hidden />
-          <ClaudeMark size={104} cheer sweat className="relative" />
+          <ClawdeMark size={104} cheer sweat className="relative" />
         </div>
         <h1 className="text-3xl font-bold text-[#f5f5f0]">
           You're all set{first ? `, ${first}` : ''}!
@@ -390,7 +390,7 @@ function InstallTips() {
           <Smartphone size={16} className="text-[#d97756]" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-[#f5f5f0]">Add Coach Claude to your home screen</p>
+          <p className="text-sm font-semibold text-[#f5f5f0]">Add Coach Clawde to your home screen</p>
           <p className="text-xs text-[#6a6a6a]">Full-screen and offline-ready. No app store needed.</p>
         </div>
         {open ? <ChevronUp size={16} className="text-[#4a4a4a]" /> : <ChevronDown size={16} className="text-[#4a4a4a]" />}
@@ -478,7 +478,7 @@ function FlightToHome({ name }: { name: string }) {
           See you in there{name.trim() ? `, ${name.trim().split(' ')[0]}` : ''}…
         </p>
         <div
-          className="claude-flight absolute"
+          className="clawde-flight absolute"
           style={{
             // Landing point tracks Home's mascot: below the status bar, and
             // centred in the content column (offset by the sidebar on iPad).
@@ -488,7 +488,7 @@ function FlightToHome({ name }: { name: string }) {
             opacity: landed ? 0 : 1,
           }}
         >
-          <ClaudeMark size={96} sweat />
+          <ClawdeMark size={96} sweat />
         </div>
       </div>
     </FixedLayer>

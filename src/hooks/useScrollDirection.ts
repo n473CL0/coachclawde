@@ -4,7 +4,7 @@ export type ScrollDirection = 'up' | 'down'
 
 /**
  * Tracks vertical scroll direction on a scrollable element (defaults to the
- * window). Used to give the Claude mark its playful scroll-up reaction.
+ * window). Used to give the Clawde mark its playful scroll-up reaction.
  *
  * `bump` flips to true briefly each time the user scrolls up, so a component
  * can re-trigger a one-shot animation without managing timers itself.

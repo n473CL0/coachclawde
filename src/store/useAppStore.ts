@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AppState, CheckIn, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
 import { DEFAULT_PROFILE } from '../lib/profileData'
+import { STORAGE_KEYS } from '../lib/storageKeys'
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
 import { normalizePlan } from '../lib/workout'
 import { scopePlansAndLogs, scopeSessionIds } from '../lib/planIds'
@@ -145,7 +146,7 @@ export const useAppStore = create<AppStore>()(
       }),
     }),
     {
-      name: 'coach-claude-store',
+      name: STORAGE_KEYS.store,
       // Plans cached before structured workouts get one on rehydrate.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>

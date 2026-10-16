@@ -1,4 +1,4 @@
--- Coach Claude v0.2.0 — multi-user schema
+-- Coach Clawde v0.2.0 — multi-user schema
 --
 -- Run this in the Supabase SQL editor (or via the Supabase CLI) once, after
 -- creating the project. Every table is owner-scoped with Row-Level Security so a
@@ -10,7 +10,7 @@
 -- index are promoted out of the JSON.
 
 -- ---------------------------------------------------------------------------
--- profiles — one row per user. This is the "background" Claude needs to plan.
+-- profiles — one row per user. This is the "background" Clawde needs to plan.
 -- ---------------------------------------------------------------------------
 create table if not exists public.profiles (
   id                 uuid primary key references auth.users (id) on delete cascade,

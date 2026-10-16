@@ -129,7 +129,7 @@ export function CompleteFlow({ sessionTitle, isLastSessionOfWeek, onSave, onChec
                   ))}
                 </div>
                 {outcome === 'modified' && (
-                  <p className="text-xs text-[#6a6a6a] mt-2">Say what changed in the note below. Claude reads it when planning next week.</p>
+                  <p className="text-xs text-[#6a6a6a] mt-2">Say what changed in the note below. Clawde reads it when planning next week.</p>
                 )}
               </div>
 

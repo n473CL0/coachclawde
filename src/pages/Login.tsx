@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Button } from '../components/shared/Button'
-import { ClaudeMark } from '../components/shared/ClaudeMark'
+import { ClawdeMark } from '../components/shared/ClawdeMark'
 import { Mail, AlertCircle, CheckCircle, LogIn } from 'lucide-react'
 
 /**
@@ -90,7 +90,7 @@ export function Login() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
-        <ClaudeMark size={56} idle />
+        <ClawdeMark size={56} idle />
       </div>
     )
   }
@@ -104,8 +104,8 @@ export function Login() {
           instead of pushing the top of the form under the status bar. */}
       <div className="my-auto w-full max-w-sm flex flex-col items-center gap-8 py-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <ClaudeMark size={72} sweat />
-          <h1 className="text-2xl font-bold text-[#f5f5f0]">Coach Claude</h1>
+          <ClawdeMark size={72} sweat />
+          <h1 className="text-2xl font-bold text-[#f5f5f0]">Coach Clawde</h1>
           <p className="text-sm text-[#6a6a6a] leading-relaxed">
             Sign in to sync your training across devices and generate personalised weekly plans.
           </p>

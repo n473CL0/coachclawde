@@ -1,6 +1,6 @@
 #!/bin/bash
 # SessionStart hook: make sure the app can build, lint and run during a session.
-# Coach Claude is a Vite + TypeScript PWA, so dependencies must be installed
+# Coach Clawde is a Vite + TypeScript PWA, so dependencies must be installed
 # before any `npm run lint` / `npm run build` / `npm run dev` will work.
 set -euo pipefail
 

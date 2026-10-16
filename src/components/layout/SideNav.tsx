@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Settings } from 'lucide-react'
-import { ClaudeMark } from '../shared/ClaudeMark'
+import { ClawdeMark } from '../shared/ClawdeMark'
 import { NAV_ITEMS, isFullscreenRoute, type NavItem } from './navItems'
 
 const SETTINGS_ITEM: NavItem = { path: '/settings', icon: Settings, label: 'Settings' }
@@ -40,8 +40,8 @@ export function SideNav() {
       className="hidden @3xl/app:flex sidebar-dock shrink-0 sticky top-0 h-svh flex-col gap-1 pr-3 pt-safe pb-edge border-r border-[#1a1a1a]"
     >
       <div className="flex items-center gap-2.5 px-3 pt-3 pb-5">
-        <ClaudeMark size={28} idle={false} />
-        <span className="text-sm font-semibold text-[#f5f5f0]">Coach Claude</span>
+        <ClawdeMark size={28} idle={false} />
+        <span className="text-sm font-semibold text-[#f5f5f0]">Coach Clawde</span>
       </div>
       {NAV_ITEMS.map(item)}
       <div className="mt-auto">{item(SETTINGS_ITEM)}</div>

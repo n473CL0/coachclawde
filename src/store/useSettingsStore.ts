@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { SyncStatus } from '../lib/supabaseSync'
+import { STORAGE_KEYS } from '../lib/storageKeys'
 
 interface SettingsStore {
   lastSyncAt: string | null
@@ -25,7 +26,7 @@ export const useSettingsStore = create<SettingsStore>()(
         set({ lastSyncAt: new Date().toISOString(), syncStatus: 'success', syncError: null }),
     }),
     {
-      name: 'coach-claude-settings',
+      name: STORAGE_KEYS.settings,
       partialize: (s) => ({ lastSyncAt: s.lastSyncAt }),
     }
   )

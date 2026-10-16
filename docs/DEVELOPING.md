@@ -1,4 +1,4 @@
-# Developing Coach Claude (code changes)
+# Developing Coach Clawde (code changes)
 
 This guide is for when you're asked to **change the app's code**. It is kept
 out of `CLAUDE.md` on purpose: most requests to this repo are workout-plan
@@ -29,12 +29,6 @@ needs working SMTP, which a free Supabase project doesn't have. The flag is
 resolved in `vite.config.ts` alongside the Supabase credentials and typed in
 `src/vite-env.d.ts`; with it unset the whole branch is dead code and drops out
 of the bundle.
-
-> **Removed in the database-only change:** the `admin` login and its
-> GitHub-storage backend (`src/lib/githubSync.ts`, `src/auth/adminMode.ts`),
-> which read and wrote `data/*.json` through the Contents API and committed on
-> every sync. All data now lives in Supabase. The legacy JSON files are
-> recoverable from the `v0.2.0-final-data` tag if ever needed.
 
 ## Commands
 
@@ -79,7 +73,7 @@ always seen, and caches the hashed `/assets/*` forever.
 
 `npm run build` fails if the newest `RELEASES` entry doesn't match
 `package.json`, so an update can't ship without notes. Which version a device
-has seen is kept in `localStorage` (`coach-claude-seen-version`), outside the
+has seen is kept in `localStorage` (`coach-clawde-seen-version`), outside the
 Zustand store so signing out and back in doesn't replay it; brand-new athletes
 are marked as seen when they finish onboarding.
 
@@ -91,7 +85,7 @@ are marked as seen when they finish onboarding.
   stay in sync.
 - `src/store/useAppStore.ts` — main Zustand store (profile, week plans, logged
   sessions, active session, rest timer). Persisted to `localStorage` under
-  `coach-claude-store` via `partialize` (timer/active session are intentionally
+  `coach-clawde-store` via `partialize` (timer/active session are intentionally
   not persisted) — this is the offline working cache; Supabase is the source of
   truth. `src/store/useSettingsStore.ts` — sync status only.
 - `src/auth/` — `AuthProvider` (Supabase session + `useAuth()`), `RequireAuth`
@@ -114,7 +108,11 @@ are marked as seen when they finish onboarding.
   then "About you", then finish. `?from=<node>` re-enters the tree for an
   onboarded athlete.
 - `components/shared/BetaFeedbackTile` — the Home tile linking beta testers
-  to the WhatsApp feedback group (link in `lib/betaFeedback`).
+  to the WhatsApp feedback group. The invite link is build-time config
+  (`VITE_BETA_FEEDBACK_URL`, read in `lib/betaFeedback`), never source, and
+  the tile is hidden when it's unset.
+- `lib/storageKeys` — every `localStorage` key. They were `coach-claude-*`
+  before the rename; importing the module carries old values over once.
 - `src/components/session/MovementGuide` + `src/lib/exerciseGuide` — per-exercise
   help sheets from free-exercise-db (fetched from jsDelivr, cached by the service
   worker), fuzzy-matched by name with a YouTube-search fallback. `RoutineCard`
@@ -130,7 +128,7 @@ are marked as seen when they finish onboarding.
   (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `export`, `nanoid`, `programOptions`
   (shared labels for the program preference enums).
   `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
-- **Runners & athletes (v1.0.2, design in `docs/RUNNERS-AND-ATHLETES.md`):**
+- **Runners & athletes (v1.0.2):**
   - `lib/flow` — the flow-as-data engine (`walk`, `rewindTo`, `enumeratePaths`)
     behind every chat. Deterministic, no AI. `components/onboarding/ChatFlow`
     renders any flow.
@@ -150,13 +148,12 @@ are marked as seen when they finish onboarding.
     thresholds, zones, tapers, deloads). Must be reviewed by a qualified coach.
   - `lib/quickLog` — "Did something else?" and "Log a session".
 - `scripts/create-beta-user.mjs` — provisions beta accounts (email + password,
-  pre-confirmed) with the service-role key. `scripts/migrate-data.mjs` imports
-  the legacy `data/*.json` files into an account; restore them from the
-  `v0.2.0-final-data` tag first. `scripts/check-setup.mjs` is a read-only status
-  report (env vars, table row counts, accounts, whether the legacy import ran).
-- `.claude/commands/go-live.md` — the `/go-live` slash command: the ordered
-  cutover-and-beta-launch checklist, with gates on the steps that are unsafe to
-  do out of order.
+  pre-confirmed) with the service-role key. `scripts/check-setup.mjs` is a
+  read-only status report (env vars, schema, accounts and their onboarding
+  state).
+- `site/` — the static marketing page published to GitHub Pages by
+  `.github/workflows/pages.yml`. Plain HTML/CSS/JS, no build step, and not part
+  of the app bundle.
 
 ## Conventions & gotchas
 
@@ -167,8 +164,8 @@ are marked as seen when they finish onboarding.
 - IDs are generated with `src/lib/nanoid.ts`; dates are local-ISO via
   `weekUtils`/`dateUtils` (don't hand-roll date math — DST/Monday-start logic
   already lives there).
-- Keep changes minimal and typed; never weaken or remove the shoulder/knee safety
-  semantics encoded in the data shapes or plan logic.
+- Keep changes minimal and typed; never weaken or remove the injury-safety
+  semantics (CLAUDE.md, rule 1) encoded in the data shapes or plan logic.
 - `dist/` and `node_modules/` are git-ignored — never commit them.
 - **No athlete data belongs in this repo.** It lives in each user's Supabase
   rows; nothing in the app writes to git any more.

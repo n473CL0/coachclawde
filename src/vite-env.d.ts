@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY: string
   /** 'true' shows the magic-link sign-in option; anything else hides it. */
   readonly VITE_ENABLE_MAGIC_LINK: string
+  /** The beta testers' WhatsApp group invite; empty hides the Home feedback tile. */
+  readonly VITE_BETA_FEEDBACK_URL: string
 }
 
 interface ImportMeta {

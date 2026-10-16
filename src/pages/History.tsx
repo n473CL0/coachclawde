@@ -7,7 +7,7 @@ import { Badge } from '../components/shared/Badge'
 import { ChevronRight, Dumbbell, Waves, Star, Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { useAutoSync } from '../hooks/useAutoSync'
-import { ClaudeMark } from '../components/shared/ClaudeMark'
+import { ClawdeMark } from '../components/shared/ClawdeMark'
 import { formatSessionDate, formatDuration } from '../lib/dateUtils'
 import type { Intensity, LoggedSession } from '../types'
 import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
@@ -35,11 +35,11 @@ export function History() {
         <PageHeader title="History" />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 pb-tabbar">
           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#241712] to-[#141414] ring-1 ring-[#d97756]/25 flex items-center justify-center">
-            <ClaudeMark size={48} sweat />
+            <ClawdeMark size={48} sweat />
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-[#f5f5f0]">No sessions yet</p>
-            <p className="text-sm text-[#6a6a6a] mt-1">Complete your first session — Claude's warmed up and waiting.</p>
+            <p className="text-sm text-[#6a6a6a] mt-1">Complete your first session — Clawde's warmed up and waiting.</p>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { crabCells } from '../../lib/crabArt'
 
-interface ClaudeMarkProps {
+interface ClawdeMarkProps {
   size?: number
   className?: string
   /** Gentle idle breathing/bob animation */
@@ -22,7 +22,7 @@ const CELLS = crabCells()
  * crisp pixel rects so it stays sharp at any size and matches the home-screen
  * app icon generated from the same grid.
  */
-export function ClaudeMark({ size = 40, className = '', idle = true, cheer = false, sweat = false }: ClaudeMarkProps) {
+export function ClawdeMark({ size = 40, className = '', idle = true, cheer = false, sweat = false }: ClawdeMarkProps) {
   return (
     <svg
       width={size}
@@ -34,7 +34,7 @@ export function ClaudeMark({ size = 40, className = '', idle = true, cheer = fal
       className={`overflow-visible ${className}`}
     >
       <g
-        className={`${idle ? 'claude-bob' : ''} ${cheer ? 'claude-cheer' : ''}`}
+        className={`${idle ? 'clawde-bob' : ''} ${cheer ? 'clawde-cheer' : ''}`}
         style={{ transformOrigin: '52px 48px' }}
       >
         {CELLS.map((c, i) => (
@@ -51,7 +51,7 @@ export function ClaudeMark({ size = 40, className = '', idle = true, cheer = fal
 
       {/* A bead of sweat that drips off the band's right tip */}
       {sweat && (
-        <g className="claude-sweat" style={{ transformOrigin: '100px 52px' }}>
+        <g className="clawde-sweat" style={{ transformOrigin: '100px 52px' }}>
           <rect x="96" y="50" width="8" height="9" fill="#7cc5ff" />
           <rect x="97.6" y="51.6" width="2.6" height="2.6" fill="#bfe2ff" />
         </g>

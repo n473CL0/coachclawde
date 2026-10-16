@@ -1,4 +1,4 @@
-# Coach Claude — Workout Tracker
+# Coach Clawde — Workout Tracker
 
 This repo is a workout tracking PWA. Claude generates personalised weekly workout plans from a prompt the app produces.
 

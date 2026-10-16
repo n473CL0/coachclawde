@@ -1,11 +1,12 @@
 import { RELEASES, compareVersions, releasesSince, type Release } from './releaseNotes'
+import { STORAGE_KEYS } from './storageKeys'
 
 /** The running app's version, injected from package.json at build time. */
 export const APP_VERSION: string = __APP_VERSION__
 
 // Per device, outside the Zustand store: the store is reset on sign-out, and we
 // don't want signing back in to replay notes the tester has already read.
-const SEEN_KEY = 'coach-claude-seen-version'
+const SEEN_KEY = STORAGE_KEYS.seenVersion
 
 function readSeen(): string | null {
   try {

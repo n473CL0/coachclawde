@@ -1,6 +1,6 @@
 # Device-fit audit
 
-An audit of how Coach Claude adapts to the device it runs on. It covers safe
+An audit of how Coach Clawde adapts to the device it runs on. It covers safe
 areas, viewport sizes, orientation, the on-screen keyboard, hardcoded offsets,
 corner-radius nesting, the iOS text-size setting and light/dark mode. It does
 **not** cover visual style. No code has been changed. Each finding has a

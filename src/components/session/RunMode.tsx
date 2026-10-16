@@ -3,7 +3,7 @@ import { Lock, Pause, Play, Plus, SkipForward, Trash2, Volume2, X } from 'lucide
 import type { CardioType, LoggedInterval, LoggedStep, SessionOutcome } from '../../types'
 import { FixedLayer } from '../layout/FixedLayer'
 import { Button } from '../shared/Button'
-import { ClaudeMark } from '../shared/ClaudeMark'
+import { ClawdeMark } from '../shared/ClawdeMark'
 import { ConfirmDialog } from '../shared/ConfirmDialog'
 import { DurationStepper } from '../shared/Stepper'
 import { WorkoutStrip } from './WorkoutStrip'
@@ -471,7 +471,7 @@ function RunTour({ step, onStep, onDone }: { step: number; onStep: (n: number) =
     <div className="absolute inset-0 z-30 bg-black/70 px-5 pt-safe" role="dialog" aria-modal="true" aria-label="How Run Mode works">
       <div className="mt-6 rounded-3xl bg-[#161616] border border-[#2a2a2a] p-4 flex flex-col gap-3 fade-in" key={step}>
         <div className="flex items-start gap-3">
-          <ClaudeMark size={44} className="shrink-0" />
+          <ClawdeMark size={44} className="shrink-0" />
           <div className="min-w-0">
             <p className="text-2xs font-semibold text-[#d97756] uppercase tracking-widest">
               Clawde's tip · {step + 1} of {TOUR.length}
@@ -637,7 +637,7 @@ function RunReview({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={1}
-          placeholder={outcome === 'modified' ? 'What changed? (Claude reads this)' : 'Anything else? (optional)'}
+          placeholder={outcome === 'modified' ? 'What changed? (Clawde reads this)' : 'Anything else? (optional)'}
           className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#4a4a4a] resize-none focus:outline-none focus:border-[#d97756]/50"
         />
       </div>

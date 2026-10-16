@@ -355,7 +355,7 @@ export function WeekPlanner() {
         {/* Notes (tracker mode: the pasted plan) */}
         <Card>
           <CardSection>
-            <p className="text-sm font-medium text-[#a8a29e] mb-3">{tracker ? 'Paste this week of your plan' : 'Any extra context for Claude?'}</p>
+            <p className="text-sm font-medium text-[#a8a29e] mb-3">{tracker ? 'Paste this week of your plan' : 'Any extra context for Clawde?'}</p>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -552,7 +552,7 @@ function RunsWithCard({ profile, onSave }: { profile: UserProfile; onSave: (patc
   return (
     <Card>
       <CardSection>
-        <p className="text-sm font-medium text-[#a8a29e]">Before Claude plans your runs: what do you run with?</p>
+        <p className="text-sm font-medium text-[#a8a29e]">Before Clawde plans your runs: what do you run with?</p>
         <p className="text-xs text-[#6a6a6a] mt-1 mb-3">With just a phone, reps are set by time, because a phone can’t tell you when you’ve run 800 m.</p>
         <div className="flex flex-wrap gap-2 mb-3">
           {RUNS_WITH.map((o) => {

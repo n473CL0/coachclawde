@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { Check, MessageCircleHeart, Sparkles, RefreshCw } from 'lucide-react'
 import { Button } from './Button'
-import { ClaudeMark } from './ClaudeMark'
+import { ClawdeMark } from './ClawdeMark'
 import { BottomSheet } from './BottomSheet'
 import { markVersionSeen, unseenReleases } from '../../lib/appVersion'
 import type { Release } from '../../lib/releaseNotes'
@@ -35,7 +35,7 @@ export function WhatsNewSheet({ releases, onClose }: { releases: Release[]; onCl
   return (
     <BottomSheet label={`What's new in version ${latest.version}`} onClose={onClose}>
       <div className="flex flex-col items-center text-center px-6 pt-6 pb-4">
-        <ClaudeMark size={64} cheer sweat />
+        <ClawdeMark size={64} cheer sweat />
         <p className="text-2xs font-semibold text-[#d97756] uppercase tracking-widest mt-3">
           What's new · v{latest.version}
         </p>

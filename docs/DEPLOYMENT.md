@@ -1,353 +1,216 @@
-# Deploying Coach Claude v0.2.0 (multi-user + login)
+# Deploying Coach Clawde
 
-This guide covers the steps **you** have to do by hand to take the app from the
-single-user GitHub-JSON setup to a multi-user app on Vercel with login and a
-Supabase database. Code changes are already in the repo; the steps below are the
-clicks-in-dashboards parts that can't be automated from here.
+How to run your own copy of Coach Clawde: a Vite single-page app on Vercel,
+with Supabase for the database, sign-in and per-user access control.
 
-> **Architecture in one line:** the Vite SPA still deploys to Vercel as static
-> files; **Supabase** provides the database, authentication (email magic-link) and
-> Row-Level Security so each user only sees their own data. No custom server is
-> required — the browser talks to Supabase directly with the public anon key, and
-> RLS does the access control.
+> **Architecture in one line:** the SPA deploys to Vercel as static files;
+> **Supabase** provides Postgres, authentication and Row-Level Security, so each
+> athlete only ever sees their own rows. There is no custom server: the browser
+> talks to Supabase directly with the public anon key, and RLS does the access
+> control.
 
-There are six phases:
+The steps:
 
 1. Create the Supabase project (via the Vercel Marketplace)
 2. Create the database schema
-3. Configure authentication (email magic-link)
-4. Wire up environment variables & redeploy
-5. Migrate your existing data into your new account
+3. Configure authentication
+4. Set environment variables and redeploy
+5. Create beta accounts
 6. Smoke-test
+
+`node --env-file=.env.local scripts/check-setup.mjs` reports where a project
+stands at any point: which variables are set, whether the schema is in place,
+and every account with its onboarding state. It is read-only.
 
 ---
 
-> **Running this from Claude Code?** `/go-live` walks these steps in order,
-> verifies each one as it goes, and refuses to create beta accounts before
-> migration 0003 is applied. `node --env-file=.env.local scripts/check-setup.mjs`
-> reports the current state of the project on its own.
-
 ## 1. Add Supabase via the Vercel Marketplace
 
-1. In the [Vercel dashboard](https://vercel.com), open your **coach-claude**
-   project (import it from GitHub first if it isn't there yet).
-2. Go to the **Integrations** / **Marketplace** tab → search **Supabase** →
-   **Add Integration** (or **Install**).
-3. Choose to **create a new Supabase project** and connect it to the
-   coach-claude Vercel project. Pick a region near you.
-4. When it finishes, the integration **automatically adds these environment
-   variables** to the Vercel project: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
-   `SUPABASE_SERVICE_ROLE_KEY`, etc.
+1. In the [Vercel dashboard](https://vercel.com), import the repo as a new
+   project (framework preset: Vite; `vercel.json` already sets the build).
+2. Open the project's **Integrations** / **Marketplace** tab → search
+   **Supabase** → **Add Integration**.
+3. Choose to **create a new Supabase project** and connect it to this Vercel
+   project. Pick a region near your athletes.
+4. The integration adds `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY` and friends to the Vercel project.
 
-> ℹ️ The build (`vite.config.ts`) auto-detects the integration's
-> `SUPABASE_URL` / `SUPABASE_ANON_KEY` (and Next-style `NEXT_PUBLIC_*`) names, so
-> in most cases **you don't need to add `VITE_` aliases** — just make sure the
-> vars exist for the environment you're testing (Preview and/or Production) and
-> **redeploy** so the build picks them up. If you ever build outside Vercel, you
-> can still set `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` explicitly.
+> ℹ️ The build (`vite.config.ts`) picks up the integration's `SUPABASE_URL` /
+> `SUPABASE_ANON_KEY` (and Next-style `NEXT_PUBLIC_*`) names, so you don't need
+> to add `VITE_` aliases. Building somewhere else? Set `VITE_SUPABASE_URL` /
+> `VITE_SUPABASE_ANON_KEY` explicitly; they take priority.
 
-You now also have a Supabase project dashboard at https://supabase.com/dashboard
-— most of the remaining steps happen there.
+You now have a Supabase dashboard at https://supabase.com/dashboard, where most
+of the remaining steps happen.
 
 ---
 
 ## 2. Create the database schema
 
-1. Open your project in the **Supabase dashboard** → **SQL Editor** → **New
-   query**.
+1. Supabase → **SQL Editor** → **New query**.
 2. Run **every file in [`supabase/migrations/`](../supabase/migrations/) in
-   numerical order** — paste each one's contents and click **Run**:
-   `0001_init.sql`, `0002_onboarding.sql`, `0003_fix_new_user_onboarding.sql`,
-   `0004_profile_birth_date.sql`, `0005_goal_profile.sql`,
-   `0006_check_ins.sql`.
-3. Confirm under **Table Editor** that `profiles`, `week_plans` and
-   `logged_sessions` exist, and under **Authentication → Policies** that each has
-   an "owner-only" RLS policy.
+   numerical order** (`0001` … `0006`): paste each one's contents, **Run**.
+3. Check under **Table Editor** that `profiles`, `week_plans`,
+   `logged_sessions` and `check_ins` exist, and under **Authentication →
+   Policies** that each has an owner-only RLS policy.
 
-`0001` installs a trigger that auto-creates a `profiles` row whenever someone
-signs up, so the app always has a profile to read. **`0003` is not optional** —
-without it that row is marked as already-onboarded, and every new account skips
-the onboarding slideshow and lands in the app with an empty profile (no
-injuries, no goals), which the plan generator depends on.
+Why each one matters:
 
-**`0004` must be applied before deploying the build that asks for a date of
-birth.** The app writes a `birth_date` column on every profile save; without it
-each save (and "Sync now") fails with *Could not find the 'birth_date' column
-of 'profiles' in the schema cache*. Running the migration fixes it — no app
-change or re-login needed.
+| Migration | What it does |
+| --- | --- |
+| `0001_init` | The tables, owner-only RLS, and a trigger that creates a `profiles` row for every new user. |
+| `0002_onboarding` | The `onboarded` flag (plus `experience_level`) that sends new athletes through the onboarding chat. |
+| `0003_fix_new_user_onboarding` | **Not optional.** Without it, new accounts skip onboarding and land in the app with an empty profile (no injuries, no goals), which plan generation depends on. |
+| `0004_profile_birth_date` | The `birth_date` column. Every profile save writes it, so saves fail without it. |
+| `0005_goal_profile` | The `goal_profile` column (goal, event, constraints, health flags). Same failure mode as `0004`. |
+| `0006_check_ins` | The weekly check-ins table. Without it check-ins stay on the device and the sync indicator shows an error. |
 
-**`0005` and `0006` must be applied before deploying v1.0.2.** `0005` adds the
-`goal_profile` column that every profile save writes (same failure as `0004`
-if it's missing). `0006` adds the `check_ins` table, owner-only like
-`logged_sessions`; without it check-ins stay on the device and the sync
-indicator shows an error when one is saved.
-
-*(Optional, if you prefer the CLI: `npm i -g supabase`, `supabase link
---project-ref <ref>`, then `supabase db push`.)*
+*(Prefer the CLI? `npm i -g supabase`, `supabase link --project-ref <ref>`,
+then `supabase db push`.)*
 
 ---
 
 ## 3. Configure authentication
 
-### 3a. Set the Site URL & redirect URLs
+### Site URL and redirect URLs
 
-In Supabase → **Authentication → URL Configuration**:
+Supabase → **Authentication → URL Configuration**:
 
-- **Site URL:** your canonical production URL, e.g. `https://coach-claude.vercel.app`.
-- **Redirect URLs (allow-list):** the app asks Supabase to send you back to the
-  origin you signed in from (`emailRedirectTo`/`redirectTo = window.location.origin`).
-  **Supabase only honours that if the origin matches an entry here — otherwise it
-  silently falls back to the Site URL.** That's why a magic link opened from a
-  Preview or localhost can dump you on the production deployment. Add (wildcards
-  are supported):
+- **Site URL:** your production URL, e.g. `https://coach-clawde.vercel.app`.
+- **Redirect URLs:** the app asks Supabase to send people back to the origin
+  they signed in from (`redirectTo = window.location.origin`). Supabase only
+  honours that if the origin matches an entry here; otherwise it silently falls
+  back to the Site URL. Add (wildcards are supported):
 
   ```
   http://localhost:5173/**
-  https://coach-claude.vercel.app/**
-  https://coach-claude-git-*-<your-vercel-scope>.vercel.app/**
-  https://coach-claude-*-<your-vercel-scope>.vercel.app/**
+  https://coach-clawde.vercel.app/**
+  https://coach-clawde-git-*-<your-vercel-scope>.vercel.app/**
+  https://coach-clawde-*-<your-vercel-scope>.vercel.app/**
   ```
 
-  The third line covers the **stable per-branch preview alias** (recommended for
-  testing); the fourth covers the per-deployment hash URLs. Replace
-  `<your-vercel-scope>` with your Vercel username/team slug (copy a real preview
-  URL and match its shape).
+  The third line covers the stable per-branch preview alias (the easiest URL
+  to test against); the fourth covers per-deployment URLs. Replace
+  `<your-vercel-scope>` with your Vercel username or team slug.
 
-> After changing these, request a **fresh** magic link — an already-sent link has
-> the old redirect baked in. Tip: for day-to-day testing, the stable branch-alias
-> preview URL (`…-git-<branch>-…`) is far less painful than the per-deploy hash
-> URLs, since it doesn't change every push.
+### Sign-in methods
 
-### 3b. Sign-in methods
+The login screen uses Supabase's **Email** provider (enabled by default):
 
-The login screen offers two paths against the same Supabase **Email** provider
-(Supabase → **Authentication → Providers → Email**, enabled by default):
+- **Email + password**: the primary path, and what the beta runs on. You
+  create each account yourself ([§5](#5-create-beta-accounts)) and hand out the
+  credentials, so no email is ever sent: nothing to rate-limit, nothing to land
+  in spam, no SMTP bill.
+- **Magic link**: implemented but **hidden** unless `VITE_ENABLE_MAGIC_LINK`
+  is exactly `true`. Supabase's built-in mailer allows only a couple of emails
+  an hour, so turn it on only after configuring custom SMTP under **Project
+  Settings → Auth → SMTP Settings** (Brevo, Resend, Postmark…). Custom SMTP
+  needs a sending domain you own.
 
-- **Email + password** — the primary path, and what the beta runs on. You create
-  each account yourself (see [§7](#7-create-beta-accounts)) and hand out the
-  credentials, so **no email is sent and nothing can be rate-limited or
-  spam-filtered**. Accounts are created pre-confirmed.
-- **Magic link** — **hidden by default.** The code is wired up, but the option
-  only appears when `VITE_ENABLE_MAGIC_LINK` is exactly `true`. Supabase's
-  built-in mailer allows only a couple of messages an hour, so offering the
-  button without real SMTP behind it mostly promises testers an email that
-  never arrives.
+### Branded email templates
 
-**The closed beta needs no email setup at all** — password accounts never send
-one, so there is nothing to rate-limit and no SMTP bill.
-
-To turn magic links on later: configure **custom SMTP** under **Project Settings
-→ Auth → SMTP Settings** (Brevo, Resend, Postmark, SendGrid…), then set
-`VITE_ENABLE_MAGIC_LINK=true` in Vercel (and `.env.local` for dev) and redeploy.
-`docs/email/` holds the branded templates, and the
-`claude/smtp-resend-to-brevo-1jn9ng` branch has a full Brevo walkthrough.
-
-### 3c. Branded email templates
-
-Drop the templates in [`docs/email/`](email/) into Supabase →
-**Authentication → Email Templates**:
+For magic links or sign-up confirmation emails, paste the templates in
+[`docs/email/`](email/) into Supabase → **Authentication → Email Templates**:
 
 | Supabase template | File |
 | --- | --- |
 | **Magic Link** | `docs/email/magic-link.html` |
 | **Confirm signup** | `docs/email/confirm-signup.html` |
 
-Keep the `{{ .ConfirmationURL }}` placeholder intact — Supabase fills it in. The
-editor is HTML-only, so the matching `.txt` files are only needed if you send via
-the Resend API directly (e.g. a Supabase *Send Email* hook), where you can supply
-both an HTML and a text part.
+Keep the `{{ .ConfirmationURL }}` placeholder intact. The `.txt` versions are
+for providers that take a plain-text part as well.
 
-The brand cue is a headband motif baked right into the card — three full-width
-stripes (cream / terracotta / cream) across the top — so there are no external
-images to host or break.
+### Social logins (optional)
 
-> **Custom SMTP needs a domain you own.** Resend (and any provider) won't let you
-> send from a free public domain like `gmail.com` — you must verify a domain you
-> control (add its DKIM/SPF DNS records). To finish setup without a domain, either
-> leave custom SMTP **off** (Supabase's built-in mailer, low rate limits) or use
-> Resend's sandbox sender `onboarding@resend.dev`, which only delivers to your own
-> Resend account email.
-
-### 3c. (Optional, later) Social logins
-
-Google, Apple and Facebook are not wired into the UI yet. The plumbing is already
-there — `AuthProvider` exposes `signInWithGoogle()` — so enabling one later is
-small:
-
-1. **Google:** in the [Google Cloud Console](https://console.cloud.google.com)
-   create an **OAuth client ID** (Web application), add Supabase's callback URL
-   (`https://<your-project-ref>.supabase.co/auth/v1/callback`) as an authorized
-   redirect URI, then paste the Client ID + secret into Supabase →
-   **Authentication → Providers → Google** and enable it. Finally add a button in
-   `src/pages/Login.tsx` that calls `signInWithGoogle()`.
-2. **Apple / Facebook:** enable the provider in Supabase, create the app in the
-   respective developer console (Apple needs a paid $99/yr Apple Developer
-   account), add the same callback URL, then add a button calling
-   `signInWithOAuth({ provider: 'apple' | 'facebook' })`.
+`AuthProvider` already exposes `signInWithGoogle()`. To offer it: create an
+OAuth client in the [Google Cloud Console](https://console.cloud.google.com)
+with `https://<your-project-ref>.supabase.co/auth/v1/callback` as an authorised
+redirect URI, paste the client ID and secret into Supabase → **Authentication →
+Providers → Google**, and add a button to `src/pages/Login.tsx`. Apple and
+Facebook work the same way through `signInWithOAuth`.
 
 ---
 
-## 4. Environment variables & redeploy
+## 4. Environment variables
 
-The build auto-detects the Supabase integration's variables, so usually there's
-nothing to add here. You just need to confirm two things:
+| Variable | Where | What it does |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Vercel, `.env.local` | The browser's Supabase client. Safe to expose: RLS gates the anon key. Without them the app runs in offline single-user "local mode". |
+| `VITE_ENABLE_MAGIC_LINK` | Vercel, `.env.local` | `true` shows the magic-link option. Anything else hides it. |
+| `VITE_BETA_FEEDBACK_URL` | Vercel, `.env.local` | Your testers' WhatsApp (or any) group link, shown as a tile on Home. Unset hides the tile. Kept out of the repo because anyone with an invite link can join. |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | `.env.local` only | For the operator scripts. The service-role key **bypasses RLS**: never commit it and never give it a `VITE_` prefix. |
 
-1. **Scope:** the integration adds vars to Production by default. To test on a
-   **Preview** deployment (a branch/PR), the vars must also apply to the Preview
-   environment. In Vercel → **Settings → Environment Variables**, check that
-   `SUPABASE_URL` and `SUPABASE_ANON_KEY` have **Preview** (and Production)
-   ticked; edit their environments if not.
-2. **Redeploy after any change.** Env vars are read at **build time**, so after
-   installing the integration or editing vars you must **redeploy** the target
-   deployment (Deployments → ⋯ → **Redeploy**) — an existing build won't pick them
-   up. After redeploy, the build log should print
-   `[coach-claude] Supabase credentials detected — auth enabled`.
+All `VITE_` values are read at **build time**:
 
-If you build outside Vercel, you can instead set `VITE_SUPABASE_URL` /
-`VITE_SUPABASE_ANON_KEY` explicitly (they take priority).
+1. In Vercel → **Settings → Environment Variables**, tick **Production** and
+   **Preview** for each one you set.
+2. **Redeploy** after any change (Deployments → ⋯ → **Redeploy**); an existing
+   build won't pick it up. The build log prints
+   `[coach-clawde] Supabase credentials detected — auth enabled` when the
+   Supabase pair is present.
 
-For **local development**, copy `.env.example` to `.env.local` and fill in the
-values (find them in Supabase → **Project Settings → API**). Either the `VITE_`
-or the plain `SUPABASE_*` names work. Without them the app runs in offline
-single-user "local mode".
+For local development, copy `.env.example` to `.env.local` and fill it in from
+Supabase → **Project Settings → API**.
 
 ---
 
-## 5. Migrate the legacy single-user data
+## 5. Create beta accounts
 
-> Only relevant if you're carrying over the original file-based data. The
-> `data/*.json` files were removed from the repo when the app went
-> database-only; restore them from the `v0.2.0-final-data` tag first:
->
-> ```bash
-> mkdir -p data
-> git show v0.2.0-final-data:data/profile.json  > data/profile.json
-> git show v0.2.0-final-data:data/sessions.json > data/sessions.json
-> git show v0.2.0-final-data:data/plans.json    > data/plans.json
-> ```
+Testers get an email and password you generate for them. Accounts are created
+already-confirmed, so nothing is emailed.
 
-Import them into an account once:
+```bash
+node --env-file=.env.local scripts/create-beta-user.mjs alice@example.com bob@example.com
+```
 
-1. **Sign in to the deployed app once** with the account that should own the data.
-   This creates your user row.
-2. In Supabase → **Authentication → Users**, copy your user's **UUID**.
-3. Get the **service role key** from **Project Settings → API** (keep it secret).
-4. Run the importer from the repo root. **Easiest (any OS)** — put the three
-   values in `.env.local` (uncomment the `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-   and `TARGET_USER_ID` lines and fill them in), then let Node load the file:
+The script prints each account with its generated password:
 
-   ```bash
-   node --env-file=.env.local scripts/migrate-data.mjs
-   ```
+```
+Beta accounts
 
-   <details><summary>Or pass them inline (shell-specific)</summary>
+  alice@example.com   k7Qm2vXpR4wL   created
+  bob@example.com     9fTbN3sZyH8c   created
+```
 
-   **macOS / Linux (bash or zsh)** — a `\` at the very end of each line continues
-   it (no spaces after the `\`); the shell shows a `>` prompt for each line:
+**Passwords are shown once and stored nowhere**, so copy them before closing
+the terminal.
 
-   ```bash
-   SUPABASE_URL=https://<ref>.supabase.co \
-   SUPABASE_SERVICE_ROLE_KEY=<service-role-key> \
-   TARGET_USER_ID=<your-user-uuid> \
-   node scripts/migrate-data.mjs
-   ```
+| Flag | Effect |
+| --- | --- |
+| `--password <pw>` | Use one password you choose for every account listed. |
+| `--reset` | The account already exists → set its password instead of skipping it (a tester lost theirs). |
 
-   …or as one line: `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… TARGET_USER_ID=… node scripts/migrate-data.mjs`
-
-   **Windows PowerShell** — set each var first (continuation char is a backtick `` ` ``):
-
-   ```powershell
-   $env:SUPABASE_URL="https://<ref>.supabase.co"
-   $env:SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
-   $env:TARGET_USER_ID="<your-user-uuid>"
-   node scripts/migrate-data.mjs
-   ```
-   </details>
-
-5. Reload the app (or Settings → **Restore from cloud**) — your profile, plans
-   and history should appear.
-
-Once the data is in and the app shows it, delete the restored `data/` directory
-again — it isn't tracked any more, and the tag keeps the originals safe.
+Each new account starts in the onboarding chat, which collects the goal,
+injuries and preferences that plan generation depends on. To remove a tester,
+delete the user in Supabase → **Authentication → Users**; their profile, plans,
+sessions and check-ins cascade away with them.
 
 ---
 
 ## 6. Smoke-test
 
 - [ ] Visit the production URL → you're redirected to the login screen.
-- [ ] Sign in with **email + password** → you land on Home with your data.
-- [ ] The login screen shows **only** the password fields — no "email me a
-      sign-in link" option — unless you deliberately set
-      `VITE_ENABLE_MAGIC_LINK=true`.
-- [ ] Sign out → redirected back to login; local data cleared.
-- [ ] Plan → **Generate & Open Claude** → the prompt now contains your profile +
-      a summarised history block (not an empty stub).
-- [ ] Complete a session → Settings shows "Synced just now"; confirm a new row in
-      Supabase `logged_sessions`.
-- [ ] Sign in on a second device/browser → same data loads.
-- [ ] Create a **second test account** → it sees an empty app, proving RLS
-      isolation, **and it starts on the onboarding slideshow** rather than
-      dropping straight into Home with a blank profile. (Delete the test user
-      afterwards.)
+- [ ] The login screen shows only the password fields (unless you enabled
+      magic links).
+- [ ] Sign in → a new account starts in the onboarding chat; finishing it lands
+      you on Home.
+- [ ] Plan → **Generate & Open Claude** → the prompt contains your profile and
+      a summarised training history.
+- [ ] Import a plan, complete a session → Settings shows "Synced just now" and a
+      new row appears in `logged_sessions`.
+- [ ] Sign in on a second device → the same data loads.
+- [ ] Sign out → back to login, local data cleared.
+- [ ] A second test account sees an empty app (RLS isolation works). Delete it
+      afterwards.
 
 ---
 
-## 7. Create beta accounts
+## How plan generation works
 
-Beta testers get an email + password you generate for them. Nothing is emailed by
-Supabase, so there's no SMTP dependency and no rate limit to hit.
-
-1. Get the **service role key** from **Project Settings → API**. It bypasses RLS
-   — keep it out of the client, out of git, and off any `VITE_` variable.
-2. From the repo root, create the accounts:
-
-   ```bash
-   SUPABASE_URL=https://<ref>.supabase.co \
-   SUPABASE_SERVICE_ROLE_KEY=<service-role-key> \
-   node scripts/create-beta-user.mjs alice@example.com bob@example.com
-   ```
-
-   Or, with the values in `.env.local`:
-
-   ```bash
-   node --env-file=.env.local scripts/create-beta-user.mjs alice@example.com
-   ```
-
-3. The script prints one line per account with its generated password:
-
-   ```
-   Beta accounts
-
-     alice@example.com   k7Qm2vXpR4wL   created
-     bob@example.com     9fTbN3sZyH8c   created
-   ```
-
-   **Passwords are shown once and are not stored anywhere** — copy them before
-   closing the terminal. Send each tester their own email + password.
-
-Useful flags:
-
-| Flag | Effect |
-| --- | --- |
-| `--password <pw>` | Use one password you choose for every account listed, instead of generating them. |
-| `--reset` | The account already exists → set its password rather than skipping it. Use when a tester loses theirs. |
-
-Each new account starts on the **onboarding slideshow**, which is what collects
-their injuries, goals and program preferences — the inputs the plan generator
-depends on. Tell testers to complete it before asking for their first plan.
-
-To remove a tester afterwards, delete the user in Supabase → **Authentication →
-Users**; their profile, plans and sessions cascade away with them.
-
----
-
-## How plan generation changes
-
-Previously Claude Code read your profile and history straight from `/data` in the
-repo. With per-user data in the database, Claude can't do that, so the app now
-builds a **self-contained prompt**: it embeds your profile plus a *summarised*
-recent history (recent sessions, current working weights, PRs — capped so the
-prompt stays focused). The programming rules and the WeekPlan JSON schema still
-live in `CLAUDE.md`, so you paste the prompt into Claude with this repo available
-and it applies the rules to the embedded data. See `src/lib/promptBuilder.ts` and
-`src/lib/historySummary.ts`.
+There is no AI call on the server. The app builds a **self-contained prompt**
+(`src/lib/promptBuilder.ts`): the athlete's profile and goal, a *summarised*
+recent history (`src/lib/historySummary.ts`: recent sessions, working weights,
+PRs, the latest check-in, capped so the prompt stays focused), the programming
+rules and the `WeekPlan` JSON schema. It opens in the Claude app (or claude.ai)
+pre-filled, the athlete sends it, and pastes the JSON reply back into the app.
+`CLAUDE.md` holds the full, general version of the rules and schema.
