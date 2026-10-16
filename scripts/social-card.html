@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+  Source of site/assets/social-preview.png: the link preview for the website
+  (og:image) and the GitHub repo's social preview (Settings → Social preview).
+  Render it at 1280×640 from the repo root with:
+
+    npx playwright screenshot --viewport-size=1280,640 "file://$PWD/scripts/social-card.html" site/assets/social-preview.png
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coach Clawde social card</title>
+<style>
+@font-face { font-family: "Doto"; src: url("../site/assets/fonts/doto.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Geist"; src: url("../site/assets/fonts/geist.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Space Mono"; src: url("../site/assets/fonts/space-mono-700.woff2") format("woff2"); font-weight: 700; }
+html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; background: #0c0c0c; }
+.card {
+  position: relative; width: 1280px; height: 640px; box-sizing: border-box; padding: 64px 72px;
+  color: #f5f5f0; font-family: "Geist", sans-serif;
+  background:
+    radial-gradient(circle at 78% 40%, rgba(217, 119, 86, 0.22), transparent 46%),
+    radial-gradient(rgba(245, 245, 240, 0.09) 1.3px, transparent 1.6px) 0 0 / 18px 18px,
+    #0c0c0c;
+}
+.top { display: flex; align-items: center; gap: 18px; }
+.top img { width: 84px; height: 84px; }
+.label { font: 700 17px/1 "Space Mono", monospace; letter-spacing: 0.14em; text-transform: uppercase; color: #a8a29e; display: flex; align-items: center; gap: 12px; }
+.label i { width: 11px; height: 11px; border-radius: 50%; background: #d97756; }
+h1 { margin: 56px 0 0; font: 800 132px/0.9 "Doto", monospace; font-variation-settings: "ROND" 100; text-transform: uppercase; letter-spacing: -0.01em; }
+p { margin: 34px 0 0; font-size: 34px; line-height: 1.25; font-weight: 500; letter-spacing: -0.01em; max-width: 620px; color: #e8e6e3; }
+.phones { position: absolute; right: 64px; top: 70px; display: flex; gap: 0; }
+.phone { width: 250px; aspect-ratio: 393 / 852; padding: 7px; border-radius: 40px; background: #050505; box-shadow: inset 0 0 0 1.5px #34312f, 0 30px 60px -20px rgba(0, 0, 0, 0.9); }
+.phone img { width: 100%; height: 100%; border-radius: 34px; display: block; }
+.phone.back { transform: rotate(6deg) translate(-38px, 40px); }
+.phone.front { transform: rotate(-4deg); z-index: 1; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top">
+    <img src="../site/assets/icon-512.png" alt="">
+    <span class="label"><i></i>Beta · Invite only</span>
+  </div>
+  <h1>Coach<br>Clawde</h1>
+  <p>Plans your week. Runs your sessions. Learns from both.</p>
+  <div class="phones">
+    <div class="phone front"><img src="../site/assets/screens/home.webp" alt=""></div>
+    <div class="phone back"><img src="../site/assets/screens/run-mode.webp" alt=""></div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,5 +1,6 @@
 // Generates the home-screen / PWA app icons (and the favicon) from the shared
 // Clawde-crab pixel grid, so the installed icon always matches the in-app mark.
+// Also writes the website's icons (site/assets, also used by the README).
 //
 // Run with:  node --experimental-strip-types scripts/gen-icons.ts
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -11,7 +12,9 @@ import { crabCells, CRAB_COLS, CRAB_ROWS } from '../src/lib/crabArt.ts'
 const here = dirname(fileURLToPath(import.meta.url))
 const publicDir = resolve(here, '../public')
 const iconsDir = resolve(publicDir, 'icons')
+const siteAssetsDir = resolve(here, '../site/assets')
 mkdirSync(iconsDir, { recursive: true })
+mkdirSync(siteAssetsDir, { recursive: true })
 
 interface SvgOpts {
   /** Canvas size in px */
@@ -87,4 +90,9 @@ writeFileSync(resolve(iconsDir, 'maskable-512.png'), png(maskable, 512))
 writeFileSync(resolve(iconsDir, 'apple-touch-icon.png'), png(apple, 180))
 writeFileSync(resolve(publicDir, 'favicon.svg'), favicon)
 
-console.log('Generated app icons in public/icons + public/favicon.svg')
+// Website + README: a rounded tile like the home-screen icon.
+writeFileSync(resolve(siteAssetsDir, 'icon-512.png'), png(buildSvg({ size: 512, pad: 0.16, radius: 114 }), 512))
+writeFileSync(resolve(siteAssetsDir, 'apple-touch-icon.png'), png(apple, 180))
+writeFileSync(resolve(siteAssetsDir, 'favicon.svg'), favicon)
+
+console.log('Generated app icons in public/icons + public/favicon.svg, and site/assets')

@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coach Clawde</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A training app that plans your week around your goal, your free days and your injuries, then coaches you through every session. Invite-only beta.">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#050505" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Coach Clawde">
+<meta property="og:description" content="Plans your week. Runs your sessions. Learns from both. An invite-only training app.">
+<meta property="og:url" content="https://n473cl0.github.io/coach-clawde/">
+<meta property="og:image" content="https://n473cl0.github.io/coach-clawde/assets/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<!-- The app's sign-in page. Every "Log in" link below points here. -->
+<link rel="preconnect" href="https://coach-clawde.vercel.app">
+<style id="fonts">
+@font-face { font-family: "Doto"; src: url("assets/fonts/doto.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist"; src: url("assets/fonts/geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("assets/fonts/space-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("assets/fonts/space-mono-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+</style>
+<style>
+/* Layout: a Nothing-style product page. Sticky pill nav; a dot-matrix hero with
+   the app on three phones; a spec strip; six rounded "stage" panels that walk
+   one training week in order; a small-things grid; a dark invite-only band;
+   FAQ; black footer with the wordmark. Light by default, dark follows the OS. */
+:root {
+  --bg: #ffffff;
+  --panel: #f3f2f0;
+  --panel-2: #e8e6e3;
+  --ink: #0c0c0c;
+  --ink-2: #5f5b57;
+  --line: #dedbd7;
+  --accent: #d97756;
+  --accent-ink: #b4532f;
+  --dot: rgba(12, 12, 12, 0.13);
+  --band: #0c0c0c;
+  --band-ink: #f5f5f0;
+  --band-ink-2: #a8a29e;
+  --band-line: #2b2927;
+  --shadow: rgba(30, 18, 12, 0.22);
+
+  --font-dot: "Doto", "Space Mono", ui-monospace, monospace;
+  --font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --gutter: max(clamp(16px, 4vw, 32px), env(safe-area-inset-left, 0px));
+  --gutter-r: max(clamp(16px, 4vw, 32px), env(safe-area-inset-right, 0px));
+  --radius: clamp(22px, 3vw, 32px);
+  --nav-h: 64px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #050505; --panel: #121211; --panel-2: #1d1c1b; --ink: #f5f5f0; --ink-2: #a39e98;
+    --line: #272523; --accent: #e07f5e; --accent-ink: #ec926f; --dot: rgba(245, 245, 240, 0.09);
+    --band: #121211; --band-ink: #f5f5f0; --band-ink-2: #a39e98; --band-line: #2b2927;
+    --shadow: rgba(0, 0, 0, 0.7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #050505; --panel: #121211; --panel-2: #1d1c1b; --ink: #f5f5f0; --ink-2: #a39e98;
+  --line: #272523; --accent: #e07f5e; --accent-ink: #ec926f; --dot: rgba(245, 245, 240, 0.09);
+  --band: #121211; --band-ink: #f5f5f0; --band-ink-2: #a39e98; --band-line: #2b2927;
+  --shadow: rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 16px); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1.0625rem/1.6 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--bg);
+}
+img { max-width: 100%; height: auto; display: block; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+p { margin: 0; }
+
+.wrap {
+  width: 100%; max-width: 1240px; margin-inline: auto;
+  padding-left: var(--gutter); padding-right: var(--gutter-r);
+}
+.label {
+  font: 700 0.75rem/1.2 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-2); display: inline-flex; align-items: center; gap: 0.6em;
+}
+.label::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+.dotface {
+  font-family: var(--font-dot); font-weight: 800; font-variation-settings: "ROND" 100;
+  letter-spacing: -0.01em; line-height: 0.92; text-transform: uppercase;
+}
+
+/* --- buttons --- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+  min-height: 48px; padding: 0 1.4rem; border-radius: 999px;
+  font: 500 0.98rem/1 var(--font-body); text-decoration: none; white-space: nowrap;
+  border: 1.5px solid var(--ink); background: var(--ink); color: var(--bg);
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.btn:hover { transform: translateY(-1px); background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.ghost:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.btn svg { width: 1em; height: 1em; flex: none; }
+.btn.small { min-height: 40px; padding: 0 1.1rem; font-size: 0.92rem; }
+
+/* --- nav --- */
+.nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+.nav .wrap { height: var(--nav-h); display: flex; align-items: center; gap: 1.5rem; }
+.brand { display: inline-flex; align-items: center; gap: 0.65rem; text-decoration: none; margin-right: auto; }
+.brand img { width: 30px; height: 30px; border-radius: 8px; }
+.brand span { font: 700 0.95rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.nav-links { display: flex; gap: 1.6rem; }
+.nav-links a {
+  font: 700 0.74rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-2); text-decoration: none; padding: 0.6rem 0;
+}
+.nav-links a:hover { color: var(--ink); }
+@media (max-width: 760px) { .nav-links { display: none; } }
+
+/* --- hero --- */
+.hero { padding-block: clamp(2rem, 4.5vw, 3.25rem) 0; text-align: center; }
+.hero .wrap { display: flex; flex-direction: column; align-items: center; }
+.glyph {
+  width: clamp(116px, 12vw, 148px); aspect-ratio: 1; border-radius: 28%;
+  background: radial-gradient(circle at 50% 42%, rgba(217, 119, 86, 0.32), transparent 62%), #0c0c0c;
+  display: grid; place-items: center;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset, 0 18px 40px -18px var(--shadow);
+}
+.glyph svg { width: 76%; overflow: visible; }
+.glyph .off { fill: #232120; }
+.glyph .c { fill: #d97756; }
+.glyph .d { fill: #a9512f; }
+.glyph .b { fill: #fbf7f0; }
+.glyph .e { fill: #232120; }
+.glyph .lit circle:not(.off) { animation: glyph-on 0.55s ease-out both; animation-delay: calc(var(--d) * 45ms + 150ms); }
+.glyph .bead { fill: #7cc5ff; animation: drip 4s ease-in 2.2s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes glyph-on { from { opacity: 0.18; } 60% { opacity: 1; filter: brightness(1.35); } to { opacity: 1; } }
+@keyframes drip {
+  0%, 12% { transform: translateY(0) scale(0.5); opacity: 0; }
+  20% { transform: translateY(0) scale(1); opacity: 1; }
+  38% { transform: translateY(1.6px) scale(0.9); opacity: 1; }
+  48%, 100% { transform: translateY(3.4px) scale(0.5); opacity: 0; }
+}
+.badge {
+  margin-top: 1.3rem; display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.5rem 0.9rem; border-radius: 999px; border: 1px solid var(--line);
+  font: 700 0.72rem/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2);
+}
+.badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: rec 1.6s ease-in-out infinite; }
+@keyframes rec { 50% { opacity: 0.25; } }
+.hero h1 { margin-top: 1rem; font-size: clamp(3.2rem, 10.5vw, 8.75rem); }
+.hero .tagline { margin-top: 1.15rem; font-size: clamp(1.3rem, 2.4vw, 1.75rem); line-height: 1.25; font-weight: 500; letter-spacing: -0.01em; }
+.hero .lead { margin-top: 0.85rem; max-width: 44rem; color: var(--ink-2); font-size: 1.08rem; }
+.hero .ctas { margin-top: 1.6rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
+
+.stage {
+  margin-top: clamp(2.25rem, 4vw, 3rem); width: 100%;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background-color: var(--panel);
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.4px);
+  background-size: 16px 16px;
+  padding: clamp(2rem, 5vw, 3.5rem) 0 0;
+  display: flex; justify-content: center; align-items: flex-start;
+  height: clamp(390px, 62vw, 640px); overflow: hidden;
+}
+.stage .phone { flex: none; }
+.stage .phone.side { margin-top: 7%; }
+.stage .phone.left { transform: rotate(-7deg) translateX(18%); z-index: 0; }
+.stage .phone.right { transform: rotate(7deg) translateX(-18%); z-index: 0; }
+.stage .phone.mid { z-index: 1; }
+
+/* --- phones --- */
+.phone {
+  width: var(--w, clamp(190px, 24vw, 290px)); aspect-ratio: 393 / 852; padding: 2.6%;
+  border-radius: 15.5% / 7.2%; background: #0e0e0e;
+  box-shadow: 0 0 0 1px var(--line), inset 0 0 0 1.5px #2e2d2c, 0 34px 60px -26px var(--shadow);
+}
+.phone img { width: 100%; height: 100%; object-fit: cover; border-radius: 13.4% / 6.2%; background: #0a0a0a; }
+
+/* --- spec strip --- */
+.specs { padding-block: clamp(3rem, 7vw, 5.5rem) 0; }
+.specs .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.spec { background: var(--panel); border-radius: 22px; padding: 1.5rem 1.4rem 1.6rem; display: flex; flex-direction: column; gap: 0.9rem; }
+.spec b { font-size: clamp(2.6rem, 5vw, 3.6rem); color: var(--ink); }
+.spec span { color: var(--ink-2); font-size: 0.98rem; line-height: 1.45; }
+@media (max-width: 900px) { .specs .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* --- section heads --- */
+.section { padding-block: clamp(4rem, 9vw, 7.5rem) 0; }
+.head { display: flex; flex-direction: column; gap: 1rem; max-width: 46rem; }
+.head h2 { font-size: clamp(2.6rem, 7vw, 5.4rem); }
+.head p { color: var(--ink-2); font-size: 1.12rem; max-width: 38rem; }
+
+/* --- feature panels: one week, in order --- */
+.panels { margin-top: clamp(2rem, 5vw, 3.5rem); display: flex; flex-direction: column; gap: 14px; }
+.panel {
+  background: var(--panel); border-radius: var(--radius); overflow: hidden;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem); padding: clamp(1.75rem, 5vw, 4rem);
+}
+.panel.flip .copy { order: 2; }
+.copy { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+.copy h3 { font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.05; letter-spacing: -0.02em; }
+.copy p { color: var(--ink-2); max-width: 34rem; }
+.copy ul { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.copy li {
+  font: 400 0.8rem/1.2 var(--font-mono); padding: 0.55rem 0.8rem; border-radius: 999px;
+  background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+}
+.shots { display: flex; justify-content: center; align-items: flex-start; min-width: 0; }
+.shots .phone { --w: clamp(170px, 22vw, 270px); }
+.shots.pair .phone:nth-child(2) { margin-left: -9%; margin-top: 14%; }
+.shots.pair .phone:nth-child(1) { z-index: 1; }
+@media (max-width: 860px) {
+  .panel { grid-template-columns: minmax(0, 1fr); }
+  .panel.flip .copy { order: 0; }
+  .shots .phone { --w: clamp(150px, 42vw, 240px); }
+}
+
+/* --- small things --- */
+.things { margin-top: clamp(2rem, 5vw, 3rem); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.thing { border: 1px solid var(--line); border-radius: 22px; padding: 1.4rem; display: flex; flex-direction: column; gap: 0.55rem; }
+.thing svg { width: 26px; height: 26px; color: var(--accent); margin-bottom: 0.5rem; }
+.thing h3 { font-size: 1.06rem; letter-spacing: -0.01em; }
+.thing p { color: var(--ink-2); font-size: 0.95rem; line-height: 1.5; }
+@media (max-width: 1000px) { .things { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .things { grid-template-columns: minmax(0, 1fr); } .specs .grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+/* --- invite-only band --- */
+.beta { margin-top: clamp(4rem, 9vw, 7.5rem); }
+.beta .card {
+  background: var(--band); color: var(--band-ink); border-radius: var(--radius);
+  border: 1px solid var(--band-line); padding: clamp(2rem, 6vw, 5rem);
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(2rem, 5vw, 4rem); align-items: end;
+  background-image: radial-gradient(rgba(245, 245, 240, 0.08) 1.1px, transparent 1.4px); background-size: 16px 16px;
+}
+.beta .label { color: var(--band-ink-2); }
+.beta h2 { margin-top: 1rem; font-size: clamp(3rem, 9vw, 7rem); color: var(--band-ink); }
+.beta p { color: var(--band-ink-2); }
+.beta p + p { margin-top: 0.9rem; }
+.beta strong { color: var(--band-ink); font-weight: 600; }
+.beta .ctas { margin-top: 1.8rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.beta .btn { background: var(--band-ink); color: #0c0c0c; border-color: var(--band-ink); }
+.beta .btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.beta .btn.ghost { background: transparent; color: var(--band-ink); border-color: rgba(245, 245, 240, 0.4); }
+.beta .btn.ghost:hover { border-color: var(--band-ink); background: rgba(245, 245, 240, 0.08); }
+@media (max-width: 860px) { .beta .card { grid-template-columns: minmax(0, 1fr); } }
+
+/* --- FAQ --- */
+.faq { margin-top: clamp(2rem, 5vw, 3rem); border-top: 1px solid var(--line); }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary {
+  list-style: none; cursor: pointer; padding: 1.4rem 0; display: flex; justify-content: space-between; gap: 1rem;
+  font-size: clamp(1.1rem, 2vw, 1.35rem); font-weight: 500; letter-spacing: -0.01em;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font: 400 1.6rem/1 var(--font-mono); color: var(--ink-2); transition: transform 0.2s ease; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p { padding: 0 0 1.5rem; max-width: 44rem; color: var(--ink-2); }
+
+/* --- footer --- */
+.footer { margin-top: clamp(4rem, 9vw, 7.5rem); background: #0c0c0c; color: #f5f5f0; padding-block: clamp(3rem, 7vw, 5rem) max(2rem, env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--band-line); }
+.footer .cols { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2rem 3rem; }
+.footer .blurb { max-width: 24rem; color: #a8a29e; font-size: 0.95rem; }
+.footer .blurb .label { color: #a8a29e; margin-bottom: 0.9rem; }
+.footer nav { display: flex; gap: 3rem; flex-wrap: wrap; }
+.footer nav div { display: flex; flex-direction: column; gap: 0.7rem; }
+.footer nav b { font: 700 0.72rem/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: #77726d; margin-bottom: 0.3rem; }
+.footer nav a { text-decoration: none; color: #f5f5f0; font-size: 0.98rem; }
+.footer nav a:hover { color: #e58a6b; }
+.wordmark { margin-top: clamp(2.5rem, 6vw, 4rem); font-size: clamp(2rem, 10.2vw, 9.4rem); color: #f5f5f0; white-space: nowrap; overflow: hidden; }
+.wordmark span { color: #d97756; }
+.fine { margin-top: 1.6rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.6rem 2rem; color: #77726d; font: 400 0.78rem/1.6 var(--font-mono); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .glyph .lit circle:not(.off), .glyph .bead, .badge i { animation: none; }
+  .glyph .bead { opacity: 0; }
+  .btn { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Coach Clawde, back to top">
+      <img src="assets/favicon.svg" alt="" width="30" height="30">
+      <span>Coach Clawde</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#week">Features</a>
+      <a href="#beta">Beta</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/n473CL0/coach-clawde">GitHub</a>
+    </nav>
+    <a class="btn small" href="https://coach-clawde.vercel.app">Log in
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg>
+    </a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div class="glyph" role="img" aria-label="Clawde the crab in a sweatband, drawn in dots">
+        <svg viewBox="-0.3 -0.3 13.6 12.6" aria-hidden="true">
+          <g class="lit">
+            <circle class="off" cx="0.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="1.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="2.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="3.5" cy="0.5" r=".36"/>
+            <circle class="c" style="--d:4" cx="4.5" cy="0.5" r=".42"/>
+            <circle class="off" cx="5.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="6.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="7.5" cy="0.5" r=".36"/>
+            <circle class="c" style="--d:8" cx="8.5" cy="0.5" r=".42"/>
+            <circle class="off" cx="9.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="10.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="11.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="12.5" cy="0.5" r=".36"/>
+            <circle class="off" cx="0.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="1.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="2.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="3.5" cy="1.5" r=".36"/>
+            <circle class="c" style="--d:5" cx="4.5" cy="1.5" r=".42"/>
+            <circle class="off" cx="5.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="6.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="7.5" cy="1.5" r=".36"/>
+            <circle class="c" style="--d:9" cx="8.5" cy="1.5" r=".42"/>
+            <circle class="off" cx="9.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="10.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="11.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="12.5" cy="1.5" r=".36"/>
+            <circle class="off" cx="0.5" cy="2.5" r=".36"/>
+            <circle class="off" cx="1.5" cy="2.5" r=".36"/>
+            <circle class="c" style="--d:4" cx="2.5" cy="2.5" r=".42"/>
+            <circle class="c" style="--d:5" cx="3.5" cy="2.5" r=".42"/>
+            <circle class="c" style="--d:6" cx="4.5" cy="2.5" r=".42"/>
+            <circle class="c" style="--d:7" cx="5.5" cy="2.5" r=".42"/>
+            <circle class="c" style="--d:8" cx="6.5" cy="2.5" r=".42"/>
+            <circle class="c" style="--d:9" cx="7.5" cy="2.5" r=".42"/>
+            <circle class="c" style="--d:10" cx="8.5" cy="2.5" r=".42"/>
+            <circle class="c" style="--d:11" cx="9.5" cy="2.5" r=".42"/>
+            <circle class="c" style="--d:12" cx="10.5" cy="2.5" r=".42"/>
+            <circle class="off" cx="11.5" cy="2.5" r=".36"/>
+            <circle class="off" cx="12.5" cy="2.5" r=".36"/>
+            <circle class="off" cx="0.5" cy="3.5" r=".36"/>
+            <circle class="c" style="--d:4" cx="1.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:5" cx="2.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:6" cx="3.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:7" cx="4.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:8" cx="5.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:9" cx="6.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:10" cx="7.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:11" cx="8.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:12" cx="9.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:13" cx="10.5" cy="3.5" r=".42"/>
+            <circle class="c" style="--d:14" cx="11.5" cy="3.5" r=".42"/>
+            <circle class="off" cx="12.5" cy="3.5" r=".36"/>
+            <circle class="b" style="--d:4" cx="0.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:5" cx="1.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:6" cx="2.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:7" cx="3.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:8" cx="4.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:9" cx="5.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:10" cx="6.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:11" cx="7.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:12" cx="8.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:13" cx="9.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:14" cx="10.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:15" cx="11.5" cy="4.5" r=".42"/>
+            <circle class="b" style="--d:16" cx="12.5" cy="4.5" r=".42"/>
+            <circle class="c" style="--d:5" cx="0.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:6" cx="1.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:7" cx="2.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:8" cx="3.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:9" cx="4.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:10" cx="5.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:11" cx="6.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:12" cx="7.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:13" cx="8.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:14" cx="9.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:15" cx="10.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:16" cx="11.5" cy="5.5" r=".42"/>
+            <circle class="c" style="--d:17" cx="12.5" cy="5.5" r=".42"/>
+            <circle class="b" style="--d:6" cx="0.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:7" cx="1.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:8" cx="2.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:9" cx="3.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:10" cx="4.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:11" cx="5.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:12" cx="6.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:13" cx="7.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:14" cx="8.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:15" cx="9.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:16" cx="10.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:17" cx="11.5" cy="6.5" r=".42"/>
+            <circle class="b" style="--d:18" cx="12.5" cy="6.5" r=".42"/>
+            <circle class="off" cx="0.5" cy="7.5" r=".36"/>
+            <circle class="c" style="--d:8" cx="1.5" cy="7.5" r=".42"/>
+            <circle class="c" style="--d:9" cx="2.5" cy="7.5" r=".42"/>
+            <circle class="c" style="--d:10" cx="3.5" cy="7.5" r=".42"/>
+            <circle class="e" style="--d:11" cx="4.5" cy="7.5" r=".42"/>
+            <circle class="c" style="--d:12" cx="5.5" cy="7.5" r=".42"/>
+            <circle class="c" style="--d:13" cx="6.5" cy="7.5" r=".42"/>
+            <circle class="c" style="--d:14" cx="7.5" cy="7.5" r=".42"/>
+            <circle class="e" style="--d:15" cx="8.5" cy="7.5" r=".42"/>
+            <circle class="c" style="--d:16" cx="9.5" cy="7.5" r=".42"/>
+            <circle class="c" style="--d:17" cx="10.5" cy="7.5" r=".42"/>
+            <circle class="c" style="--d:18" cx="11.5" cy="7.5" r=".42"/>
+            <circle class="off" cx="12.5" cy="7.5" r=".36"/>
+            <circle class="off" cx="0.5" cy="8.5" r=".36"/>
+            <circle class="c" style="--d:9" cx="1.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:10" cx="2.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:11" cx="3.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:12" cx="4.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:13" cx="5.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:14" cx="6.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:15" cx="7.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:16" cx="8.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:17" cx="9.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:18" cx="10.5" cy="8.5" r=".42"/>
+            <circle class="c" style="--d:19" cx="11.5" cy="8.5" r=".42"/>
+            <circle class="off" cx="12.5" cy="8.5" r=".36"/>
+            <circle class="off" cx="0.5" cy="9.5" r=".36"/>
+            <circle class="c" style="--d:10" cx="1.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:11" cx="2.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:12" cx="3.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:13" cx="4.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:14" cx="5.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:15" cx="6.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:16" cx="7.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:17" cx="8.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:18" cx="9.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:19" cx="10.5" cy="9.5" r=".42"/>
+            <circle class="c" style="--d:20" cx="11.5" cy="9.5" r=".42"/>
+            <circle class="off" cx="12.5" cy="9.5" r=".36"/>
+            <circle class="off" cx="0.5" cy="10.5" r=".36"/>
+            <circle class="d" style="--d:11" cx="1.5" cy="10.5" r=".42"/>
+            <circle class="off" cx="2.5" cy="10.5" r=".36"/>
+            <circle class="d" style="--d:13" cx="3.5" cy="10.5" r=".42"/>
+            <circle class="off" cx="4.5" cy="10.5" r=".36"/>
+            <circle class="d" style="--d:15" cx="5.5" cy="10.5" r=".42"/>
+            <circle class="off" cx="6.5" cy="10.5" r=".36"/>
+            <circle class="d" style="--d:17" cx="7.5" cy="10.5" r=".42"/>
+            <circle class="off" cx="8.5" cy="10.5" r=".36"/>
+            <circle class="d" style="--d:19" cx="9.5" cy="10.5" r=".42"/>
+            <circle class="off" cx="10.5" cy="10.5" r=".36"/>
+            <circle class="d" style="--d:21" cx="11.5" cy="10.5" r=".42"/>
+            <circle class="off" cx="12.5" cy="10.5" r=".36"/>
+            <circle class="off" cx="0.5" cy="11.5" r=".36"/>
+            <circle class="d" style="--d:12" cx="1.5" cy="11.5" r=".42"/>
+            <circle class="off" cx="2.5" cy="11.5" r=".36"/>
+            <circle class="off" cx="3.5" cy="11.5" r=".36"/>
+            <circle class="off" cx="4.5" cy="11.5" r=".36"/>
+            <circle class="off" cx="5.5" cy="11.5" r=".36"/>
+            <circle class="off" cx="6.5" cy="11.5" r=".36"/>
+            <circle class="off" cx="7.5" cy="11.5" r=".36"/>
+            <circle class="off" cx="8.5" cy="11.5" r=".36"/>
+            <circle class="off" cx="9.5" cy="11.5" r=".36"/>
+            <circle class="off" cx="10.5" cy="11.5" r=".36"/>
+            <circle class="d" style="--d:22" cx="11.5" cy="11.5" r=".42"/>
+            <circle class="off" cx="12.5" cy="11.5" r=".36"/>
+          </g>
+          <circle class="bead" cx="12.5" cy="7.55" r=".34"/>
+        </svg>
+      </div>
+      <span class="badge"><i></i>Beta · Invite only</span>
+      <h1 id="hero-title" class="dotface">Coach Clawde</h1>
+      <p class="tagline">Plans your week. Runs your sessions. Learns from both.</p>
+      <p class="lead">Tell Clawde what you're training for, which days you're free and what hurts. You get next week's plan, then a coach in your pocket for every set, rep and interval. A first 5K, a half marathon PB, a bigger squat, or a plan you already have.</p>
+      <div class="ctas">
+        <a class="btn" href="https://coach-clawde.vercel.app">Log in
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg>
+        </a>
+        <a class="btn ghost" href="#week">See how it works</a>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="stage">
+        <div class="phone side left"><img src="assets/screens/run-mode.webp" width="786" height="1704" alt="Run Mode during a 1 km threshold rep: a big clock, the target pace and a LAP button."></div>
+        <div class="phone mid"><img src="assets/screens/home.webp" width="786" height="1704" alt="Home screen: Clawde the crab says good morning, with today's Threshold Intervals and the rest of the week."></div>
+        <div class="phone side right"><img src="assets/screens/chat.webp" width="786" height="1704" alt="Onboarding chat: Clawde asks which event and when, and works out it is 22 weeks away."></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="specs" aria-label="At a glance">
+    <div class="wrap grid">
+      <div class="spec"><b class="dotface">≤10</b><span>questions to set up. Every answer shapes your plan.</span></div>
+      <div class="spec"><b class="dotface">9</b><span>recent sessions, plus working weights and PRs, go into every new plan.</span></div>
+      <div class="spec"><b class="dotface">1 min</b><span>weekly check-in. Skip it whenever you like.</span></div>
+      <div class="spec"><b class="dotface">0</b><span>extra stopwatches. Run Mode times every rep for you.</span></div>
+    </div>
+  </section>
+
+  <section class="section" id="week" aria-labelledby="week-title">
+    <div class="wrap">
+      <div class="head">
+        <span class="label">Features</span>
+        <h2 id="week-title" class="dotface">A week with Clawde</h2>
+        <p>Six steps that repeat every week. Each one feeds the next plan, so the longer you train, the better it fits.</p>
+      </div>
+
+      <div class="panels">
+        <article class="panel">
+          <div class="copy">
+            <span class="label">01 · Set up</span>
+            <h3>Start with a chat</h3>
+            <p>Clawde asks why you're here: a race, a habit, a holiday, your sport or a plan you already follow. Then your time, your kit and a quick health check. Ten questions at most, and a card at the end shows what it heard so you can fix anything.</p>
+            <ul><li>5K to marathon, Hyrox, triathlon</li><li>Gym, home or just a mat</li><li>Injuries kept word for word</li></ul>
+          </div>
+          <div class="shots"><div class="phone"><img loading="lazy" src="assets/screens/chat.webp" width="786" height="1704" alt="Onboarding chat with Clawde: training for a half marathon on 14 March, 22 weeks away."></div></div>
+        </article>
+
+        <article class="panel flip">
+          <div class="copy">
+            <span class="label">02 · Plan</span>
+            <h3>Your week in one tap</h3>
+            <p>Pick your training days and how long you've got, and add a note if the week is unusual. Coach Clawde writes one prompt with everything that matters: your goal, injuries, working weights, recent sessions and the programming rules. It opens in Claude ready to send. Paste the reply back and the week is set.</p>
+            <ul><li>A dated session for each day</li><li>Progressive overload from your logs</li><li>Deload weeks built into the block</li></ul>
+          </div>
+          <div class="shots pair">
+            <div class="phone"><img loading="lazy" src="assets/screens/planner.webp" width="786" height="1704" alt="Plan Your Week: Monday, Tuesday, Thursday and Saturday picked, 60 minutes a session, a note about Saturday's parkrun."></div>
+            <div class="phone"><img loading="lazy" src="assets/screens/prompt.webp" width="786" height="1704" alt="The generated prompt, ready to open in the Claude app."></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="copy">
+            <span class="label">03 · Lift</span>
+            <h3>Log every set as you go</h3>
+            <p>Each session starts with a warm-up you tick through move by move. Log reps and weight against the plan's target, and the rest timer starts on its own and beeps when it's time to go again. Supersets stay side by side, and every exercise has a how-to guide with photos and a video search as backup.</p>
+            <ul><li>Rest timer with sound</li><li>Screen stays on mid-workout</li><li>Did something else? It still counts</li></ul>
+          </div>
+          <div class="shots pair">
+            <div class="phone"><img loading="lazy" src="assets/screens/lift.webp" width="786" height="1704" alt="Upper Body Strength in progress: dumbbell bench press sets with target reps and weights."></div>
+            <div class="phone"><img loading="lazy" src="assets/screens/rest.webp" width="786" height="1704" alt="Rest timer counting down one minute before the next set."></div>
+          </div>
+        </article>
+
+        <article class="panel flip">
+          <div class="copy">
+            <span class="label">04 · Run</span>
+            <h3>Run Mode times every rep</h3>
+            <p>Press Start and run. Run Mode plays a tone at every change: rising for go, falling for recover, three pips just before. For distance reps, tap the big LAP button as you pass the mark. Paces come from a recent race time, so "threshold" means your threshold. When you finish, the log has filled itself in.</p>
+            <ul><li>Pace zones from a recent race</li><li>Lock mode ignores pocket taps</li><li>Works over your music</li></ul>
+          </div>
+          <div class="shots pair">
+            <div class="phone"><img loading="lazy" src="assets/screens/run-mode.webp" width="786" height="1704" alt="Run Mode: rep 1 of 6, 1 km at threshold pace, with a LAP button."></div>
+            <div class="phone"><img loading="lazy" src="assets/screens/workout.webp" width="786" height="1704" alt="Threshold Intervals: the workout as a coloured strip, six 1 km reps with 90 second jogs."></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="copy">
+            <span class="label">05 · Check in</span>
+            <h3>A minute at the end of the week</h3>
+            <p>How did it go? Shorter sessions next week? Is the knee better or worse? Every answer changes the next plan. Check-ins are suggestions, never a gate: skip one, or switch them off.</p>
+            <ul><li>Lighter week on request</li><li>Injury status tracked</li><li>Off switch in Settings</li></ul>
+          </div>
+          <div class="shots"><div class="phone"><img loading="lazy" src="assets/screens/check-in.webp" width="786" height="1704" alt="Weekly check-in: Clawde asks how the week went, with answers from Rough to Great."></div></div>
+        </article>
+
+        <article class="panel flip">
+          <div class="copy">
+            <span class="label">06 · Progress</span>
+            <h3>Watch it add up</h3>
+            <p>See where you are in the block, how the last four weeks went, and your best set for every lift. History keeps every session with its notes, and you can delete anything logged by mistake.</p>
+            <ul><li>Personal bests for every lift</li><li>Block progress and a 4-week grid</li><li>Every session in History</li></ul>
+          </div>
+          <div class="shots pair">
+            <div class="phone"><img loading="lazy" src="assets/screens/progress.webp" width="786" height="1704" alt="Progress: week 5 of a 26-week program and a grid of the last four weeks."></div>
+            <div class="phone"><img loading="lazy" src="assets/screens/best-efforts.webp" width="786" height="1704" alt="Best efforts: the heaviest set for each lift, from Romanian deadlift down."></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="things-title">
+    <div class="wrap">
+      <div class="head">
+        <span class="label">And the small things</span>
+        <h2 id="things-title" class="dotface">Built for the gym floor</h2>
+      </div>
+      <div class="things">
+        <div class="thing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></svg>
+          <h3>Install it like an app</h3>
+          <p>Add it to your home screen: full-screen, offline-ready, no app store.</p>
+        </div>
+        <div class="thing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.4 6.4L3 16M3 21v-5h5"/></svg>
+          <h3>Pick up anywhere</h3>
+          <p>Sign in on your phone, tablet or laptop and your plans and history are there.</p>
+        </div>
+        <div class="thing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/><path d="M3 3l18 18"/></svg>
+          <h3>Patchy gym signal</h3>
+          <p>A workout logged without signal stays on your phone until it can sync.</p>
+        </div>
+        <div class="thing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 3h8l4 4v14H4V3h4z"/><path d="M8 11h8M8 15h6"/></svg>
+          <h3>Bring your own plan</h3>
+          <p>Paste a plan from your coach or a book and Clawde converts it. Or just log as you go.</p>
+        </div>
+        <div class="thing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h11l-3-3M20 17H9l3 3"/></svg>
+          <h3>Plans change</h3>
+          <p>Swapped the run for a bike ride? Log what you did and it still counts.</p>
+        </div>
+        <div class="thing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+          <h3>Private by design</h3>
+          <p>Your data lives in your own account. Health answers are stored as ticked boxes, never details.</p>
+        </div>
+        <div class="thing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 19 9.5 5h1L16 19M6.2 14h7.6M16.5 19l2.7-7h.6l2.7 7M17.4 16.5h4"/></svg>
+          <h3>Big text, small screens</h3>
+          <p>Made for iPhone and iPad, and it follows your text-size setting.</p>
+        </div>
+        <div class="thing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg>
+          <h3>Updates itself</h3>
+          <p>New versions arrive on their own and never interrupt a workout.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="beta" id="beta" aria-labelledby="beta-title">
+    <div class="wrap">
+      <div class="card">
+        <div>
+          <span class="label">Beta</span>
+          <h2 id="beta-title" class="dotface">Invite only</h2>
+        </div>
+        <div>
+          <p>Coach Clawde is in a closed beta while it's tested with a small group of athletes. There's no sign-up form: <strong>accounts are set up by hand</strong>, and you'll be sent an email and password to sign in with.</p>
+          <p>Got an invite? Log in below. You'll also need a Claude account to generate your plans.</p>
+          <div class="ctas">
+            <a class="btn" href="https://coach-clawde.vercel.app">Log in to the beta
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg>
+            </a>
+            <a class="btn ghost" href="https://github.com/n473CL0/coach-clawde">Read the code</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="wrap">
+      <div class="head">
+        <span class="label">FAQ</span>
+        <h2 id="faq-title" class="dotface">Questions</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Who writes the plans?</summary>
+          <p>Claude, Anthropic's AI assistant. Coach Clawde builds the prompt from your profile, goal, injuries, recent training and a set of programming rules, then opens it in the Claude app or on claude.ai. Claude replies with the week as structured data, and the app turns that into your sessions. You'll need a Claude account.</p>
+        </details>
+        <details>
+          <summary>Is it medical advice?</summary>
+          <p>No. It programs around the injuries you describe and keeps things conservative until you're cleared, but it isn't medical advice. If an injury is serious, recent or getting worse, see a GP or physio before you train, and stop if anything causes sharp pain.</p>
+        </details>
+        <details>
+          <summary>Where does my data go?</summary>
+          <p>Into your own account in the app's database, where row-level security means only you can read your rows. Your prompt goes to Claude only when you choose to send it.</p>
+        </details>
+        <details>
+          <summary>How do I get an invite?</summary>
+          <p>Invites go out by hand while the app is tested, so there's no waiting list to join yet. The code is public, though: the repo includes a setup guide if you'd like to run your own copy.</p>
+        </details>
+        <details>
+          <summary>Is this made by Anthropic?</summary>
+          <p>No. Coach Clawde is an independent project. It hands your prompt to Claude, and Clawde the crab is a nod to the Claude Code mascot, now wearing a sweatband.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="cols">
+      <div class="blurb">
+        <span class="label">Coach Clawde</span>
+        <p>A training app that plans your week around you and coaches you through every session. In invite-only beta.</p>
+      </div>
+      <nav aria-label="Footer">
+        <div>
+          <b>App</b>
+          <a href="https://coach-clawde.vercel.app">Log in</a>
+          <a href="#week">Features</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div>
+          <b>Project</b>
+          <a href="https://github.com/n473CL0/coach-clawde">GitHub</a>
+          <a href="https://github.com/n473CL0/coach-clawde/blob/main/docs/DEPLOYMENT.md">Run your own</a>
+          <a href="https://github.com/n473CL0">Made by @n473CL0</a>
+        </div>
+      </nav>
+    </div>
+    <p class="wordmark dotface" aria-hidden="true">Coach Clawde<span>.</span></p>
+    <div class="fine">
+      <span>Not medical advice. Not affiliated with Anthropic.</span>
+      <span>Claude is a trademark of Anthropic, PBC.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
