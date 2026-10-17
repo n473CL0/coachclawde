@@ -85,8 +85,8 @@ Supabase → **Authentication → URL Configuration**:
   ```
   http://localhost:5173/**
   https://coachclawde.vercel.app/**
-  https://coach-clawde-git-*-<your-vercel-scope>.vercel.app/**
-  https://coach-clawde-*-<your-vercel-scope>.vercel.app/**
+  https://coachclawde-git-*-<your-vercel-scope>.vercel.app/**
+  https://coachclawde-*-<your-vercel-scope>.vercel.app/**
   ```
 
   The third line covers the stable per-branch preview alias (the easiest URL
