@@ -76,7 +76,7 @@ then `supabase db push`.)*
 
 Supabase → **Authentication → URL Configuration**:
 
-- **Site URL:** your production URL, e.g. `https://coach-clawde.vercel.app`.
+- **Site URL:** your production URL, e.g. `https://coachclawde.vercel.app`.
 - **Redirect URLs:** the app asks Supabase to send people back to the origin
   they signed in from (`redirectTo = window.location.origin`). Supabase only
   honours that if the origin matches an entry here; otherwise it silently falls
@@ -84,7 +84,7 @@ Supabase → **Authentication → URL Configuration**:
 
   ```
   http://localhost:5173/**
-  https://coach-clawde.vercel.app/**
+  https://coachclawde.vercel.app/**
   https://coach-clawde-git-*-<your-vercel-scope>.vercel.app/**
   https://coach-clawde-*-<your-vercel-scope>.vercel.app/**
   ```

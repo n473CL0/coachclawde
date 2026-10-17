@@ -11,13 +11,13 @@
 </p>
 
 <p align="center">
-  <a href="https://n473cl0.github.io/coach-clawde/">Website</a> ·
-  <a href="https://coach-clawde.vercel.app">Open the app</a> ·
+  <a href="https://n473cl0.github.io/coachclawde/">Website</a> ·
+  <a href="https://coachclawde.vercel.app">Open the app</a> ·
   <a href="docs/DEPLOYMENT.md">Run your own</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/n473CL0/coach-clawde/actions/workflows/ci.yml"><img src="https://github.com/n473CL0/coach-clawde/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/n473CL0/coachclawde/actions/workflows/ci.yml"><img src="https://github.com/n473CL0/coachclawde/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <img src="https://img.shields.io/badge/status-invite--only%20beta-d97756" alt="Status: invite-only beta">
 </p>
 
