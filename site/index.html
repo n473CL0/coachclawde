@@ -21,13 +21,13 @@
 <!-- The app's sign-in page. Every "Log in" link below points here. -->
 <link rel="preconnect" href="https://coach-clawde.vercel.app">
 <style id="fonts">
-@font-face { font-family: "Doto"; src: url("assets/fonts/doto.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Tiny5"; src: url("assets/fonts/tiny5.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Geist"; src: url("assets/fonts/geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Space Mono"; src: url("assets/fonts/space-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Space Mono"; src: url("assets/fonts/space-mono-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 </style>
 <style>
-/* Layout: a Nothing-style product page. Sticky pill nav; a dot-matrix hero with
+/* Layout: a Nothing-style product page. Sticky pill nav; a pixel-type hero with
    the app on three phones; a spec strip; six rounded "stage" panels that walk
    one training week in order; a small-things grid; a dark invite-only band;
    FAQ; black footer with the wordmark. Light by default, dark follows the OS. */
@@ -47,7 +47,7 @@
   --band-line: #2b2927;
   --shadow: rgba(30, 18, 12, 0.22);
 
-  --font-dot: "Doto", "Space Mono", ui-monospace, monospace;
+  --font-pixel: "Tiny5", "Space Mono", ui-monospace, monospace;
   --font-body: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
@@ -102,9 +102,10 @@ p { margin: 0; }
   color: var(--ink-2); display: inline-flex; align-items: center; gap: 0.6em;
 }
 .label::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
-.dotface {
-  font-family: var(--font-dot); font-weight: 800; font-variation-settings: "ROND" 100;
-  letter-spacing: -0.01em; line-height: 0.92; text-transform: uppercase;
+/* Pixel lettering, drawn on the same square grid as the app icon. */
+.pixelface {
+  font-family: var(--font-pixel); font-weight: 400; font-synthesis: none;
+  letter-spacing: 0.02em; line-height: 0.92; text-transform: uppercase;
 }
 
 /* --- buttons --- */
@@ -150,12 +151,11 @@ p { margin: 0; }
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset, 0 18px 40px -18px var(--shadow);
 }
 .glyph svg { width: 76%; overflow: visible; }
-.glyph .off { fill: #232120; }
 .glyph .c { fill: #d97756; }
 .glyph .d { fill: #a9512f; }
 .glyph .b { fill: #fbf7f0; }
 .glyph .e { fill: #232120; }
-.glyph .lit circle:not(.off) { animation: glyph-on 0.55s ease-out both; animation-delay: calc(var(--d) * 45ms + 150ms); }
+.glyph .lit rect { animation: glyph-on 0.55s ease-out both; animation-delay: calc(var(--d) * 45ms + 150ms); }
 .glyph .bead { fill: #7cc5ff; animation: drip 4s ease-in 2.2s infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes glyph-on { from { opacity: 0.18; } 60% { opacity: 1; filter: brightness(1.35); } to { opacity: 1; } }
 @keyframes drip {
@@ -164,14 +164,7 @@ p { margin: 0; }
   38% { transform: translateY(1.6px) scale(0.9); opacity: 1; }
   48%, 100% { transform: translateY(3.4px) scale(0.5); opacity: 0; }
 }
-.badge {
-  margin-top: 1.3rem; display: inline-flex; align-items: center; gap: 0.6rem;
-  padding: 0.5rem 0.9rem; border-radius: 999px; border: 1px solid var(--line);
-  font: 700 0.72rem/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2);
-}
-.badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: rec 1.6s ease-in-out infinite; }
-@keyframes rec { 50% { opacity: 0.25; } }
-.hero h1 { margin-top: 1rem; font-size: clamp(3.2rem, 10.5vw, 8.75rem); }
+.hero h1 { margin-top: 1.6rem; font-size: clamp(3.2rem, 10.5vw, 8.75rem); }
 .hero .tagline { margin-top: 1.15rem; font-size: clamp(1.3rem, 2.4vw, 1.75rem); line-height: 1.25; font-weight: 500; letter-spacing: -0.01em; }
 .hero .lead { margin-top: 0.85rem; max-width: 44rem; color: var(--ink-2); font-size: 1.08rem; }
 .hero .ctas { margin-top: 1.6rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
@@ -297,7 +290,7 @@ p { margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .glyph .lit circle:not(.off), .glyph .bead, .badge i { animation: none; }
+  .glyph .lit rect, .glyph .bead { animation: none; }
   .glyph .bead { opacity: 0; }
   .btn { transition: none; }
 }
@@ -326,171 +319,118 @@ p { margin: 0; }
 <main id="top">
   <section class="hero" aria-labelledby="hero-title">
     <div class="wrap">
-      <div class="glyph" role="img" aria-label="Clawde the crab in a sweatband, drawn in dots">
+      <div class="glyph" role="img" aria-label="Clawde the crab in a sweatband, in pixels">
         <svg viewBox="-0.3 -0.3 13.6 12.6" aria-hidden="true">
           <g class="lit">
-            <circle class="off" cx="0.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="1.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="2.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="3.5" cy="0.5" r=".36"/>
-            <circle class="c" style="--d:4" cx="4.5" cy="0.5" r=".42"/>
-            <circle class="off" cx="5.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="6.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="7.5" cy="0.5" r=".36"/>
-            <circle class="c" style="--d:8" cx="8.5" cy="0.5" r=".42"/>
-            <circle class="off" cx="9.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="10.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="11.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="12.5" cy="0.5" r=".36"/>
-            <circle class="off" cx="0.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="1.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="2.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="3.5" cy="1.5" r=".36"/>
-            <circle class="c" style="--d:5" cx="4.5" cy="1.5" r=".42"/>
-            <circle class="off" cx="5.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="6.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="7.5" cy="1.5" r=".36"/>
-            <circle class="c" style="--d:9" cx="8.5" cy="1.5" r=".42"/>
-            <circle class="off" cx="9.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="10.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="11.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="12.5" cy="1.5" r=".36"/>
-            <circle class="off" cx="0.5" cy="2.5" r=".36"/>
-            <circle class="off" cx="1.5" cy="2.5" r=".36"/>
-            <circle class="c" style="--d:4" cx="2.5" cy="2.5" r=".42"/>
-            <circle class="c" style="--d:5" cx="3.5" cy="2.5" r=".42"/>
-            <circle class="c" style="--d:6" cx="4.5" cy="2.5" r=".42"/>
-            <circle class="c" style="--d:7" cx="5.5" cy="2.5" r=".42"/>
-            <circle class="c" style="--d:8" cx="6.5" cy="2.5" r=".42"/>
-            <circle class="c" style="--d:9" cx="7.5" cy="2.5" r=".42"/>
-            <circle class="c" style="--d:10" cx="8.5" cy="2.5" r=".42"/>
-            <circle class="c" style="--d:11" cx="9.5" cy="2.5" r=".42"/>
-            <circle class="c" style="--d:12" cx="10.5" cy="2.5" r=".42"/>
-            <circle class="off" cx="11.5" cy="2.5" r=".36"/>
-            <circle class="off" cx="12.5" cy="2.5" r=".36"/>
-            <circle class="off" cx="0.5" cy="3.5" r=".36"/>
-            <circle class="c" style="--d:4" cx="1.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:5" cx="2.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:6" cx="3.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:7" cx="4.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:8" cx="5.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:9" cx="6.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:10" cx="7.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:11" cx="8.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:12" cx="9.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:13" cx="10.5" cy="3.5" r=".42"/>
-            <circle class="c" style="--d:14" cx="11.5" cy="3.5" r=".42"/>
-            <circle class="off" cx="12.5" cy="3.5" r=".36"/>
-            <circle class="b" style="--d:4" cx="0.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:5" cx="1.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:6" cx="2.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:7" cx="3.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:8" cx="4.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:9" cx="5.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:10" cx="6.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:11" cx="7.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:12" cx="8.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:13" cx="9.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:14" cx="10.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:15" cx="11.5" cy="4.5" r=".42"/>
-            <circle class="b" style="--d:16" cx="12.5" cy="4.5" r=".42"/>
-            <circle class="c" style="--d:5" cx="0.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:6" cx="1.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:7" cx="2.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:8" cx="3.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:9" cx="4.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:10" cx="5.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:11" cx="6.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:12" cx="7.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:13" cx="8.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:14" cx="9.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:15" cx="10.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:16" cx="11.5" cy="5.5" r=".42"/>
-            <circle class="c" style="--d:17" cx="12.5" cy="5.5" r=".42"/>
-            <circle class="b" style="--d:6" cx="0.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:7" cx="1.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:8" cx="2.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:9" cx="3.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:10" cx="4.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:11" cx="5.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:12" cx="6.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:13" cx="7.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:14" cx="8.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:15" cx="9.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:16" cx="10.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:17" cx="11.5" cy="6.5" r=".42"/>
-            <circle class="b" style="--d:18" cx="12.5" cy="6.5" r=".42"/>
-            <circle class="off" cx="0.5" cy="7.5" r=".36"/>
-            <circle class="c" style="--d:8" cx="1.5" cy="7.5" r=".42"/>
-            <circle class="c" style="--d:9" cx="2.5" cy="7.5" r=".42"/>
-            <circle class="c" style="--d:10" cx="3.5" cy="7.5" r=".42"/>
-            <circle class="e" style="--d:11" cx="4.5" cy="7.5" r=".42"/>
-            <circle class="c" style="--d:12" cx="5.5" cy="7.5" r=".42"/>
-            <circle class="c" style="--d:13" cx="6.5" cy="7.5" r=".42"/>
-            <circle class="c" style="--d:14" cx="7.5" cy="7.5" r=".42"/>
-            <circle class="e" style="--d:15" cx="8.5" cy="7.5" r=".42"/>
-            <circle class="c" style="--d:16" cx="9.5" cy="7.5" r=".42"/>
-            <circle class="c" style="--d:17" cx="10.5" cy="7.5" r=".42"/>
-            <circle class="c" style="--d:18" cx="11.5" cy="7.5" r=".42"/>
-            <circle class="off" cx="12.5" cy="7.5" r=".36"/>
-            <circle class="off" cx="0.5" cy="8.5" r=".36"/>
-            <circle class="c" style="--d:9" cx="1.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:10" cx="2.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:11" cx="3.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:12" cx="4.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:13" cx="5.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:14" cx="6.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:15" cx="7.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:16" cx="8.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:17" cx="9.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:18" cx="10.5" cy="8.5" r=".42"/>
-            <circle class="c" style="--d:19" cx="11.5" cy="8.5" r=".42"/>
-            <circle class="off" cx="12.5" cy="8.5" r=".36"/>
-            <circle class="off" cx="0.5" cy="9.5" r=".36"/>
-            <circle class="c" style="--d:10" cx="1.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:11" cx="2.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:12" cx="3.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:13" cx="4.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:14" cx="5.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:15" cx="6.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:16" cx="7.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:17" cx="8.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:18" cx="9.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:19" cx="10.5" cy="9.5" r=".42"/>
-            <circle class="c" style="--d:20" cx="11.5" cy="9.5" r=".42"/>
-            <circle class="off" cx="12.5" cy="9.5" r=".36"/>
-            <circle class="off" cx="0.5" cy="10.5" r=".36"/>
-            <circle class="d" style="--d:11" cx="1.5" cy="10.5" r=".42"/>
-            <circle class="off" cx="2.5" cy="10.5" r=".36"/>
-            <circle class="d" style="--d:13" cx="3.5" cy="10.5" r=".42"/>
-            <circle class="off" cx="4.5" cy="10.5" r=".36"/>
-            <circle class="d" style="--d:15" cx="5.5" cy="10.5" r=".42"/>
-            <circle class="off" cx="6.5" cy="10.5" r=".36"/>
-            <circle class="d" style="--d:17" cx="7.5" cy="10.5" r=".42"/>
-            <circle class="off" cx="8.5" cy="10.5" r=".36"/>
-            <circle class="d" style="--d:19" cx="9.5" cy="10.5" r=".42"/>
-            <circle class="off" cx="10.5" cy="10.5" r=".36"/>
-            <circle class="d" style="--d:21" cx="11.5" cy="10.5" r=".42"/>
-            <circle class="off" cx="12.5" cy="10.5" r=".36"/>
-            <circle class="off" cx="0.5" cy="11.5" r=".36"/>
-            <circle class="d" style="--d:12" cx="1.5" cy="11.5" r=".42"/>
-            <circle class="off" cx="2.5" cy="11.5" r=".36"/>
-            <circle class="off" cx="3.5" cy="11.5" r=".36"/>
-            <circle class="off" cx="4.5" cy="11.5" r=".36"/>
-            <circle class="off" cx="5.5" cy="11.5" r=".36"/>
-            <circle class="off" cx="6.5" cy="11.5" r=".36"/>
-            <circle class="off" cx="7.5" cy="11.5" r=".36"/>
-            <circle class="off" cx="8.5" cy="11.5" r=".36"/>
-            <circle class="off" cx="9.5" cy="11.5" r=".36"/>
-            <circle class="off" cx="10.5" cy="11.5" r=".36"/>
-            <circle class="d" style="--d:22" cx="11.5" cy="11.5" r=".42"/>
-            <circle class="off" cx="12.5" cy="11.5" r=".36"/>
+            <rect class="c" style="--d:4" x="4" y="0" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:8" x="8" y="0" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:5" x="4" y="1" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:9" x="8" y="1" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:4" x="2" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:5" x="3" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:6" x="4" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:7" x="5" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:8" x="6" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:9" x="7" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:10" x="8" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:11" x="9" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:12" x="10" y="2" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:4" x="1" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:5" x="2" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:6" x="3" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:7" x="4" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:8" x="5" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:9" x="6" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:10" x="7" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:11" x="8" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:12" x="9" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:13" x="10" y="3" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:14" x="11" y="3" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:4" x="0" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:5" x="1" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:6" x="2" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:7" x="3" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:8" x="4" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:9" x="5" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:10" x="6" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:11" x="7" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:12" x="8" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:13" x="9" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:14" x="10" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:15" x="11" y="4" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:16" x="12" y="4" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:5" x="0" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:6" x="1" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:7" x="2" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:8" x="3" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:9" x="4" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:10" x="5" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:11" x="6" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:12" x="7" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:13" x="8" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:14" x="9" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:15" x="10" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:16" x="11" y="5" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:17" x="12" y="5" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:6" x="0" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:7" x="1" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:8" x="2" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:9" x="3" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:10" x="4" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:11" x="5" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:12" x="6" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:13" x="7" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:14" x="8" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:15" x="9" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:16" x="10" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:17" x="11" y="6" width="1.04" height="1.04"/>
+            <rect class="b" style="--d:18" x="12" y="6" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:8" x="1" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:9" x="2" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:10" x="3" y="7" width="1.04" height="1.04"/>
+            <rect class="e" style="--d:11" x="4" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:12" x="5" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:13" x="6" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:14" x="7" y="7" width="1.04" height="1.04"/>
+            <rect class="e" style="--d:15" x="8" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:16" x="9" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:17" x="10" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:18" x="11" y="7" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:9" x="1" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:10" x="2" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:11" x="3" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:12" x="4" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:13" x="5" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:14" x="6" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:15" x="7" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:16" x="8" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:17" x="9" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:18" x="10" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:19" x="11" y="8" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:10" x="1" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:11" x="2" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:12" x="3" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:13" x="4" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:14" x="5" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:15" x="6" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:16" x="7" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:17" x="8" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:18" x="9" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:19" x="10" y="9" width="1.04" height="1.04"/>
+            <rect class="c" style="--d:20" x="11" y="9" width="1.04" height="1.04"/>
+            <rect class="d" style="--d:11" x="1" y="10" width="1.04" height="1.04"/>
+            <rect class="d" style="--d:13" x="3" y="10" width="1.04" height="1.04"/>
+            <rect class="d" style="--d:15" x="5" y="10" width="1.04" height="1.04"/>
+            <rect class="d" style="--d:17" x="7" y="10" width="1.04" height="1.04"/>
+            <rect class="d" style="--d:19" x="9" y="10" width="1.04" height="1.04"/>
+            <rect class="d" style="--d:21" x="11" y="10" width="1.04" height="1.04"/>
+            <rect class="d" style="--d:12" x="1" y="11" width="1.04" height="1.04"/>
+            <rect class="d" style="--d:22" x="11" y="11" width="1.04" height="1.04"/>
           </g>
-          <circle class="bead" cx="12.5" cy="7.55" r=".34"/>
+          <rect class="bead" x="12" y="6.1" width="1" height="1.1"/>
         </svg>
       </div>
-      <span class="badge"><i></i>Beta · Invite only</span>
-      <h1 id="hero-title" class="dotface">Coach Clawde</h1>
+      <h1 id="hero-title" class="pixelface">Coach Clawde</h1>
       <p class="tagline">Plans your week. Runs your sessions. Learns from both.</p>
       <p class="lead">Tell Clawde what you're training for, which days you're free and what hurts. You get next week's plan, then a coach in your pocket for every set, rep and interval. A first 5K, a half marathon PB, a bigger squat, or a plan you already have.</p>
       <div class="ctas">
@@ -511,10 +451,10 @@ p { margin: 0; }
 
   <section class="specs" aria-label="At a glance">
     <div class="wrap grid">
-      <div class="spec"><b class="dotface">≤10</b><span>questions to set up. Every answer shapes your plan.</span></div>
-      <div class="spec"><b class="dotface">9</b><span>recent sessions, plus working weights and PRs, go into every new plan.</span></div>
-      <div class="spec"><b class="dotface">1 min</b><span>weekly check-in. Skip it whenever you like.</span></div>
-      <div class="spec"><b class="dotface">0</b><span>extra stopwatches. Run Mode times every rep for you.</span></div>
+      <div class="spec"><b class="pixelface">10</b><span>questions at most to set up. Every answer shapes your plan.</span></div>
+      <div class="spec"><b class="pixelface">9</b><span>recent sessions, plus working weights and PRs, go into every new plan.</span></div>
+      <div class="spec"><b class="pixelface">1 min</b><span>weekly check-in. Skip it whenever you like.</span></div>
+      <div class="spec"><b class="pixelface">0</b><span>extra stopwatches. Run Mode times every rep for you.</span></div>
     </div>
   </section>
 
@@ -522,7 +462,7 @@ p { margin: 0; }
     <div class="wrap">
       <div class="head">
         <span class="label">Features</span>
-        <h2 id="week-title" class="dotface">A week with Clawde</h2>
+        <h2 id="week-title" class="pixelface">A week with Clawde</h2>
         <p>Six steps that repeat every week. Each one feeds the next plan, so the longer you train, the better it fits.</p>
       </div>
 
@@ -606,7 +546,7 @@ p { margin: 0; }
     <div class="wrap">
       <div class="head">
         <span class="label">And the small things</span>
-        <h2 id="things-title" class="dotface">Built for the gym floor</h2>
+        <h2 id="things-title" class="pixelface">Built for the gym floor</h2>
       </div>
       <div class="things">
         <div class="thing">
@@ -658,7 +598,7 @@ p { margin: 0; }
       <div class="card">
         <div>
           <span class="label">Beta</span>
-          <h2 id="beta-title" class="dotface">Invite only</h2>
+          <h2 id="beta-title" class="pixelface">Invite only</h2>
         </div>
         <div>
           <p>Coach Clawde is in a closed beta while it's tested with a small group of athletes. There's no sign-up form: <strong>accounts are set up by hand</strong>, and you'll be sent an email and password to sign in with.</p>
@@ -678,7 +618,7 @@ p { margin: 0; }
     <div class="wrap">
       <div class="head">
         <span class="label">FAQ</span>
-        <h2 id="faq-title" class="dotface">Questions</h2>
+        <h2 id="faq-title" class="pixelface">Questions</h2>
       </div>
       <div class="faq">
         <details>
@@ -728,7 +668,7 @@ p { margin: 0; }
         </div>
       </nav>
     </div>
-    <p class="wordmark dotface" aria-hidden="true">Coach Clawde<span>.</span></p>
+    <p class="wordmark pixelface" aria-hidden="true">Coach Clawde<span>.</span></p>
     <div class="fine">
       <span>Not medical advice. Not affiliated with Anthropic.</span>
       <span>Claude is a trademark of Anthropic, PBC.</span>

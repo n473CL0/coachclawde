@@ -91,7 +91,7 @@ CLAUDE.md         programming rules and the WeekPlan schema, for generating plan
 ## Credits
 
 - Exercise photos and instructions in the movement guides come from [free-exercise-db](https://github.com/yuhonas/free-exercise-db).
-- Icons from [Lucide](https://lucide.dev). Website fonts: Doto, Geist and Space Mono (SIL Open Font License).
+- Icons from [Lucide](https://lucide.dev). Website fonts: Tiny5, Geist and Space Mono (SIL Open Font License).
 - Clawde the crab is a nod to the Claude Code mascot, now in a sweatband.
 
 ## Disclaimer
