@@ -55,6 +55,13 @@
   --gutter-r: max(clamp(16px, 4vw, 32px), env(safe-area-inset-right, 0px));
   --radius: clamp(22px, 3vw, 32px);
   --nav-h: 64px;
+
+  --motion-100: 100ms;
+  --motion-150: 150ms;
+  --motion-200: 200ms;
+  --motion-300: 300ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -77,7 +84,7 @@
 html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 16px); -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
-  background: var(--bg);
+  background: radial-gradient(ellipse min(900px, 140vw) 620px at 50% 0, rgba(217, 119, 86, 0.3), transparent 70%) no-repeat, var(--bg);
   color: var(--ink);
   font: 400 1.0625rem/1.6 var(--font-body);
   -webkit-font-smoothing: antialiased;
@@ -101,7 +108,6 @@ p { margin: 0; }
   font: 700 0.75rem/1.2 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--ink-2); display: inline-flex; align-items: center; gap: 0.6em;
 }
-.label::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
 /* Pixel lettering, drawn on the same square grid as the app icon. */
 .pixelface {
   font-family: var(--font-pixel); font-weight: 400; font-synthesis: none;
@@ -114,7 +120,7 @@ p { margin: 0; }
   min-height: 48px; padding: 0 1.4rem; border-radius: 999px;
   font: 500 0.98rem/1 var(--font-body); text-decoration: none; white-space: nowrap;
   border: 1.5px solid var(--ink); background: var(--ink); color: var(--bg);
-  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: transform var(--motion-150) var(--ease-out), background-color var(--motion-150) ease, color var(--motion-150) ease, border-color var(--motion-150) ease;
 }
 .btn:hover { transform: translateY(-1px); background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.ghost { background: transparent; color: var(--ink); }
@@ -124,14 +130,20 @@ p { margin: 0; }
 
 /* --- nav --- */
 .nav {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
-  background: color-mix(in srgb, var(--bg) 86%, transparent);
-  backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px);
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  position: fixed; inset: env(safe-area-inset-top, 0px) 0 auto; z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  /* Headroom.js-style reveal: glide in on a long ease-out, fade alongside. */
+  transition: transform var(--motion-300) var(--ease-out), opacity var(--motion-200) var(--ease-out), visibility 0s;
+}
+/* Hidden over the hero; the script below reveals it once the hero's buttons scroll away. */
+.nav.tucked {
+  transform: translateY(calc(-100% - env(safe-area-inset-top, 0px))); opacity: 0; visibility: hidden;
+  transition: transform var(--motion-200) var(--ease-in), opacity var(--motion-200) var(--ease-in), visibility 0s var(--motion-200);
 }
 .nav .wrap { height: var(--nav-h); display: flex; align-items: center; gap: 1.5rem; }
 .brand { display: inline-flex; align-items: center; gap: 0.65rem; text-decoration: none; margin-right: auto; }
-.brand img { width: 30px; height: 30px; border-radius: 8px; }
+.brand img { width: 30px; height: 30px; animation: breathe 3.2s ease-in-out infinite; }
 .brand span { font: 700 0.95rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
 .nav-links { display: flex; gap: 1.6rem; }
 .nav-links a {
@@ -144,27 +156,42 @@ p { margin: 0; }
 /* --- hero --- */
 .hero { padding-block: clamp(2rem, 4.5vw, 3.25rem) 0; text-align: center; }
 .hero .wrap { display: flex; flex-direction: column; align-items: center; }
-.glyph {
-  width: clamp(116px, 12vw, 148px); aspect-ratio: 1; border-radius: 28%;
-  background: radial-gradient(circle at 50% 42%, rgba(217, 119, 86, 0.32), transparent 62%), #0c0c0c;
-  display: grid; place-items: center;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset, 0 18px 40px -18px var(--shadow);
-}
-.glyph svg { width: 76%; overflow: visible; }
+/* The crab turns to face the pointer. The script sets --mx/--my (-1..1), stacks
+   dark copies of the pixels behind it for depth, and lights it from the top
+   right through a white copy on top. */
+.glyph { width: clamp(116px, 12vw, 148px); perspective: 600px; animation: glitch-in 0.9s steps(1, end) 0.1s both; }
+.glyph .tilt { transform: rotateY(calc(var(--mx, 0) * 24deg)) rotateX(calc(var(--my, 0) * -24deg)); }
+.glyph svg { width: 100%; overflow: visible; animation: breathe 3.2s ease-in-out infinite; }
 .glyph .c { fill: #d97756; }
 .glyph .d { fill: #a9512f; }
 .glyph .b { fill: #fbf7f0; }
 .glyph .e { fill: #232120; }
-.glyph .lit rect { animation: glyph-on 0.55s ease-out both; animation-delay: calc(var(--d) * 45ms + 150ms); }
+.glyph .depth { transform: translate(calc(var(--mx, 0) * var(--i) * -0.2px), calc(var(--my, 0) * var(--i) * -0.2px)); }
+.glyph .depth rect { fill: #6b2f1a; }
+.glyph .sheen rect { fill: #fff; opacity: 0; }
 .glyph .bead { fill: #7cc5ff; animation: drip 4s ease-in 2.2s infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes glyph-on { from { opacity: 0.18; } 60% { opacity: 1; filter: brightness(1.35); } to { opacity: 1; } }
+/* Same idle bob as the app's ClawdeMark (clawde-bob), scaled to the mark's size. */
+@keyframes breathe { 0%, 100% { transform: none; } 50% { transform: translateY(-3.5%) rotate(-1.4deg); } }
+/* Load-in: sliced, jittered and colour-split, then settles. */
+@keyframes glitch-in {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; clip-path: inset(38% 0 44% 0); transform: translateX(-7px); filter: drop-shadow(4px 0 #7cc5ff) drop-shadow(-4px 0 #d97756); }
+  18%  { clip-path: inset(8% 0 72% 0); transform: translateX(6px); }
+  28%  { opacity: 0.35; clip-path: inset(62% 0 6% 0); transform: translateX(-3px) skewX(-10deg); }
+  38%  { opacity: 1; clip-path: inset(0 0 58% 0); transform: translateX(4px); filter: drop-shadow(-3px 0 #7cc5ff) drop-shadow(3px 0 #d97756); }
+  50%  { clip-path: inset(46% 0 0 0); transform: translateX(-2px); }
+  62%  { clip-path: inset(0); transform: translateX(2px) skewX(6deg); filter: drop-shadow(2px 0 #7cc5ff) drop-shadow(-2px 0 #d97756); }
+  74%  { opacity: 0.7; transform: none; filter: none; }
+  82%  { opacity: 1; transform: translateX(-1px); }
+  100% { opacity: 1; clip-path: inset(0); transform: none; filter: none; }
+}
 @keyframes drip {
   0%, 12% { transform: translateY(0) scale(0.5); opacity: 0; }
   20% { transform: translateY(0) scale(1); opacity: 1; }
   38% { transform: translateY(1.6px) scale(0.9); opacity: 1; }
   48%, 100% { transform: translateY(3.4px) scale(0.5); opacity: 0; }
 }
-.hero h1 { margin-top: 1.6rem; font-size: clamp(3.2rem, 10.5vw, 8.75rem); }
+.hero h1 { margin-top: 1.6rem; font-size: clamp(3.2rem, 10.5vw, 8.75rem); animation: glitch-in 0.9s steps(1, end) 0.35s both; }
 .hero .tagline { margin-top: 1.15rem; font-size: clamp(1.3rem, 2.4vw, 1.75rem); line-height: 1.25; font-weight: 500; letter-spacing: -0.01em; }
 .hero .lead { margin-top: 0.85rem; max-width: 44rem; color: var(--ink-2); font-size: 1.08rem; }
 .hero .ctas { margin-top: 1.6rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; }
@@ -187,7 +214,9 @@ p { margin: 0; }
 
 /* --- phones --- */
 .phone {
-  width: var(--w, clamp(190px, 24vw, 290px)); aspect-ratio: 393 / 852; padding: 2.6%;
+  /* Bezel is a share of the phone's own width; a % padding would follow the container's. */
+  --w: clamp(190px, 24vw, 290px);
+  width: var(--w); aspect-ratio: 393 / 852; padding: calc(var(--w) * 0.026);
   border-radius: 15.5% / 7.2%; background: #0e0e0e;
   box-shadow: 0 0 0 1px var(--line), inset 0 0 0 1.5px #2e2d2c, 0 34px 60px -26px var(--shadow);
 }
@@ -218,11 +247,6 @@ p { margin: 0; }
 .copy { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
 .copy h3 { font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.05; letter-spacing: -0.02em; }
 .copy p { color: var(--ink-2); max-width: 34rem; }
-.copy ul { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.copy li {
-  font: 400 0.8rem/1.2 var(--font-mono); padding: 0.55rem 0.8rem; border-radius: 999px;
-  background: var(--bg); border: 1px solid var(--line); color: var(--ink);
-}
 .shots { display: flex; justify-content: center; align-items: flex-start; min-width: 0; }
 .shots .phone { --w: clamp(170px, 22vw, 270px); }
 .shots.pair .phone:nth-child(2) { margin-left: -9%; margin-top: 14%; }
@@ -270,7 +294,7 @@ p { margin: 0; }
   font-size: clamp(1.1rem, 2vw, 1.35rem); font-weight: 500; letter-spacing: -0.01em;
 }
 .faq summary::-webkit-details-marker { display: none; }
-.faq summary::after { content: "+"; font: 400 1.6rem/1 var(--font-mono); color: var(--ink-2); transition: transform 0.2s ease; }
+.faq summary::after { content: "+"; font: 400 1.6rem/1 var(--font-mono); color: var(--ink-2); transition: transform var(--motion-200) var(--ease-out); }
 .faq details[open] summary::after { transform: rotate(45deg); }
 .faq details p { padding: 0 0 1.5rem; max-width: 44rem; color: var(--ink-2); }
 
@@ -290,9 +314,9 @@ p { margin: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .glyph .lit rect, .glyph .bead { animation: none; }
+  .glyph, .glyph svg, .glyph .bead, .brand img, .hero h1 { animation: none; }
   .glyph .bead { opacity: 0; }
-  .btn { transition: none; }
+  .btn, .nav { transition: none; }
 }
 </style>
 </head>
@@ -315,124 +339,174 @@ p { margin: 0; }
     </a>
   </div>
 </header>
+<script>
+  // Without JS the nav simply stays visible.
+  (() => {
+    const nav = document.querySelector('.nav');
+    nav.classList.add('tucked');
+    addEventListener('DOMContentLoaded', () => {
+      new IntersectionObserver(([e]) => nav.classList.toggle('tucked', e.isIntersecting || e.boundingClientRect.top > 0))
+        .observe(document.querySelector('.hero .ctas'));
+    });
+  })();
+</script>
 
 <main id="top">
   <section class="hero" aria-labelledby="hero-title">
     <div class="wrap">
-      <div class="glyph" role="img" aria-label="Clawde the crab in a sweatband, in pixels">
+      <div class="glyph" role="img" aria-label="Clawde the crab in a sweatband, in pixels"><div class="tilt">
         <svg viewBox="-0.3 -0.3 13.6 12.6" aria-hidden="true">
           <g class="lit">
-            <rect class="c" style="--d:4" x="4" y="0" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:8" x="8" y="0" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:5" x="4" y="1" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:9" x="8" y="1" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:4" x="2" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:5" x="3" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:6" x="4" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:7" x="5" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:8" x="6" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:9" x="7" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:10" x="8" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:11" x="9" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:12" x="10" y="2" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:4" x="1" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:5" x="2" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:6" x="3" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:7" x="4" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:8" x="5" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:9" x="6" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:10" x="7" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:11" x="8" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:12" x="9" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:13" x="10" y="3" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:14" x="11" y="3" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:4" x="0" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:5" x="1" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:6" x="2" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:7" x="3" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:8" x="4" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:9" x="5" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:10" x="6" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:11" x="7" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:12" x="8" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:13" x="9" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:14" x="10" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:15" x="11" y="4" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:16" x="12" y="4" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:5" x="0" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:6" x="1" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:7" x="2" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:8" x="3" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:9" x="4" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:10" x="5" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:11" x="6" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:12" x="7" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:13" x="8" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:14" x="9" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:15" x="10" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:16" x="11" y="5" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:17" x="12" y="5" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:6" x="0" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:7" x="1" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:8" x="2" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:9" x="3" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:10" x="4" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:11" x="5" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:12" x="6" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:13" x="7" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:14" x="8" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:15" x="9" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:16" x="10" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:17" x="11" y="6" width="1.04" height="1.04"/>
-            <rect class="b" style="--d:18" x="12" y="6" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:8" x="1" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:9" x="2" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:10" x="3" y="7" width="1.04" height="1.04"/>
-            <rect class="e" style="--d:11" x="4" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:12" x="5" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:13" x="6" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:14" x="7" y="7" width="1.04" height="1.04"/>
-            <rect class="e" style="--d:15" x="8" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:16" x="9" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:17" x="10" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:18" x="11" y="7" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:9" x="1" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:10" x="2" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:11" x="3" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:12" x="4" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:13" x="5" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:14" x="6" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:15" x="7" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:16" x="8" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:17" x="9" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:18" x="10" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:19" x="11" y="8" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:10" x="1" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:11" x="2" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:12" x="3" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:13" x="4" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:14" x="5" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:15" x="6" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:16" x="7" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:17" x="8" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:18" x="9" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:19" x="10" y="9" width="1.04" height="1.04"/>
-            <rect class="c" style="--d:20" x="11" y="9" width="1.04" height="1.04"/>
-            <rect class="d" style="--d:11" x="1" y="10" width="1.04" height="1.04"/>
-            <rect class="d" style="--d:13" x="3" y="10" width="1.04" height="1.04"/>
-            <rect class="d" style="--d:15" x="5" y="10" width="1.04" height="1.04"/>
-            <rect class="d" style="--d:17" x="7" y="10" width="1.04" height="1.04"/>
-            <rect class="d" style="--d:19" x="9" y="10" width="1.04" height="1.04"/>
-            <rect class="d" style="--d:21" x="11" y="10" width="1.04" height="1.04"/>
-            <rect class="d" style="--d:12" x="1" y="11" width="1.04" height="1.04"/>
-            <rect class="d" style="--d:22" x="11" y="11" width="1.04" height="1.04"/>
+            <rect class="c" x="4" y="0" width="1.04" height="1.04"/>
+            <rect class="c" x="8" y="0" width="1.04" height="1.04"/>
+            <rect class="c" x="4" y="1" width="1.04" height="1.04"/>
+            <rect class="c" x="8" y="1" width="1.04" height="1.04"/>
+            <rect class="c" x="2" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="3" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="4" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="5" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="6" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="7" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="8" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="9" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="10" y="2" width="1.04" height="1.04"/>
+            <rect class="c" x="1" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="2" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="3" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="4" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="5" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="6" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="7" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="8" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="9" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="10" y="3" width="1.04" height="1.04"/>
+            <rect class="c" x="11" y="3" width="1.04" height="1.04"/>
+            <rect class="b" x="0" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="1" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="2" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="3" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="4" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="5" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="6" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="7" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="8" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="9" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="10" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="11" y="4" width="1.04" height="1.04"/>
+            <rect class="b" x="12" y="4" width="1.04" height="1.04"/>
+            <rect class="c" x="0" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="1" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="2" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="3" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="4" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="5" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="6" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="7" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="8" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="9" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="10" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="11" y="5" width="1.04" height="1.04"/>
+            <rect class="c" x="12" y="5" width="1.04" height="1.04"/>
+            <rect class="b" x="0" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="1" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="2" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="3" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="4" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="5" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="6" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="7" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="8" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="9" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="10" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="11" y="6" width="1.04" height="1.04"/>
+            <rect class="b" x="12" y="6" width="1.04" height="1.04"/>
+            <rect class="c" x="1" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="2" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="3" y="7" width="1.04" height="1.04"/>
+            <rect class="e" x="4" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="5" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="6" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="7" y="7" width="1.04" height="1.04"/>
+            <rect class="e" x="8" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="9" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="10" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="11" y="7" width="1.04" height="1.04"/>
+            <rect class="c" x="1" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="2" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="3" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="4" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="5" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="6" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="7" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="8" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="9" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="10" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="11" y="8" width="1.04" height="1.04"/>
+            <rect class="c" x="1" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="2" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="3" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="4" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="5" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="6" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="7" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="8" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="9" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="10" y="9" width="1.04" height="1.04"/>
+            <rect class="c" x="11" y="9" width="1.04" height="1.04"/>
+            <rect class="d" x="1" y="10" width="1.04" height="1.04"/>
+            <rect class="d" x="3" y="10" width="1.04" height="1.04"/>
+            <rect class="d" x="5" y="10" width="1.04" height="1.04"/>
+            <rect class="d" x="7" y="10" width="1.04" height="1.04"/>
+            <rect class="d" x="9" y="10" width="1.04" height="1.04"/>
+            <rect class="d" x="11" y="10" width="1.04" height="1.04"/>
+            <rect class="d" x="1" y="11" width="1.04" height="1.04"/>
+            <rect class="d" x="11" y="11" width="1.04" height="1.04"/>
           </g>
           <rect class="bead" x="12" y="6.1" width="1" height="1.1"/>
         </svg>
-      </div>
+      </div></div>
+      <script>
+        (() => {
+          const glyph = document.querySelector('.glyph');
+          const lit = glyph.querySelector('.lit');
+          for (let i = 3; i > 0; i--) {
+            const layer = lit.cloneNode(true);
+            layer.setAttribute('class', 'depth');
+            layer.style.setProperty('--i', i);
+            lit.before(layer);
+          }
+          const sheen = lit.cloneNode(true);
+          sheen.setAttribute('class', 'sheen');
+          lit.after(sheen);
+          const cells = [...sheen.children].map(r => [r, +r.getAttribute('x') + 0.5, +r.getAttribute('y') + 0.5]);
+          const clamp = v => Math.max(-1, Math.min(1, v));
+          const still = matchMedia('(prefers-reduced-motion: reduce)');
+          // Resting pose: turned up towards the light, so the depth falls bottom left.
+          const cur = { x: 0.35, y: -0.5 }, target = { ...cur };
+          let raf = 0;
+          function draw() {
+            cur.x += (target.x - cur.x) * 0.1;
+            cur.y += (target.y - cur.y) * 0.1;
+            glyph.style.setProperty('--mx', cur.x.toFixed(3));
+            glyph.style.setProperty('--my', cur.y.toFixed(3));
+            // Fixed light at the top right; it drifts a little across the pixels as the crab turns under it.
+            const lx = 11 - cur.x * 2.5, ly = 1 - cur.y * 2.5;
+            for (const [r, x, y] of cells) r.style.opacity = (Math.max(0, 1 - Math.hypot(x - lx, y - ly) / 6) ** 2 * 0.5).toFixed(3);
+            raf = Math.abs(target.x - cur.x) + Math.abs(target.y - cur.y) > 0.002 ? requestAnimationFrame(draw) : 0;
+          }
+          addEventListener('pointermove', e => {
+            if (still.matches) return;
+            const b = glyph.getBoundingClientRect();
+            target.x = clamp((e.clientX - b.left - b.width / 2) / (innerWidth / 2));
+            target.y = clamp((e.clientY - b.top - b.height / 2) / (innerHeight / 2));
+            raf ||= requestAnimationFrame(draw);
+          }, { passive: true });
+          draw();
+        })();
+      </script>
       <h1 id="hero-title" class="pixelface">Coach Clawde</h1>
       <p class="tagline">Plans your week. Runs your sessions. Learns from both.</p>
-      <p class="lead">Tell Clawde what you're training for, which days you're free and what hurts. You get next week's plan, then a coach in your pocket for every set, rep and interval. A first 5K, a half marathon PB, a bigger squat, or a plan you already have.</p>
+      <p class="lead">Tell Clawde your goal, your free days and what hurts. You get next week's plan and a coach for every set, rep and interval.</p>
       <div class="ctas">
         <a class="btn" href="https://coach-clawde.vercel.app">Log in
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg>
@@ -469,20 +543,16 @@ p { margin: 0; }
       <div class="panels">
         <article class="panel">
           <div class="copy">
-            <span class="label">01 · Set up</span>
             <h3>Start with a chat</h3>
-            <p>Clawde asks why you're here: a race, a habit, a holiday, your sport or a plan you already follow. Then your time, your kit and a quick health check. Ten questions at most, and a card at the end shows what it heard so you can fix anything.</p>
-            <ul><li>5K to marathon, Hyrox, triathlon</li><li>Gym, home or just a mat</li><li>Injuries kept word for word</li></ul>
+            <p>Clawde asks what you're training for, how much time you have and what kit you've got. Ten questions at most, then a summary you can correct.</p>
           </div>
           <div class="shots"><div class="phone"><img loading="lazy" src="assets/screens/chat.webp" width="786" height="1704" alt="Onboarding chat with Clawde: training for a half marathon on 14 March, 22 weeks away."></div></div>
         </article>
 
         <article class="panel flip">
           <div class="copy">
-            <span class="label">02 · Plan</span>
             <h3>Your week in one tap</h3>
-            <p>Pick your training days and how long you've got, and add a note if the week is unusual. Coach Clawde writes one prompt with everything that matters: your goal, injuries, working weights, recent sessions and the programming rules. It opens in Claude ready to send. Paste the reply back and the week is set.</p>
-            <ul><li>A dated session for each day</li><li>Progressive overload from your logs</li><li>Deload weeks built into the block</li></ul>
+            <p>Pick your days and session length. Coach Clawde writes a prompt for your AI chat with your goal, injuries and recent training. Paste the reply back and the week is set.</p>
           </div>
           <div class="shots pair">
             <div class="phone"><img loading="lazy" src="assets/screens/planner.webp" width="786" height="1704" alt="Plan Your Week: Monday, Tuesday, Thursday and Saturday picked, 60 minutes a session, a note about Saturday's parkrun."></div>
@@ -492,10 +562,8 @@ p { margin: 0; }
 
         <article class="panel">
           <div class="copy">
-            <span class="label">03 · Lift</span>
             <h3>Log every set as you go</h3>
-            <p>Each session starts with a warm-up you tick through move by move. Log reps and weight against the plan's target, and the rest timer starts on its own and beeps when it's time to go again. Supersets stay side by side, and every exercise has a how-to guide with photos and a video search as backup.</p>
-            <ul><li>Rest timer with sound</li><li>Screen stays on mid-workout</li><li>Did something else? It still counts</li></ul>
+            <p>Log reps and weight against each target. The rest timer starts itself and beeps when it's time to go, and every exercise has a how-to guide.</p>
           </div>
           <div class="shots pair">
             <div class="phone"><img loading="lazy" src="assets/screens/lift.webp" width="786" height="1704" alt="Upper Body Strength in progress: dumbbell bench press sets with target reps and weights."></div>
@@ -505,10 +573,8 @@ p { margin: 0; }
 
         <article class="panel flip">
           <div class="copy">
-            <span class="label">04 · Run</span>
             <h3>Run Mode times every rep</h3>
-            <p>Press Start and run. Run Mode plays a tone at every change: rising for go, falling for recover, three pips just before. For distance reps, tap the big LAP button as you pass the mark. Paces come from a recent race time, so "threshold" means your threshold. When you finish, the log has filled itself in.</p>
-            <ul><li>Pace zones from a recent race</li><li>Lock mode ignores pocket taps</li><li>Works over your music</li></ul>
+            <p>Press Start and run. A tone marks every change, and paces come from a recent race time. When you finish, the log has filled itself in.</p>
           </div>
           <div class="shots pair">
             <div class="phone"><img loading="lazy" src="assets/screens/run-mode.webp" width="786" height="1704" alt="Run Mode: rep 1 of 6, 1 km at threshold pace, with a LAP button."></div>
@@ -518,20 +584,16 @@ p { margin: 0; }
 
         <article class="panel">
           <div class="copy">
-            <span class="label">05 · Check in</span>
             <h3>A minute at the end of the week</h3>
-            <p>How did it go? Shorter sessions next week? Is the knee better or worse? Every answer changes the next plan. Check-ins are suggestions, never a gate: skip one, or switch them off.</p>
-            <ul><li>Lighter week on request</li><li>Injury status tracked</li><li>Off switch in Settings</li></ul>
+            <p>How did the week go? Is the knee better or worse? Your answers shape the next plan, and you can always skip.</p>
           </div>
           <div class="shots"><div class="phone"><img loading="lazy" src="assets/screens/check-in.webp" width="786" height="1704" alt="Weekly check-in: Clawde asks how the week went, with answers from Rough to Great."></div></div>
         </article>
 
         <article class="panel flip">
           <div class="copy">
-            <span class="label">06 · Progress</span>
             <h3>Watch it add up</h3>
-            <p>See where you are in the block, how the last four weeks went, and your best set for every lift. History keeps every session with its notes, and you can delete anything logged by mistake.</p>
-            <ul><li>Personal bests for every lift</li><li>Block progress and a 4-week grid</li><li>Every session in History</li></ul>
+            <p>See where you are in the block, your last four weeks and your best set for every lift.</p>
           </div>
           <div class="shots pair">
             <div class="phone"><img loading="lazy" src="assets/screens/progress.webp" width="786" height="1704" alt="Progress: week 5 of a 26-week program and a grid of the last four weeks."></div>
@@ -602,7 +664,7 @@ p { margin: 0; }
         </div>
         <div>
           <p>Coach Clawde is in a closed beta while it's tested with a small group of athletes. There's no sign-up form: <strong>accounts are set up by hand</strong>, and you'll be sent an email and password to sign in with.</p>
-          <p>Got an invite? Log in below. You'll also need a Claude account to generate your plans.</p>
+          <p>Want to join? Email <a href="mailto:n473.cl0@gmail.com"><strong>n473.cl0@gmail.com</strong></a>. Got an invite? Log in below. Plans are written by an AI chat you already use, such as Claude, ChatGPT or Gemini.</p>
           <div class="ctas">
             <a class="btn" href="https://coach-clawde.vercel.app">Log in to the beta
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5"/></svg>
@@ -623,23 +685,23 @@ p { margin: 0; }
       <div class="faq">
         <details>
           <summary>Who writes the plans?</summary>
-          <p>Claude, Anthropic's AI assistant. Coach Clawde builds the prompt from your profile, goal, injuries, recent training and a set of programming rules, then opens it in the Claude app or on claude.ai. Claude replies with the week as structured data, and the app turns that into your sessions. You'll need a Claude account.</p>
+          <p>The AI chat you already pay for: Claude, ChatGPT, Gemini or any other. There's no extra subscription. Coach Clawde writes one prompt from your goal, injuries, recent training and a set of coaching rules, and copies it for you. One tap opens it in Claude, or you can paste it into any other chat. Paste the reply back and the app turns it into your sessions.</p>
+        </details>
+        <details>
+          <summary>Where does my data go?</summary>
+          <p>Into your own private account, and only you can see it. Your plans, workouts and answers aren't shared with anyone. They only leave the app when you send a prompt to your AI chat yourself.</p>
+        </details>
+        <details>
+          <summary>How do I get an invite?</summary>
+          <p>Invites go out by hand while the app is tested. If you'd like to join, email <a href="mailto:n473.cl0@gmail.com">n473.cl0@gmail.com</a>. The code is public too: the repo includes a setup guide if you'd like to run your own copy.</p>
+        </details>
+        <details>
+          <summary>Is this made by Anthropic?</summary>
+          <p>No. Coach Clawde is an independent project. Clawde the crab is a nod to the Claude Code mascot, now wearing a sweatband.</p>
         </details>
         <details>
           <summary>Is it medical advice?</summary>
           <p>No. It programs around the injuries you describe and keeps things conservative until you're cleared, but it isn't medical advice. If an injury is serious, recent or getting worse, see a GP or physio before you train, and stop if anything causes sharp pain.</p>
-        </details>
-        <details>
-          <summary>Where does my data go?</summary>
-          <p>Into your own account in the app's database, where row-level security means only you can read your rows. Your prompt goes to Claude only when you choose to send it.</p>
-        </details>
-        <details>
-          <summary>How do I get an invite?</summary>
-          <p>Invites go out by hand while the app is tested, so there's no waiting list to join yet. The code is public, though: the repo includes a setup guide if you'd like to run your own copy.</p>
-        </details>
-        <details>
-          <summary>Is this made by Anthropic?</summary>
-          <p>No. Coach Clawde is an independent project. It hands your prompt to Claude, and Clawde the crab is a nod to the Claude Code mascot, now wearing a sweatband.</p>
         </details>
       </div>
     </div>
