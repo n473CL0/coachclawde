@@ -41,7 +41,7 @@ export interface CheckInFacts {
   done: number
   /** Average planned session length, for "shorter sessions?" options. */
   sessionMinutes: number
-  /** Injury to ask about: a profile injury, or a pain note from this week. */
+  /** Injury to ask about, when one is due: a profile injury, or a pain note from this week. */
   injury?: { label: string; line: string; fromPainNote: boolean }
   /** A completed pace-based cardio session this week (title). */
   pacedSession?: string
@@ -98,10 +98,15 @@ export function computeFacts(input: {
   const mins = plan?.sessions.map((s) => s.estimatedMinutes).filter((m) => m > 0) ?? []
   const sessionMinutes = mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length) : goal?.constraints.sessionMinutes ?? 60
 
+  const n = checkIns.filter((c) => c.trigger !== 'reactive' && c.trigger !== 'migration').length + 1
   const resolved = new Set(goal?.health.pastInjuries ?? [])
   const activeInjury = profile.injuries.find((i) => !resolved.has(i))
   const pain = inWeek.find((s) => s.painNotes?.trim())
-  const injury = activeInjury
+  // A settled niggle isn't asked about every week: only when it's new, worse,
+  // flagged by a pain note, or every 4th check-in (so "Gone" stays reachable).
+  const status = activeInjury ? goal?.health.injuryStatus?.[activeInjury] : undefined
+  const due = trigger === 'reactive' || !!pain || !status || status === 'worse' || n % 4 === 0
+  const injury = activeInjury && due
     ? { label: injuryLabel(activeInjury), line: activeInjury, fromPainNote: false }
     : pain ? { label: `${injuryLabel(pain.painNotes!)} (from ${format(parseISO(pain.date), 'EEEE')})`, line: pain.painNotes!.trim(), fromPainNote: true } : undefined
 
@@ -125,7 +130,6 @@ export function computeFacts(input: {
     }
   }
 
-  const n = checkIns.filter((c) => c.trigger !== 'reactive' && c.trigger !== 'migration').length + 1
   const progress = getProgramProgress(profile, now)
   let milestone: CheckInFacts['milestone']
   if (event?.passed && !event.resultLogged) milestone = 'after-event'
@@ -434,7 +438,7 @@ export function describeAction(x: CheckInAction, f?: CheckInFacts): string {
       return ({
         improving: `${capital(name)}: improving. Keep programming around it`,
         active: `${capital(name)}: unchanged. Keep programming around it`,
-        worse: `${capital(name)}: worse. Conservative loads, and advise getting it assessed`,
+        worse: `${capital(name)}: worse. Lighter on the moves that load it this week`,
         gone: `${capital(name)}: resolved. Moved to injury history`,
       } as const)[x.status]
     }

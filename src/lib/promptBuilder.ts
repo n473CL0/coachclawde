@@ -1,4 +1,4 @@
-import type { CheckIn, DayOfWeek, LoggedSession, ProgramExerciseType, ProgramFacility, SessionType, UserProfile, WeekPlan } from '../types'
+import type { CheckIn, DayOfWeek, InjuryStatus, LoggedSession, ProgramExerciseType, ProgramFacility, SessionType, UserProfile, WeekPlan } from '../types'
 import { checkInForPlanning } from './checkIn'
 import { format } from 'date-fns'
 import { WEEK_DAYS_MON, addDays, toLocalISODate } from './weekUtils'
@@ -108,13 +108,13 @@ function strengthRule(s: PromptScope, profile: UserProfile): string {
    dominate. Each session's \`focus\` should be honest and cover a coherent group
    of muscles.`
     case 'lifts':
-      return `**Build the main lifts:** Organise sessions around the squat, bench press and
-   deadlift (and an overhead press if my injuries allow), progressing from my
-   current working weights, with accessories that fix weak points and keep
-   push, pull and legs in balance.`
+      return `**Build the main lifts:** Organise sessions around the squat, bench press,
+   deadlift and overhead press, progressing from my current working weights,
+   with accessories that fix weak points and keep push, pull and legs in
+   balance.`
     case 'event':
       return `**Strength supports my event:** Keep strength sessions short and focused on
-   legs, posterior chain, core and injury resilience. Keep them away from my
+   legs, posterior chain, core and durability. Keep them away from my
    key sessions: no heavy legs the day before a hard session or long effort.`
     case 'sport': {
       const wants = profile.goal?.sport?.wants ?? []
@@ -263,10 +263,10 @@ PlannedSession {
   estimatedMinutes: number,
   intensity: "easy" | "moderate" | "hard",
   warmup: string,                 // REQUIRED: one-line summary of the warm-up
-  warmupExercises: RoutineItem[], // REQUIRED: the full warm-up, in order, 4–8
-                                  // moves (see "Warm-up & cool-down format")
-  cooldown: string,               // REQUIRED: one-line summary of the cool-down
-  cooldownExercises: RoutineItem[], // REQUIRED: the full cool-down, 3–5 moves
+  warmupExercises: RoutineItem[], // REQUIRED: the warm-up, in order, 2–4 moves
+                                  // (see "Warm-up format")
+  cooldown?: string,              // optional one-line cool-down summary
+  cooldownExercises?: RoutineItem[], // optional: at most 2 stretches
 ${sessionFields}
 }
 
@@ -287,92 +287,72 @@ const ALL: PromptScope = {
 
 // --- warm-up -------------------------------------------------------------------------
 
-function raiseExamples(s: PromptScope): string {
-  const f = s.facilities
-  if (f.includes('full-gym') || (!f.length && s.weights)) return 'e.g. bike, rower or brisk incline walk'
-  if (s.cardio && !s.weights && !s.mobility) return 'e.g. a brisk walk or very easy jog'
-  return 'e.g. marching on the spot, step-ups or skipping'
-}
-
 function warmupSection(s: PromptScope): string {
-  const phase4 = [
-    s.weights && `**Ramp-up sets (weights sessions):** before the first main lift, and any
-     later lift much heavier than what came before, give 2–3 lighter build-up
-     sets with falling reps at roughly 40–50%, 70% and 85–90% of the working
-     weight you set. Write the actual kg in the \`prescription\`, rounded to
-     loadable jumps. Skip this for bodyweight or light accessory work.`,
-    s.cardio && `**${s.weights ? 'Cardio sessions' : 'Before a run or ride'}:** finish with drills (e.g. Leg Swings, High
-     Knees, Butt Kicks) and 2–4 short strides or build-ups toward the target
-     effort before the first rep.`,
-    s.mobility && `**${s.weights || s.cardio ? 'Active recovery' : 'Mobility sessions'}:** a gentle flow into the session's first positions.`,
+  const f = s.facilities
+  const gym = f.includes('full-gym') || (!f.length && s.weights)
+  const moves = [
+    s.weights && (gym
+      ? `**Weights sessions:** ramp-up sets for the first main lift (and any later
+    lift much heavier than what came before): 2–3 lighter sets with falling reps
+    at roughly 40–50%, 70% and 85–90% of the working weight you set, with the
+    actual kg in the \`prescription\`, rounded to loadable jumps. In sessions of
+    45 min or more, start with up to 5 min easy on a bike or rower and add 1–2
+    mobility moves for the joints the session loads.`
+      : `**Weights sessions:** an easier version of the first exercise (e.g. incline
+    push-ups before push-ups, bodyweight squats before goblet squats), then
+    ramp-up sets with the actual kg if the first exercise is loaded. In sessions
+    of 45 min or more, add 1–2 mobility moves for the joints the session loads.`),
+    s.cardio && `**${s.weights ? 'Cardio sessions' : 'Runs and rides'}:** the easy warm-up itself is a timed
+    \`workout\` step. Before runs with fast work (threshold, interval, repetition
+    or sprint efforts), add drills (e.g. Leg Swings, High Knees, Butt Kicks) and
+    2–4 short strides; before easy runs, one or two loosening moves are enough.
+    No running drills before rowing, cycling or swimming.`,
+    s.mobility && `**${s.weights || s.cardio ? 'Active recovery' : 'Mobility sessions'}:** a gentle move or two into the session's first positions.`,
   ].filter(Boolean)
 
   const example = s.weights
-    ? `"warmup": "5 min easy row, hip and upper-back mobility, band pull-aparts, ramp-up sets",
+    ? gym
+      ? `"warmup": "5 min easy row, hip and upper-back mobility, ramp-up sets",
 "warmupExercises": [
   { "name": "Rowing Machine", "prescription": "5 min easy", "notes": "Conversational pace, just get warm" },
   { "name": "World's Greatest Stretch", "prescription": "5 each side", "notes": "Opens hips and upper back" },
-  { "name": "Cat Stretch", "prescription": "8 slow reps" },
-  { "name": "Band Pull-Apart", "prescription": "2 × 15", "notes": "Shoulder prehab before pressing" },
   { "name": "Dumbbell Bench Press", "prescription": "10 × 10kg, 6 × 16kg, 3 × 20kg", "notes": "Ramp-up to the 22.5kg work sets: light, crisp reps, not logged" }
-],
-"cooldown": "Easy walk, then chest, lat and hip-flexor stretches",
-"cooldownExercises": [
-  { "name": "Walking", "prescription": "2 min easy" },
-  { "name": "Chest Stretch", "prescription": "45s each side" },
-  { "name": "Lat Stretch", "prescription": "45s each side" }
+]`
+      : `"warmup": "Easy squats and incline push-ups before the first exercise",
+"warmupExercises": [
+  { "name": "Bodyweight Squat", "prescription": "2 × 10", "notes": "Easy range first, then full depth" },
+  { "name": "Incline Push-Up", "prescription": "2 × 8", "notes": "An easier version of the first exercise" }
 ]`
     : s.cardio
-      ? `"warmup": "Brisk walk, leg swings, drills and strides",
+      ? `"warmup": "Leg swings, drills and strides",
 "warmupExercises": [
-  { "name": "Walking", "prescription": "3 min brisk", "notes": "Just get warm" },
   { "name": "Leg Swings", "prescription": "10 each way, each leg" },
   { "name": "High Knees", "prescription": "2 × 20 m" },
-  { "name": "Butt Kicks", "prescription": "2 × 20 m" },
-  { "name": "Strides", "prescription": "3 × 80 m", "notes": "Build to the session's fastest effort, then walk back" }
-],
-"cooldown": "Easy walk, then calf, hamstring and hip-flexor stretches",
-"cooldownExercises": [
-  { "name": "Walking", "prescription": "2 min easy" },
-  { "name": "Calf Stretch", "prescription": "45s each side" },
-  { "name": "Hamstring Stretch", "prescription": "45s each side" }
+  { "name": "Strides", "prescription": "3 × 20s", "notes": "Build to the session's fastest effort, then walk back" }
 ]`
-      : `"warmup": "Marching, cat-cow, thoracic rotations and hip circles",
+      : `"warmup": "Cat-cow and hip circles to loosen up",
 "warmupExercises": [
-  { "name": "Marching", "prescription": "2 min" },
   { "name": "Cat Stretch", "prescription": "8 slow reps" },
-  { "name": "Thoracic Rotation", "prescription": "8 each side" },
   { "name": "Hip Circles", "prescription": "10 each way" }
-],
-"cooldown": "Child's pose and slow breathing",
-"cooldownExercises": [
-  { "name": "Child's Pose", "prescription": "60s" },
-  { "name": "Supine Twist", "prescription": "45s each side" },
-  { "name": "Box Breathing", "prescription": "2 min" }
 ]`
 
-  return `## Warm-up & cool-down format (required on every session)
+  return `## Warm-up format
 
 The app shows each session's warm-up as a one-line summary that expands into
-a numbered checklist, with a movement guide for every move. Build it like this:
+a short checklist, with a movement guide for every move. Keep it short and use
+the session's own equipment:
 
-- \`warmup\`: one line summarising the whole warm-up.
-- \`warmupExercises\`: the full warm-up **in the order I do it**, 4–8 moves,
-  about 8–12 minutes (count it in \`estimatedMinutes\`). Work through these
-  phases:
-  1. **Raise:** 3–5 min of easy movement to get my heart rate up (${raiseExamples(s)}).
-  2. **Mobilise:** dynamic mobility for the joints this session loads${s.weights ? ` (e.g.
-     hips and ankles before squats, upper back and shoulders before pressing)` : ''}.
-  3. **Activate / prehab:** 1–2 moves for the muscles that protect my flagged
-     injuries, or that the session leans on most.
-${phase4.map((p, i) => `  ${4 + i}. ${p}`).join('\n')}
+- \`warmup\`: one line summarising the warm-up.
+- \`warmupExercises\`: 2–4 moves, in the order I do them (count them in
+  \`estimatedMinutes\`):
+${moves.map((m) => `  - ${m}`).join('\n')}
 - **Every move needs a \`prescription\`**: reps, sets × reps, time or distance,
   e.g. "2 × 10", "60s", "5 min easy", "10 each side"${s.weights ? ', "8 × 12kg, 5 × 18kg"' : ''}. Use
   \`notes\` for the cue or why the move is there.
-- \`cooldown\` + \`cooldownExercises\`: 3–5 moves, about 5 minutes. An easy
-  flush first, then static stretches (30–60s holds) for the muscles worked, in
-  order.
-- Warm-up and cool-down moves aren't logged${s.weights || s.mobility ? ', so don\'t repeat them in\n  `exercises`' : ''}.
+- The cool-down is optional: leave \`cooldown\` and \`cooldownExercises\` out
+  unless the session has time to spare, and then give at most two stretches
+  (30–60s holds) for the muscles worked.
+- Warm-up moves aren't logged${s.weights || s.mobility ? ', so don\'t repeat them in `exercises`' : ''}.
 
 Example of the shape (base the real moves${s.weights ? ' and loads' : ''} on each session${s.weights ? ' and my\nworking weights' : ''}; don't copy these):
 
@@ -382,6 +362,9 @@ ${example}
 }
 
 // --- the prompt ----------------------------------------------------------------------
+
+/** How a niggle's latest check-in answer reads in the prompt. */
+const STATUS_WORDS: Record<InjuryStatus, string> = { active: 'unchanged', improving: 'improving', worse: 'worse this week' }
 
 export function buildWeekPlanPrompt(
   selectedDays: DayOfWeek[],
@@ -432,41 +415,40 @@ export function buildWeekPlanPrompt(
       ].filter(Boolean).join('\n')
     : '- (no standing program preferences set)'
 
+  // Each niggle is stated once, with its check-in status; nothing at all when there are none.
+  const status = profile.goal?.health.injuryStatus ?? {}
+  const niggles = profile.injuries.map((i) => (status[i] ? `${i} (${STATUS_WORDS[status[i]]})` : i))
+  const everyMuscleTwice = s.strengthFocus === 'physique' || s.strengthFocus === 'lifts' || s.strengthFocus === 'general'
+
   // The rules that apply to this athlete, numbered as they come.
   const rules: string[] = [
-    profile.injuries.length
-      ? `**INJURY-AWARE PROGRAMMING (safety-critical):** Read my stated injuries and
-   program around them. Pick exercise variations, ranges of motion and loads
-   that don't aggravate a flagged area, swap out movements that would, and add
-   appropriate prehab/rehab work where it helps. When an injury is serious,
-   recent or unresolved, keep loads conservative and note that I should get it
-   assessed and cleared by a qualified professional first. This is general
-   fitness guidance, not medical advice.`
-      : `**Safety first:** I've reported no injuries, but choose sensible variations and
-   loads, and tell me to stop anything that causes sharp or worsening pain.
-   This is general fitness guidance, not medical advice.`,
+    niggles.length ? `**Train around my niggles:** For each niggle in my profile, change only the
+   exercises${s.cardio ? ' or sessions' : ''} that provoke it (a different variation, range of motion or
+   load) and train everything else normally. Say what you changed once, in a
+   short note on that exercise${s.cardio ? ' or step' : ''}. For one marked "worse this week", go
+   lighter on the movements that load it this week. Don't add rehab or
+   "protective" moves unless I ask, and leave medical advice to the app.` : '',
     s.diet ? `**Respect my dietary needs** (${profile.dietaryNotes.join('; ')}) in any nutrition
    suggestions; they don't otherwise change the programming.` : '',
     equipmentRule(s.facilities, s) ?? '',
     s.weights
-      ? `**Progressive overload:** Slightly increase volume or intensity vs. my recent
-   logged data and current working weights.`
+      ? `**Progressive overload:** Keep last week's exercises, with the same names,
+   unless I swapped one or a new block starts, and slightly increase volume or
+   intensity from my recent logged data and current working weights.`
       : `**Progressive overload:** Build gradually from my recent sessions: a little
    more time, volume or intensity each week, never all three at once.`,
     s.weights ? strengthRule(s, profile) : '',
-    s.weights ? `**Supersets — pairing, equipment & layout:** Pair complementary movements
-   (prefer antagonist or push/pull pairs, e.g. chest press + row, quad +
-   hamstring, biceps + triceps). For each superset:
-   - **Keep it easy to move between:** only pair exercises that share the same
-     station/equipment or sit right next to each other. Do NOT pair two
-     different machines, or a machine with a bench/rack — I shouldn't have to
-     hop between stations (or hold a machine others are waiting for) to alternate
-     sets. Dumbbell/bodyweight pairs, or two moves on one cable/bench, are ideal.
-   - **Keep it in one contiguous block:** place the paired exercises adjacent in
-     the \`exercises\` array, and don't scatter a superset's exercises among
-     others — all of a superset's movements come one after another so I'm not
-     flipping back and forth. Note the pairing in \`coachNotes\` (e.g. "Superset
-     with the next exercise — alternate sets").` : '',
+    s.weights ? `**Session shape:** 3–6 exercises a session (up to 7 once I'm past beginner),
+   main compound exercise first. Most sets stop 1–3 reps short of failure
+   (RPE 7–9). Rest 2–3 min on compound exercises and 60–90 s on isolation
+   work.${everyMuscleTwice ? ` Where my days allow, train each major muscle group at least twice a
+   week.` : ''}` : '',
+    s.weights ? `**Supersets are optional:** Use straight sets by default. Only superset when
+   the session wouldn't fit the time otherwise, and then only opposing muscles at
+   one station (e.g. Dumbbell Bench Press + One-Arm Dumbbell Row on one bench,
+   or Cable Curl + Cable Pushdown on one stack), never the main heavy lift. Put
+   the pair next to each other in \`exercises\` and note it in \`coachNotes\`
+   (e.g. "Superset with the next exercise — alternate sets").` : '',
     s.weights || s.mobility ? `**Timed exercises:** For holds (planks, side planks, ${s.weights ? 'dead hangs, wall sits' : 'stretches, wall sits'}),
    set \`durationSeconds\` on each set${s.weights ? ' and give them no weight' : ''}. The app shows a
    stopwatch.` : '',
@@ -480,14 +462,13 @@ export function buildWeekPlanPrompt(
    scores${s.weights ? ', missed reps, stalled weights' : ', sessions cut short'}). Build through the middle of the block
    and push a little harder in the final week or two. Say in your summary if
    this is a deload week and why.`,
-    `**Detailed warm-up & cool-down (required):** Every session must include the
-   full step-by-step warm-up and cool-down described in "Warm-up & cool-down
-   format" below. I follow it move by move in the app, so never skip it or
-   reduce it to a one-line summary.`,
+    `**Warm-up:** Give every session the short warm-up described in "Warm-up
+   format" below, listed move by move: I follow it as a checklist in the app.`,
     `**Standard exercise names:** Name every ${s.weights || s.mobility ? 'exercise and ' : ''}warm-up move with its
    common, standard name (e.g. ${s.weights ? '"Dumbbell Bench Press", "Romanian Deadlift",\n   "Cat Stretch"' : s.cardio ? '"Leg Swings", "Calf Stretch"' : '"Cat Stretch", "Child\'s Pose"'}). The app looks each name up in an exercise library to
    show me a movement guide. Put variations and cues in ${s.weights || s.mobility ? '`coachNotes` / ' : ''}\`notes\`,
-   not in the name.`,
+   not in the name.${s.weights || s.mobility ? ` Stick to well-known exercises that fit my equipment: no hybrids
+   or novelty moves.` : ''}`,
     s.cardio ? `**Cardio is a structured \`workout\`:** Describe every cardio session as
    \`workout\` steps (see "Cardio workouts" below). Pick an effort word for each
    step; the app turns it into my pace or feel. Only prescribe what I can
@@ -513,7 +494,7 @@ me follow-up questions — go straight to the plan.
 - **Week starts (Monday):** ${weekStartISO}
 - **Training days — use exactly these dates, one session per day:**
 ${dayLines || '  - —'}
-- **Target session length:** about ${sessionMinutes} minutes each, including warm-up and cool-down. Size the ${s.weights || s.mobility ? 'exercise count, sets and rest' : 'workout'} so it genuinely fits, and set \`estimatedMinutes\` honestly.
+- **Target session length:** about ${sessionMinutes} minutes each, including the warm-up. Size the ${s.weights || s.mobility ? 'exercise count, sets and rest' : 'workout'} so it genuinely fits, and set \`estimatedMinutes\` honestly.
 - **Session types:** ${onlyTypes}
 - **Extra context / notes:** ${userNotes.trim() || 'None'}${replaceNote}
 ${goalSection ? `
@@ -525,8 +506,8 @@ ${goalSection}
 - **Sex / age / height / weight:** ${profile.sex}, ${age !== undefined ? `${age}y` : 'age —'}, ${profile.heightCm}cm, ${profile.weightKg}kg
 - **Program block:** ${blockLine}
 - **Experience level:** ${profile.experienceLevel ?? '—'}
-- **Goals:** ${profile.goals.length ? profile.goals.join('; ') : '—'}
-- **⚠️ Injuries (safety-critical — program around these using your judgement; this is general fitness guidance, not medical advice):** ${profile.injuries.length ? profile.injuries.join('; ') : 'None reported'}
+- **Goals:** ${profile.goals.length ? profile.goals.join('; ') : '—'}${niggles.length ? `
+- **Niggles to train around:** ${niggles.join('; ')}` : ''}
 - **Fitness background:** ${profile.fitnessBackground || '—'}${s.diet ? `
 - **Dietary notes:** ${profile.dietaryNotes.join('; ')}` : ''}
 
@@ -540,9 +521,9 @@ ${s.cardio ? `
 ## Training history (summary)
 ${summarizeHistory(loggedSessions, { latestCheckIn: checkInForPlanning(checkIns, weekStartISO)?.summary.split('\n').filter(Boolean) })}
 
-## Critical Programming Rules
+## Programming rules
 
-Apply all of these. The safety rules override every preference above.
+Apply all of these.
 
 ${rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
@@ -559,8 +540,8 @@ ${s.weights ? 'Apply progressive overload against the current working weights ab
 /**
  * Tracker mode (§4.6): the athlete brings their own plan. This prompt asks
  * Claude to convert pasted plan text into importable WeekPlan JSON *as
- * written*: no reprogramming, but anything that conflicts with their
- * injuries is flagged, never silently rewritten.
+ * written*: no reprogramming, but anything that loads an injury marked worse
+ * at a check-in is flagged, never silently rewritten.
  */
 export function buildConvertPlanPrompt(
   planText: string,
@@ -574,6 +555,14 @@ export function buildConvertPlanPrompt(
     .filter(({ day }) => selectedDays.includes(day))
     .map(({ day, i }) => `  - ${day} → \`${toLocalISODate(addDays(weekStart, i))}\``)
     .join('\n')
+  const worse = profile.injuries.filter((i) => profile.goal?.health.injuryStatus?.[i] === 'worse')
+  const flareUp = worse.length ? `
+## Flare-up check
+- Worse this week: ${worse.join('; ')}.
+- If anything in the plan loads it heavily, **don't rewrite it**. Keep it, put a
+  short note starting with "⚠️" in that exercise's \`coachNotes\` (or the
+  session's \`focus\`), and list it in your summary so I can ask my coach.
+` : ''
   return `# Convert my training plan — week of ${format(weekStart, 'dd MMM yyyy')}
 
 I follow a plan from my ${profile.goal?.tracker?.source === 'coach' ? 'coach or club' : profile.goal?.tracker?.source === 'self' ? 'own notes' : 'app or book'}. Convert this week of it into JSON for my training app,
@@ -589,17 +578,11 @@ ${dayLines || '  - (use the days in the plan below, this week)'}
 \`\`\`
 ${planText.trim() || '(paste your plan here)'}
 \`\`\`
-
-## Safety check (don't skip)
-- ⚠️ My injuries: ${profile.injuries.length ? profile.injuries.join('; ') : 'none reported'}.
-- If anything in the plan conflicts with them, **don't rewrite it**. Keep it, and
-  put a warning starting with "⚠️" in that exercise's \`coachNotes\` (or the
-  session's \`focus\`), then list the conflicts in your summary so I can ask my
-  coach.
-
+${flareUp}
 ## How to fill in what the plan doesn't say
-- Warm-up and cool-down: if the plan gives none, add a short, sensible one in
-  the required format (it isn't logged, it's a checklist).
+- Warm-up: if the plan gives none, add a short one (\`warmup\` plus 2–4
+  \`warmupExercises\`; it isn't logged, it's a checklist). Leave the cool-down
+  out unless the plan has one.
 - Cardio goes in \`workout\` steps. Use effort words that match the plan's
   descriptions; put any explicit pace or split from the plan in \`target\`.
 - Keep distances and times exactly as the plan gives them: a distance rep

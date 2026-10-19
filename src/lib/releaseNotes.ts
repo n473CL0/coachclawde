@@ -41,6 +41,23 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.0.3',
+    date: '2026-10-19',
+    headline: 'Plans that look like real gym sessions, with shorter warm-ups and calmer handling of niggles.',
+    fromFeedback: [
+      'Sessions look like a real programme: a focused handful of well-known exercises, the big lift first, and the same exercises week to week so your weights keep climbing.',
+      'Shorter warm-ups on the kit you’re already using: a few lighter sets of your first lift (or an easier version of it at home), plus a few minutes on the bike or rower in longer sessions. No more marching on the spot.',
+      'Cool-downs are optional, so more of your time goes on the workout itself.',
+      'Supersets only when time is tight, and only two exercises at one station, so you’re not hopping between machines.',
+      'Niggles are handled calmly: Clawde changes the exercises that bother them and leaves the rest of your training alone, without extra rehab moves or warnings in every session.',
+    ],
+    alsoNew: [
+      'The weekly check-in only asks about a niggle when it matters: when it’s new, after you’ve noted pain, when it’s getting worse, or now and then so you can tell us it’s gone.',
+      'If a niggle gets worse, the check-in tells you when it’s worth seeing a GP or physio.',
+      'Runners: drills and strides only come before faster sessions, and never before a row, ride or swim.',
+    ],
+  },
+  {
     version: '1.0.2',
     date: '2026-10-01',
     headline: 'Run Mode, real goals and weekly check-ins, shaped by your feedback.',

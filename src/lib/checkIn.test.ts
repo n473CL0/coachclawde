@@ -145,6 +145,19 @@ describe('a week with a missed session', () => {
     expect(patch.goal?.zoneOffsetPct).toBe(2)
   })
 
+  it('asks about a settled niggle only when it is due', () => {
+    const withStatus = (status: 'improving' | 'worse'): UserProfile => ({ ...profile, goal: { ...profile.goal!, health: { ...profile.goal!.health, injuryStatus: { 'Left knee aches on stairs': status } } } })
+    const week = (over: Partial<Parameters<typeof computeFacts>[0]> = {}) => computeFacts({
+      profile: withStatus('improving'), plan, checkIns: [], weekStart: '2026-09-28', trigger: 'week-end', now, loggedSessions: [log('mon')], ...over,
+    })
+    expect(week().injury).toBeUndefined()
+    expect(week({ loggedSessions: [log('mon', { painNotes: 'Knee sore on lunges' })] }).injury).toMatchObject({ fromPainNote: false })
+    expect(week({ profile: withStatus('worse') }).injury).toBeDefined()
+    // Every 4th check-in, so "Gone" stays reachable.
+    const earlier = ['2026-09-07', '2026-09-14', '2026-09-21'].map((w): CheckIn => ({ id: w, weekStartDate: w, createdAt: w, trigger: 'week-end', answers: {}, actions: [], summary: '' }))
+    expect(week({ checkIns: earlier }).injury).toBeDefined()
+  })
+
   it('answers a deferred question once and stops asking it', () => {
     const quiet = { ...f, injury: undefined, pacedSession: undefined, done: 3 }
     const c = buildCheckIn(quiet, { c1: '4', c3: 'right', c8: ['watch', 'track'], c7: ['nothing'] }, now, 'ci-3')

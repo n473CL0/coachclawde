@@ -552,7 +552,7 @@ const nodes: FlowNode[] = [
       ...(list(a, 'health').some((f) => (MEDICAL as string[]).includes(f))
         ? ['Thanks for telling me. Please check with your GP or physio before starting. I’ll keep things conservative until you’re cleared.']
         : []),
-      'Coach Clawde isn’t medical advice. If an injury is serious, recent or unresolved, get it assessed first, and stop if anything causes sharp or worsening pain.',
+      'Most aches and niggles are fine to train around: I’ll change the moves that bother them. Get it checked before you start if it came from a recent fall or impact, it’s getting worse, or you have numbness, pins and needles or pain at night. Coach Clawde isn’t medical advice.',
       'Describe the injury and how it behaves day to day, one issue per line. I’ll program around it.',
     ],
     samples: ['Left knee aches on stairs'],

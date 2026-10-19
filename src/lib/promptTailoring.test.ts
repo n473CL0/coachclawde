@@ -65,9 +65,31 @@ describe('the plan prompt is tailored to the athlete', () => {
 
   it('numbers the rules it includes without gaps', () => {
     for (const p of [gymLifter, runnerNoStrength, homeBodyweight, rugby]) {
-      const nums = [...p.split('## Critical Programming Rules')[1].split('## Warm-up')[0].matchAll(/^(\d+)\. /gm)].map((m) => Number(m[1]))
+      const nums = [...p.split('## Programming rules')[1].split('## Warm-up')[0].matchAll(/^(\d+)\. /gm)].map((m) => Number(m[1]))
       expect(nums).toEqual(nums.map((_, i) => i + 1))
     }
+  })
+
+  it('states each niggle once, with its status, and says nothing about injuries without one', () => {
+    for (const p of [gymLifter, runnerNoStrength, homeBodyweight, rugby]) {
+      expect(p).not.toMatch(/niggle|safety|medical|prehab/i)
+    }
+    const knee: FlowAnswers = { why: 'strength', 'str.kind': 'lifts', lifting: '1y+', 'str.numbers': 'test', time: { days: '3', mins: '60' }, kit: ['gym'], health: ['injury'], 'health.injury': 'Left knee aches on stairs' }
+    const goal = toGoalProfile(knee, { now })
+    const p = promptFor(knee, { goal: { ...goal, health: { ...goal.health, injuryStatus: { 'Left knee aches on stairs': 'worse' } } } })
+    expect(p.match(/Left knee aches on stairs/g)).toHaveLength(1)
+    expect(p).toMatch(/Niggles to train around:\*\* Left knee aches on stairs \(worse this week\)/)
+    expect(p).toMatch(/change only the\s+exercises that provoke it/)
+    expect(p).not.toMatch(/safety|assess|prehab/i)
+  })
+
+  it('warms up on the kit the session uses, never marching on the spot', () => {
+    for (const p of [gymLifter, runnerNoStrength, homeBodyweight, homeWeights, rugby]) {
+      expect(p).not.toMatch(/marching/i)
+    }
+    expect(gymLifter).toMatch(/bike or rower/)
+    expect(homeBodyweight).toMatch(/easier version of the first exercise/)
+    expect(homeBodyweight).not.toMatch(/bike or rower|Rowing Machine/)
   })
 
   it('keeps everything for profiles that predate onboarding', () => {
