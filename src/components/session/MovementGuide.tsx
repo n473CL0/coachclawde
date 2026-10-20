@@ -9,6 +9,8 @@ import {
   type ExerciseDbEntry,
 } from '../../lib/exerciseGuide'
 import { BottomSheet, SheetCloseButton } from '../shared/BottomSheet'
+import { useUnits } from '../../store/useSettingsStore'
+import { localize } from '../../lib/units'
 
 type GuideState =
   | { status: 'loading' }
@@ -30,6 +32,7 @@ interface MovementGuideProps {
  */
 export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
   const [state, setState] = useState<GuideState>({ status: 'loading' })
+  const units = useUnits()
 
   useEffect(() => {
     let cancelled = false
@@ -61,7 +64,7 @@ export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
         {notes && (
           <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-2xl px-3 py-2.5">
             <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" />
-            <p className="text-xs text-[#d97756]/90">{notes}</p>
+            <p className="text-xs text-[#d97756]/90">{localize(notes, units)}</p>
           </div>
         )}
 

@@ -9,6 +9,8 @@ import {
   formatClock,
   metersToDistance,
 } from '../../lib/cardioUtils'
+import { useUnits } from '../../store/useSettingsStore'
+import { localize } from '../../lib/units'
 
 /** What a row needs to know about the planned piece. */
 export interface IntervalRowSpec {
@@ -46,18 +48,19 @@ function recordHint(spec: Pick<IntervalRowSpec, 'knownSeconds' | 'knownMeters'>)
  */
 export function IntervalRow({ spec, repeatIndex, cardioType, logged, onUpdate, onComplete }: IntervalRowProps) {
   const completed = logged?.completed ?? false
-  const unit = distanceUnit(cardioType)
+  const units = useUnits()
+  const unit = distanceUnit(cardioType, units.distance)
 
   const initialMeters = logged?.actualDistanceMeters ?? spec.knownMeters
   const [distText, setDistText] = useState(
-    initialMeters != null ? String(Math.round(metersToDistance(cardioType, initialMeters) * 100) / 100) : ''
+    initialMeters != null ? String(Math.round(metersToDistance(cardioType, initialMeters, units.distance) * 100) / 100) : ''
   )
   const [seconds, setSeconds] = useState<number>(logged?.actualSeconds ?? spec.knownSeconds ?? 0)
 
   const meters = distText !== '' && !Number.isNaN(Number(distText)) && Number(distText) > 0
-    ? distanceToMeters(cardioType, Number(distText))
+    ? distanceToMeters(cardioType, Number(distText), units.distance)
     : undefined
-  const split = computeSplit(cardioType, meters, seconds || undefined)
+  const split = computeSplit(cardioType, meters, seconds || undefined, units.distance)
 
   function values(nextMeters: number | undefined, nextSeconds: number): Partial<LoggedInterval> {
     return {
@@ -82,11 +85,11 @@ export function IntervalRow({ spec, repeatIndex, cardioType, logged, onUpdate, o
 
         <div className="flex-1 min-w-0">
           <p className={`text-sm font-medium ${completed ? 'text-[#6a6a6a] line-through' : 'text-[#f5f5f0]'}`}>
-            {spec.label}
+            {localize(spec.label, units)}
           </p>
           {spec.targets.length > 0 && (
             <div className="flex flex-wrap items-center gap-x-2 mt-0.5">
-              {spec.targets.map((t) => <span key={t} className="text-xs text-[#4a4a4a]">{t}</span>)}
+              {spec.targets.map((t) => <span key={t} className="text-xs text-[#4a4a4a]">{localize(t, units)}</span>)}
             </div>
           )}
         </div>
@@ -122,7 +125,7 @@ export function IntervalRow({ spec, repeatIndex, cardioType, logged, onUpdate, o
               const raw = e.target.value.replace(/[^0-9.]/g, '')
               setDistText(raw)
               const n = Number(raw)
-              onUpdate(values(raw !== '' && n > 0 ? distanceToMeters(cardioType, n) : undefined, seconds))
+              onUpdate(values(raw !== '' && n > 0 ? distanceToMeters(cardioType, n, units.distance) : undefined, seconds))
             }}
             disabled={completed}
             className="w-full min-w-0 bg-[#111] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"

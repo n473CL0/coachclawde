@@ -17,16 +17,17 @@ import { getDeviceShape } from '../lib/deviceShape'
 import { RELEASES } from '../lib/releaseNotes'
 import { ageFromBirthDate, isValidBirthDate } from '../lib/dateUtils'
 import { toLocalISODate } from '../lib/weekUtils'
+import { fromWeight, toWeight, type DistanceUnit, type WeightUnit } from '../lib/units'
 
 export function Settings() {
   const navigate = useNavigate()
   const { user, configured, signOut } = useAuth()
-  const { syncStatus, syncError } = useSettingsStore()
+  const { syncStatus, syncError, units, setUnits } = useSettingsStore()
   const { profile, setProfile } = useAppStore()
   const { sync } = useAutoSync()
 
   const [name, setName] = useState(profile.name ?? '')
-  const [weight, setWeight] = useState(String(profile.weightKg))
+  const [weight, setWeight] = useState(String(toWeight(profile.weightKg, units.weight)))
   const [height, setHeight] = useState(String(profile.heightCm))
   const [sex, setSex] = useState<'male' | 'female'>(profile.sex)
   const [birthDate, setBirthDate] = useState(profile.birthDate ?? '')
@@ -56,13 +57,19 @@ export function Settings() {
     setConfirmHealth(false)
   }
 
+  function setWeightUnit(u: WeightUnit) {
+    // Keep the body-weight field showing the same weight in the new unit.
+    if (Number(weight)) setWeight(String(toWeight(fromWeight(Number(weight), units.weight), u)))
+    setUnits({ weight: u })
+  }
+
   function handleSaveProfile() {
     // Never wipe a previously-set name with a blank field.
     const nextName = name.trim() || profile.name
     setName(nextName)
     setProfile({
       name: nextName,
-      weightKg: Number(weight) || profile.weightKg,
+      weightKg: Number(weight) ? fromWeight(Number(weight), units.weight) : profile.weightKg,
       heightCm: Number(height) || profile.heightCm,
       sex,
       // Blank clears it; a half-typed or out-of-range date keeps the old one.
@@ -147,10 +154,10 @@ export function Settings() {
                 />
               </Field>
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Weight (kg)">
+                <Field label={`Weight (${units.weight})`}>
                   <input
                     inputMode="decimal"
-                    placeholder="81"
+                    placeholder={units.weight === 'lb' ? '180' : '81'}
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
                     className={inputClass}
@@ -202,6 +209,24 @@ export function Settings() {
                 {profileSaved ? <CheckCircle size={16} /> : null}
                 {profileSaved ? 'Saved' : 'Save profile'}
               </Button>
+            </CardSection>
+          </Card>
+        </div>
+
+        {/* Units */}
+        <div>
+          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Units</p>
+          <Card>
+            <CardSection className="flex flex-col gap-3">
+              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+                How weights and distances are shown on this device. Clawde always plans in metric; the app converts.
+              </p>
+              <Field label="Weight">
+                <UnitToggle options={['kg', 'lb'] as WeightUnit[]} value={units.weight} onChange={setWeightUnit} />
+              </Field>
+              <Field label="Distance">
+                <UnitToggle options={['km', 'mi'] as DistanceUnit[]} value={units.distance} onChange={(d) => setUnits({ distance: d })} />
+              </Field>
             </CardSection>
           </Card>
         </div>
@@ -345,3 +370,24 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 const inputClass = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors'
+
+function UnitToggle<T extends string>({ options, value, onChange }: { options: T[]; value: T; onChange: (v: T) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {options.map((o) => (
+        <button
+          key={o}
+          onClick={() => onChange(o)}
+          aria-pressed={value === o}
+          className={`px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 ${
+            value === o
+              ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
+              : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
+          }`}
+        >
+          {o}
+        </button>
+      ))}
+    </div>
+  )
+}

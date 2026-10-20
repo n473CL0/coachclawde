@@ -30,6 +30,8 @@ import type { CardioType, Intensity, LoggedExercise, LoggedInterval, LoggedSessi
 import type { IntervalRowSpec } from '../components/session/IntervalRow'
 import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, Play } from 'lucide-react'
 import { nanoid } from '../lib/nanoid'
+import { useUnits } from '../store/useSettingsStore'
+import { localize, type DistanceUnit } from '../lib/units'
 
 function usePlannedSession(sessionId: string | undefined): PlannedSession | undefined {
   const { weekPlans } = useAppStore()
@@ -59,6 +61,7 @@ export function Session() {
   // The log Run Mode started, if it started one (so discarding can undo it).
   const [runLogId, setRunLogId] = useState<string | null>(null)
   const { startTimer } = useRestTimer()
+  const units = useUnits()
   const { syncSession, removeSession } = useAutoSync()
   const [activeExerciseIdx, setActiveExerciseIdx] = useState(0)
   const [showComplete, setShowComplete] = useState(false)
@@ -263,7 +266,7 @@ export function Session() {
     const rest = flat[at + 1]
     if (existingLog?.status !== 'complete' && rest?.step.role === 'recover' && rest.step.end.by === 'time' && rest.step.end.seconds > 0) {
       const next = flat[at + 2]
-      startTimer(rest.step.end.seconds, next ? `Up next: ${stepLabel(next)}` : 'Last one done')
+      startTimer(rest.step.end.seconds, next ? `Up next: ${localize(stepLabel(next), units)}` : 'Last one done')
     }
   }
 
@@ -327,8 +330,8 @@ export function Session() {
   return (
     <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
       <PageHeader
-        title={planned.title}
-        subtitle={planned.focus}
+        title={localize(planned.title, units)}
+        subtitle={localize(planned.focus, units)}
         onBack={goBack}
         right={<Badge label={planned.intensity} variant={planned.intensity as Intensity} />}
       />
@@ -471,7 +474,7 @@ export function Session() {
                   {rows.map((f, i) => (
                     <IntervalRow
                       key={f.path}
-                      spec={stepSpec(f, cardioType, zones)}
+                      spec={stepSpec(f, cardioType, zones, units.distance)}
                       repeatIndex={f.rep ? f.rep.index - 1 : i}
                       cardioType={cardioType}
                       logged={loggedSession.loggedIntervals?.[i]}
@@ -569,10 +572,10 @@ export function Session() {
 }
 
 /** A workout step as an interval-row spec, pre-filling what the plan fixes. */
-function stepSpec(f: FlatStep, modality: CardioType, zones: RunZones | undefined): IntervalRowSpec {
+function stepSpec(f: FlatStep, modality: CardioType, zones: RunZones | undefined, d: DistanceUnit): IntervalRowSpec {
   const { end, effort, target } = f.step
   const meters = end.by === 'distance' ? end.meters : undefined
-  const t = target ? { primary: target, secondary: undefined } : resolveTarget(effort, modality, zones, meters)
+  const t = target ? { primary: target, secondary: undefined } : resolveTarget(effort, modality, zones, meters, d)
   return {
     label: stepLabel(f),
     targets: [t.primary, t.secondary].filter((x): x is string => !!x),

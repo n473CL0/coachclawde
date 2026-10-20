@@ -9,6 +9,8 @@ import { getMonday, addDays, toLocalISODate } from '../lib/weekUtils'
 import { SlidersHorizontal, ChevronDown, Dumbbell, Waves, Star } from 'lucide-react'
 import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
 import type { LoggedSession } from '../types'
+import { useUnits } from '../store/useSettingsStore'
+import { localize } from '../lib/units'
 
 const WEIGHTS_COLOR = '#d97756'
 const CARDIO_COLOR = '#60a5fa'
@@ -143,6 +145,7 @@ function ProgramHistory() {
   const navigate = useNavigate()
   const { loggedSessions } = useAppStore()
   const [open, setOpen] = useState<string | null>(null)
+  const units = useUnits()
 
   const weeks = useMemo<WeekGroup[]>(() => {
     const completed = [...loggedSessions]
@@ -231,7 +234,7 @@ function ProgramHistory() {
                             : <Waves size={15} className="text-blue-400" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#f5f5f0] truncate">{s.title}</p>
+                          <p className="text-sm font-medium text-[#f5f5f0] truncate">{localize(s.title, units)}</p>
                           <p className="text-xs text-[#6a6a6a] mt-0.5">{format(parseISO(s.date), 'EEE dd MMM')}</p>
                         </div>
                         {s.feelings && (

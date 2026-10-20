@@ -4,6 +4,7 @@ import type {
 } from '../types'
 import { formatClock, parseDistanceToMeters, parseDurationToSeconds } from './cardioUtils'
 import { describeDistance, estimateSeconds, resolveTarget, type RunZones } from './zones'
+import type { DistanceUnit } from './units'
 
 /**
  * The structured cardio workout (§5.2 of docs/RUNNERS-AND-ATHLETES.md): steps
@@ -246,11 +247,11 @@ function endText(end: StepEnd): string {
   return 'until LAP'
 }
 
-function effortText(step: WorkoutStep, modality: CardioType, zones?: RunZones): string {
+function effortText(step: WorkoutStep, modality: CardioType, zones?: RunZones, d?: DistanceUnit): string {
   if (step.role === 'recover') return step.recovery ?? 'rest'
   if (step.target) return `@ ${step.effort} (${step.target})`
   if (step.effort === 'easy' || step.effort === 'recovery') return step.effort
-  const t = resolveTarget(step.effort, modality, zones, step.end.by === 'distance' ? step.end.meters : undefined)
+  const t = resolveTarget(step.effort, modality, zones, step.end.by === 'distance' ? step.end.meters : undefined, d)
   if (modality === 'run' && zones) {
     const aim = t.secondary?.replace('aim ', '')
     return `@ ${step.effort} (${t.primary}${aim ? ` ${aim}` : ''})`
@@ -258,13 +259,13 @@ function effortText(step: WorkoutStep, modality: CardioType, zones?: RunZones): 
   return `@ ${step.effort}`
 }
 
-function stepNotation(step: WorkoutStep, modality: CardioType, zones?: RunZones): string {
-  return `${endText(step.end)} ${effortText(step, modality, zones)}`.trim()
+function stepNotation(step: WorkoutStep, modality: CardioType, zones?: RunZones, d?: DistanceUnit): string {
+  return `${endText(step.end)} ${effortText(step, modality, zones, d)}`.trim()
 }
 
-function itemNotation(item: WorkoutItem, modality: CardioType, zones?: RunZones): string {
-  if (item.kind === 'step') return stepNotation(item, modality, zones)
-  const inner = item.steps.map((s) => itemNotation(s, modality, zones)).join(' · ')
+function itemNotation(item: WorkoutItem, modality: CardioType, zones?: RunZones, d?: DistanceUnit): string {
+  if (item.kind === 'step') return stepNotation(item, modality, zones, d)
+  const inner = item.steps.map((s) => itemNotation(s, modality, zones, d)).join(' · ')
   const every = item.everySeconds ? ` on ${formatClock(item.everySeconds)}` : ''
   if (item.times === 1) return inner
   // "6 × 800 m @ interval · 90 s jog" reads unambiguously when a block is one
@@ -278,8 +279,8 @@ function itemNotation(item: WorkoutItem, modality: CardioType, zones?: RunZones)
  * One-line notation, always in the same form:
  * `15′ easy · 6 × (800 m @ interval (4:45/km ≈ 3:48) · 90 s jog) · 10′ easy`.
  */
-export function workoutNotation(items: WorkoutItem[], modality: CardioType, zones?: RunZones): string {
-  return items.map((i) => itemNotation(i, modality, zones)).join(' · ')
+export function workoutNotation(items: WorkoutItem[], modality: CardioType, zones?: RunZones, d?: DistanceUnit): string {
+  return items.map((i) => itemNotation(i, modality, zones, d)).join(' · ')
 }
 
 export interface StripSegment {

@@ -3,6 +3,8 @@ import { Check, Pencil, Play, Square, TriangleAlert } from 'lucide-react'
 import type { LoggedSet, PlannedSet } from '../../types'
 import { secondsToDisplay } from '../../lib/dateUtils'
 import { ConfirmDialog } from '../shared/ConfirmDialog'
+import { useUnits } from '../../store/useSettingsStore'
+import { fromWeight, toWeight } from '../../lib/units'
 
 interface SetRowProps {
   setIndex: number
@@ -24,11 +26,12 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
   const completed = loggedSet?.completed ?? false
   const skipped = loggedSet?.skipped ?? false
   const [confirm, setConfirm] = useState<'empty' | 'edit' | null>(null)
+  const unit = useUnits().weight
 
   // Keep the raw typed text locally so partial decimals (e.g. "60.") survive —
   // parsing straight to Number on every keystroke would drop the trailing dot.
   const [repsText, setRepsText] = useState(loggedSet?.actualReps?.toString() ?? '')
-  const [weightText, setWeightText] = useState(loggedSet?.weightKg?.toString() ?? '')
+  const [weightText, setWeightText] = useState(loggedSet?.weightKg != null ? String(toWeight(loggedSet.weightKg, unit)) : '')
   const weightRef = useRef<HTMLInputElement>(null)
 
   return (
@@ -39,7 +42,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
       <div className="text-xs text-[#6a6a6a] shrink-0 w-16">
         {plannedSet.reps} reps
         {plannedSet.suggestedWeightKg && (
-          <span className="block text-[#4a4a4a]">~{plannedSet.suggestedWeightKg}kg</span>
+          <span className="block text-[#4a4a4a]">~{toWeight(plannedSet.suggestedWeightKg, unit)}{unit}</span>
         )}
       </div>
       <RowBreak />
@@ -70,19 +73,19 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
           inputMode="decimal"
           enterKeyHint="done"
           onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
-          placeholder="kg"
+          placeholder={unit}
           value={weightText}
           onChange={(e) => {
             // Allow digits and a single decimal point only.
             const raw = e.target.value.replace(/[^0-9.]/g, '')
             setWeightText(raw)
             const n = Number(raw)
-            onUpdate({ weightKg: raw === '' || Number.isNaN(n) ? undefined : n })
+            onUpdate({ weightKg: raw === '' || Number.isNaN(n) ? undefined : fromWeight(n, unit) })
           }}
           disabled={completed}
           className="w-full bg-[#111] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
         />
-        <span className="text-xs text-[#4a4a4a] shrink-0">kg</span>
+        <span className="text-xs text-[#4a4a4a] shrink-0">{unit}</span>
       </div>
 
       <CompleteButton

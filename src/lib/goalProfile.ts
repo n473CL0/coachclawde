@@ -1,6 +1,7 @@
 import type { GoalProfile, Pursuit, RunsWith, UserProfile } from '../types'
 import { describeZones, runZones, describeDistance, type RunZones } from './zones'
 import { formatClock } from './cardioUtils'
+import type { DistanceUnit } from './units'
 
 /**
  * Helpers over the athlete's GoalProfile that more than one screen needs.
@@ -54,15 +55,15 @@ export function resultSource(profile: Pick<UserProfile, 'goal'>): string | null 
   return `${describeDistance(r.meters)} in ${formatClock(r.seconds)}, VDOT ${z.vdot.toFixed(1)}`
 }
 
-/** The prompt's pace-zone line, or a by-feel fallback. */
-export function zonesLine(profile: Pick<UserProfile, 'goal'>): string {
+/** The prompt's pace-zone line (always /km there), or a by-feel fallback. */
+export function zonesLine(profile: Pick<UserProfile, 'goal'>, d: DistanceUnit = 'km'): string {
   const z = athleteZones(profile)
   if (!z) {
     return 'Pace zones: no recent result yet. Use effort words; the app shows them by feel (RPE). Consider a short benchmark (e.g. a 20-minute time trial or a 5K) early on.'
   }
   const offset = profile.goal?.zoneOffsetPct
   const adj = offset ? ` (adjusted ${offset > 0 ? '+' : ''}${offset}% from check-ins)` : ''
-  return `Pace zones (from ${resultSource(profile)})${adj}: ${describeZones(z)}.`
+  return `Pace zones (from ${resultSource(profile)})${adj}: ${describeZones(z, d)}.`
 }
 
 const PURSUIT_STATEMENT: Record<Pursuit, string> = {

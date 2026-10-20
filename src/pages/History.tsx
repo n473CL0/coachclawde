@@ -10,6 +10,8 @@ import { useAutoSync } from '../hooks/useAutoSync'
 import { ClawdeMark } from '../components/shared/ClawdeMark'
 import { formatSessionDate, formatDuration } from '../lib/dateUtils'
 import type { Intensity, LoggedSession } from '../types'
+import { useUnits } from '../store/useSettingsStore'
+import { localize } from '../lib/units'
 import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
 
 export function History() {
@@ -17,6 +19,7 @@ export function History() {
   const { loggedSessions, weekPlans } = useAppStore()
   const { removeSession } = useAutoSync()
   const [toDelete, setToDelete] = useState<LoggedSession | null>(null)
+  const units = useUnits()
 
   const completed = [...loggedSessions]
     .filter((s) => s.status === 'complete')
@@ -73,7 +76,7 @@ export function History() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#f5f5f0] truncate">{session.title}</p>
+                        <p className="text-sm font-semibold text-[#f5f5f0] truncate">{localize(session.title, units)}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-xs text-[#6a6a6a]">{formatSessionDate(session.date)}</span>
                           {planned && (

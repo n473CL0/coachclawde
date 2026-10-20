@@ -32,6 +32,7 @@ describe('the plan prompt is tailored to the athlete', () => {
     expect(gymLifter).not.toMatch(/active-recovery/)
     expect(gymLifter).toMatch(/Build the main lifts/)
     expect(gymLifter).toMatch(/full gym/)
+    expect(gymLifter).toMatch(/Metric units only\*\* \(weights in kg\)/)
   })
 
   it('gives a runner with no strength work no lifting rules', () => {
@@ -42,6 +43,7 @@ describe('the plan prompt is tailored to the athlete', () => {
     expect(runnerNoStrength).toMatch(/Cardio is a structured `workout`/)
     expect(runnerNoStrength).toMatch(/Every session is `type: "cardio"`/)
     expect(runnerNoStrength).toMatch(/Runs with: unknown \(assume phone only\)/)
+    expect(runnerNoStrength).toMatch(/Metric units only\*\* \(distances in m or km, paces per km, speeds in km\/h\)/)
   })
 
   it('holds home athletes to their equipment', () => {

@@ -197,6 +197,14 @@ RepeatBlock {
 }
 ` : ''
 
+  const metric = [s.weights && 'weights in kg', s.cardio && 'distances in m or km, paces per km, speeds in km/h'].filter(Boolean).join('; ')
+  const numericFields = [s.weights && '`suggestedWeightKg`', s.cardio && '`meters`', s.cardio && '`seconds`'].filter(Boolean).join(', ')
+  const unitsRule = metric ? `
+- **Metric units only** (${metric}), even where my notes or plan use lb or
+  miles: convert them. In text, put the number right before its unit (e.g.
+  ${s.weights ? '"8 × 12kg"' : ''}${s.weights && s.cardio ? ', ' : ''}${s.cardio ? '"400 m", "5 km", "4:45/km"' : ''}); ${numericFields} are plain numbers. The app
+  converts everything to my display units.` : ''
+
   const cardioSection = s.cardio ? `
 
 ## Cardio workouts
@@ -233,7 +241,7 @@ the week. I paste the JSON straight into the app, so it must parse:
 - **Strict JSON only** — double-quoted keys and strings, no comments, no trailing
   commas, no \`undefined\`. Leave optional fields out rather than setting them to null.
 - Only use the fields in the schema below; use the exact string values shown
-  for \`type\`, \`intensity\`, \`dayOfWeek\`${s.cardio ? ' and `cardioOptions`' : ''}.
+  for \`type\`, \`intensity\`, \`dayOfWeek\`${s.cardio ? ' and `cardioOptions`' : ''}.${unitsRule}
 - Every \`id\` must be unique across the whole plan. Put the date in each
   session id, e.g. \`"session-${weekStartISO}-${s.weights ? 'upper' : s.cardio ? 'run' : 'mobility'}"\`, so it never repeats an
   earlier week's.

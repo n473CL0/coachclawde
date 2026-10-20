@@ -18,6 +18,8 @@ import {
 import { describeDistance, resolveTarget, type RunZones } from '../../lib/zones'
 import { computeSplit, distanceToMeters, distanceUnit, formatClock, metersToDistance } from '../../lib/cardioUtils'
 import { useWakeLock } from '../../hooks/useWakeLock'
+import { useUnits } from '../../store/useSettingsStore'
+import { localize } from '../../lib/units'
 import { markRunTourSeen, runTourSeen } from '../../lib/tutorials'
 
 export interface RunResult {
@@ -52,6 +54,7 @@ export function RunMode({
   onClose: () => void
 }) {
   const [phase, setPhase] = useState<Phase>('check')
+  const units = useUnits()
   const [idx, setIdx] = useState(0)
   const [, setTick] = useState(0)
   const [locked, setLocked] = useState(false)
@@ -329,7 +332,7 @@ export function RunMode({
   const showLap = lapStep || demoLap
   const target = step.step.target
     ? { primary: step.step.target, secondary: undefined as string | undefined }
-    : resolveTarget(step.step.effort, modality, zones, meters)
+    : resolveTarget(step.step.effort, modality, zones, meters, units.distance)
 
   return (
     <Shell>
@@ -348,15 +351,15 @@ export function RunMode({
         <h2 className="text-3xl font-extrabold uppercase leading-tight text-[#f5f5f0]">
           {step.step.role === 'recover'
             ? `${d != null ? formatStepDuration(Math.round(d)) : ''} ${step.step.recovery ?? 'rest'}`.trim()
-            : meters ? describeDistance(meters)
+            : meters ? localize(describeDistance(meters), units)
               : step.step.end.by === 'time' ? `${formatStepDuration(step.step.end.seconds)} ${step.step.effort}`
                 : 'Until LAP'}
         </h2>
         <p className="text-sm text-[#a8a29e]">
           <span style={{ color }} className="font-semibold">{EFFORT_LABEL[step.step.effort]}</span>
-          {step.step.role !== 'recover' && <> · {target.primary}{target.secondary ? ` · ${target.secondary}` : ''}</>}
+          {step.step.role !== 'recover' && <> · {localize(target.primary, units)}{target.secondary ? ` · ${localize(target.secondary, units)}` : ''}</>}
         </p>
-        {step.step.cue && <p className="text-sm text-[#e5e5e0]">“{step.step.cue}”</p>}
+        {step.step.cue && <p className="text-sm text-[#e5e5e0]">“{localize(step.step.cue, units)}”</p>}
 
         <p className={`text-7xl short:text-6xl font-bold text-center tabular-nums tracking-tight my-2 ${phase === 'paused' ? 'text-[#6a6a6a]' : 'text-[#f5f5f0]'}`} aria-live="off">
           {clock}
@@ -365,7 +368,7 @@ export function RunMode({
 
         <p className="text-sm text-[#e5e5e0] flex gap-2">
           <b className="text-2xs tracking-widest text-[#6a6a6a] pt-0.5">NEXT</b>
-          {next ? stepLabel(next) : 'Finish'}
+          {next ? localize(stepLabel(next), units) : 'Finish'}
         </p>
         <WorkoutStrip segments={segments} progress={total ? doneSeconds / total : 0} />
 
@@ -548,7 +551,8 @@ function RunReview({
   const [pain, setPain] = useState('')
   const [notes, setNotes] = useState('')
   const loggable = useMemo(() => loggableSteps(flat), [flat])
-  const unit = distanceUnit(modality)
+  const units = useUnits()
+  const unit = distanceUnit(modality, units.distance)
   const minutes = Math.round(records.reduce((t, r) => t + r.seconds, 0) / 60)
 
   function update(i: number, patch: Partial<LoggedInterval>) {
@@ -567,16 +571,16 @@ function RunReview({
         {rows.map((row, i) => {
           const f = loggable[i]
           const planMeters = f?.step.end.by === 'distance' ? f.step.end.meters : undefined
-          const t = f ? resolveTarget(f.step.effort, modality, zones, planMeters) : null
-          const split = computeSplit(modality, row.actualDistanceMeters, row.actualSeconds)
+          const t = f ? resolveTarget(f.step.effort, modality, zones, planMeters, units.distance) : null
+          const split = computeSplit(modality, row.actualDistanceMeters, row.actualSeconds, units.distance)
           return (
             <div key={row.stepPath ?? i} className={`rounded-2xl border px-4 py-3 [--nest-radius:1rem] ${row.completed ? 'bg-[#161616] border-[#2a2a2a]' : 'bg-[#111] border-[#1f1f1f] opacity-70'}`}>
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-sm font-semibold text-[#f5f5f0]">
-                  {f ? stepLabel(f) : row.label}{f?.rep ? ` · ${f.rep.index}/${f.rep.of}` : ''}
+                  {localize(f ? stepLabel(f) : row.label, units)}{f?.rep ? ` · ${f.rep.index}/${f.rep.of}` : ''}
                 </p>
                 <p className="text-xs text-[#6a6a6a] text-right">
-                  {f?.step.target ?? (planMeters && t?.secondary ? t.secondary : f?.step.end.by === 'time' ? formatClock(f.step.end.seconds) : '')}
+                  {localize(f?.step.target ?? (planMeters && t?.secondary ? t.secondary : f?.step.end.by === 'time' ? formatClock(f.step.end.seconds) : ''), units)}
                 </p>
               </div>
               {!row.completed && <p className="text-2xs text-[#6a6a6a] mt-0.5">Skipped. Add a time if you did it.</p>}
@@ -590,10 +594,10 @@ function RunReview({
                     inputMode="decimal"
                     placeholder="dist"
                     aria-label={`Distance in ${unit}`}
-                    defaultValue={row.actualDistanceMeters ? String(Math.round(metersToDistance(modality, row.actualDistanceMeters) * 100) / 100) : ''}
+                    defaultValue={row.actualDistanceMeters ? String(Math.round(metersToDistance(modality, row.actualDistanceMeters, units.distance) * 100) / 100) : ''}
                     onChange={(e) => {
                       const n = Number(e.target.value.replace(/[^0-9.]/g, ''))
-                      update(i, { actualDistanceMeters: n > 0 ? distanceToMeters(modality, n) : undefined })
+                      update(i, { actualDistanceMeters: n > 0 ? distanceToMeters(modality, n, units.distance) : undefined })
                     }}
                     className="w-full min-w-0 bg-[#0a0a0a] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50"
                   />
