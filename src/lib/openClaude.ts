@@ -30,7 +30,8 @@ const MAX_PREFILL_URL_LENGTH = 30_000
 /** `base?q=<prompt>`, or just `base` when there's no prompt or it's too long for a URL. */
 export function withPrompt(base: string, prompt?: string): string {
   if (!prompt) return base
-  const url = `${base}?${new URLSearchParams({ q: prompt })}`
+  // %20, not URLSearchParams' `+`: the iOS app doesn't decode `+` as a space
+  const url = `${base}?q=${encodeURIComponent(prompt)}`
   return url.length <= MAX_PREFILL_URL_LENGTH ? url : base
 }
 
