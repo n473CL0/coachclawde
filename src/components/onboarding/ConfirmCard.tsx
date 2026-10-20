@@ -36,7 +36,6 @@ export function ConfirmCard({
           value={anythingElse}
           onChange={(e) => onAnythingElse(e.target.value)}
           rows={2}
-          placeholder="e.g. Played rugby at school, prefer morning sessions"
           className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-3 py-2 text-base text-[#f5f5f0] placeholder-[#4a4a4a] resize-none focus:outline-none focus:border-[#d97756]/50"
         />
       </label>

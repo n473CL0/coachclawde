@@ -41,6 +41,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.0.4',
+    date: '2026-10-20',
+    headline: 'Opening Claude on iPhone works properly again.',
+    fromFeedback: [
+      'On iPhone, “Open Claude” no longer fills the prompt with + signs between the words.',
+    ],
+    alsoNew: [
+      'The last onboarding step no longer suggests example notes; just add anything you want Clawde to know.',
+    ],
+  },
+  {
     version: '1.0.3',
     date: '2026-10-19',
     headline: 'Plans that look like real gym sessions, with shorter warm-ups and calmer handling of niggles.',
