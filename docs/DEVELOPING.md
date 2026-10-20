@@ -46,7 +46,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.0.2**) and is injected
+The app version lives in `package.json` (currently **1.0.3**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -164,8 +164,11 @@ are marked as seen when they finish onboarding.
 - IDs are generated with `src/lib/nanoid.ts`; dates are local-ISO via
   `weekUtils`/`dateUtils` (don't hand-roll date math — DST/Monday-start logic
   already lives there).
-- Keep changes minimal and typed; never weaken or remove the injury-safety
-  semantics (CLAUDE.md, rule 1) encoded in the data shapes or plan logic.
+- Keep changes minimal and typed. Injury handling is deliberately
+  proportionate (CLAUDE.md, rule 1): its wording can change, but never remove
+  its safety triggers — an uncleared medical flag's limits, the "worse" status
+  from check-ins (lighter loading, plus the app's own referral note), and
+  changing only the exercises that provoke a niggle.
 - `dist/` and `node_modules/` are git-ignored — never commit them.
 - **No athlete data belongs in this repo.** It lives in each user's Supabase
   rows; nothing in the app writes to git any more.

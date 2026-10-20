@@ -1,4 +1,4 @@
-import type { EventKind, GoalProfile, InjuryStatus, UserProfile } from '../types'
+import type { EventKind, GoalProfile, UserProfile } from '../types'
 import { BASE_SHARE, DELOAD_EVERY_WEEKS, EVENT_METERS, FAT_LOSS_PCT_PER_WEEK, MIN_WEEKS, TAPER_WEEKS, peakWeeks, type RunVolume } from './coachingConfig'
 import { getProgramProgress } from './programProgress'
 import { predictSeconds, vdot, describeDistance } from './zones'
@@ -62,8 +62,6 @@ export function isDeloadWeek(phases: Phase[], week: number): boolean {
 export function describePhases(phases: Phase[]): string {
   return phases.map((p) => `${p.name} (week${p.from === p.to ? ` ${p.from}` : `s ${p.from}–${p.to}`})`).join(' → ')
 }
-
-const STATUS_WORDS: Record<InjuryStatus, string> = { active: 'still active', improving: 'improving', worse: 'WORSE — keep it conservative and advise getting it assessed' }
 
 function eventLine(goal: GoalProfile, now: Date): string[] {
   const ev = goal.event!
@@ -145,16 +143,14 @@ export function buildGoalSection(profile: UserProfile, weekStart: Date): string 
     lines.push(`${goal.sport.name}, ${goal.sport.season}-season. Days already taken: ${fixed} — don't plan on them${goal.sport.fixed.some((f) => f.kind === 'match') ? ', and never put heavy lower-body work within 48 h before a match' : ''}. Wants from extra training: ${goal.sport.wants.join(', ') || '—'}.`)
   }
 
-  if (goal.pursuit === 'event' && goal.constraints.strengthWork === false) lines.push('No strength sessions wanted: running only (mobility/prehab inside warm-ups is fine).')
+  if (goal.pursuit === 'event' && goal.constraints.strengthWork === false) lines.push('No strength sessions wanted: running only (mobility inside warm-ups is fine).')
   lines.push(`Wants about ${daysPerWeekLabel(goal.constraints.daysPerWeek)} sessions a week of ~${goal.constraints.sessionMinutes} min (this week's days and length above take precedence).`)
 
-  // Health: flags only, never diagnoses.
+  // Health: flags only, never diagnoses. Niggles and their status are on the
+  // profile's "Niggles to train around" line; the app gives referral advice.
   if (goal.health.conservative) {
-    lines.push('⚠️ Medical flag on the pre-exercise screen and not yet cleared by a GP/physio: keep everything conservative (moderate intensity, no maximal efforts) and remind them to get cleared.')
+    lines.push('Medical flag on the pre-exercise screen, not yet cleared by a GP or physio: keep everything at moderate intensity with no maximal efforts, whatever their coaching style.')
   }
-  const status = Object.entries(goal.health.injuryStatus ?? {})
-  if (status.length) lines.push(`Injury status from check-ins: ${status.map(([k, v]) => `${k} — ${STATUS_WORDS[v]}`).join('; ')}.`)
-  if (goal.health.pastInjuries?.length) lines.push(`Resolved injuries (be sensible, no longer restricting): ${goal.health.pastInjuries.join('; ')}.`)
 
   if (goal.deferred.includes('coaching-tone')) lines.push("Coaching tone not chosen yet: use 'balanced'.")
   return lines.map((l) => `- ${l}`).join('\n')

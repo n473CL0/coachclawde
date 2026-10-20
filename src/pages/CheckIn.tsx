@@ -49,6 +49,8 @@ export function CheckIn() {
   const checkIn = migration ? null : buildCheckIn(facts, answers, now, id)
   const migrationResult = migration ? applyMigration(profile, answers, now) : null
   const reopen = checkIn?.actions.find((a) => a.kind === 'reopen-goal')
+  // The app, not the plan, owns referral advice: said once, when a niggle gets worse.
+  const worse = checkIn?.actions.some((a) => a.kind === 'injury-status' && a.status === 'worse')
   const wantsLog = checkIn?.actions.some((a) => a.kind === 'log-swap') && !logged
 
   function save() {
@@ -156,6 +158,11 @@ export function CheckIn() {
                 <span>{l}</span>
               </p>
             ))}
+            {worse && (
+              <p className="text-xs text-[#a8a29e] leading-snug">
+                If it isn’t settling in a week or two, it’s worth getting it checked by a GP or physio.
+              </p>
+            )}
           </div>
         }
         endAction={endAction}
