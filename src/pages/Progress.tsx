@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
+import { useUnits } from '../store/useSettingsStore'
+import { toWeight, type WeightUnit } from '../lib/units'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { Reveal } from '../components/shared/Reveal'
@@ -15,6 +17,7 @@ import type { LoggedSession } from '../types'
 export function Progress() {
   const navigate = useNavigate()
   const { loggedSessions, profile } = useAppStore()
+  const weightUnit = useUnits().weight
 
   const completed = loggedSessions.filter((s) => s.status === 'complete')
   const weightSessions = completed.filter((s) => s.type === 'weights')
@@ -127,7 +130,7 @@ export function Progress() {
                     <TrendingUp size={18} className="text-[#d97756]" />
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-[#f5f5f0]">{formatVolume(totalVolume)}</p>
+                    <p className="text-lg font-bold text-[#f5f5f0]">{formatVolume(totalVolume, weightUnit)}</p>
                     <p className="text-xs text-[#6a6a6a]">Total volume lifted</p>
                   </div>
                 </CardSection>
@@ -256,7 +259,11 @@ function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string
   )
 }
 
-function formatVolume(kg: number): string {
+function formatVolume(kg: number, unit: WeightUnit): string {
+  if (unit === 'lb') {
+    const lb = toWeight(kg, 'lb')
+    return lb >= 1000 ? `${(lb / 1000).toFixed(1)}k lb` : `${Math.round(lb)} lb`
+  }
   if (kg >= 1000) return `${(kg / 1000).toFixed(1)}t`
   return `${Math.round(kg)}kg`
 }

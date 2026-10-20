@@ -3,6 +3,8 @@ import type { CardioType, WorkoutItem } from '../../types'
 import type { RunZones } from '../../lib/zones'
 import { flattenWorkout, howItWorks, totalSeconds, workoutNotation, workoutStrip, youllRecord } from '../../lib/workout'
 import { WorkoutStrip } from './WorkoutStrip'
+import { useUnits } from '../../store/useSettingsStore'
+import { localize } from '../../lib/units'
 import { EFFORT_COLOR, EFFORT_LABEL } from './effortStyle'
 
 /**
@@ -14,6 +16,7 @@ export function WorkoutCard({ workout, modality, zones }: { workout: WorkoutItem
   const segments = workoutStrip(flat, modality, zones)
   const minutes = Math.round(totalSeconds(flat, modality, zones) / 60)
   const efforts = [...new Set(flat.map((f) => f.step.effort))]
+  const units = useUnits()
 
   return (
     <div className="rounded-3xl bg-[#161616] border border-[#2a2a2a] p-4 flex flex-col gap-3">
@@ -30,13 +33,13 @@ export function WorkoutCard({ workout, modality, zones }: { workout: WorkoutItem
           </span>
         ))}
       </div>
-      <p className="font-mono text-xs text-[#e5e5e0] leading-relaxed">{workoutNotation(workout, modality, zones)}</p>
+      <p className="font-mono text-xs text-[#e5e5e0] leading-relaxed">{localize(workoutNotation(workout, modality, zones, units.distance), units)}</p>
       {!zones && modality === 'run' && (
         <p className="text-xs text-[#6a6a6a] leading-relaxed">
           Efforts are by feel for now. Add a recent race time in Program setup and I'll show your paces.
         </p>
       )}
-      <p className="text-xs text-[#a8a29e] leading-relaxed"><b className="text-[#f5f5f0] font-semibold">How this works. </b>{howItWorks(flat)}</p>
+      <p className="text-xs text-[#a8a29e] leading-relaxed"><b className="text-[#f5f5f0] font-semibold">How this works. </b>{localize(howItWorks(flat), units)}</p>
       <p className="text-xs text-[#a8a29e] leading-relaxed"><b className="text-[#f5f5f0] font-semibold">You'll record: </b>{youllRecord(flat)}</p>
     </div>
   )

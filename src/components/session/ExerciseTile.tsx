@@ -4,6 +4,8 @@ import type { LoggedExercise, PlannedExercise } from '../../types'
 import { SetRow } from './SetRow'
 import { MovementGuide } from './MovementGuide'
 import { formatRestTime } from '../../lib/dateUtils'
+import { useUnits } from '../../store/useSettingsStore'
+import { localize } from '../../lib/units'
 
 interface ExerciseTileProps {
   planned: PlannedExercise
@@ -18,6 +20,7 @@ interface ExerciseTileProps {
 export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, isActive, onActivate }: ExerciseTileProps) {
   const [expanded, setExpanded] = useState(isActive)
   const [showGuide, setShowGuide] = useState(false)
+  const units = useUnits()
 
   const completedSets = logged.sets.filter((s) => s.completed).length
   const totalSets = planned.sets.length
@@ -78,7 +81,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
           {planned.coachNotes && (
             <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-nested px-3 py-2.5 mb-1">
               <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" />
-              <p className="text-xs text-[#d97756]/90">{planned.coachNotes}</p>
+              <p className="text-xs text-[#d97756]/90">{localize(planned.coachNotes, units)}</p>
             </div>
           )}
 

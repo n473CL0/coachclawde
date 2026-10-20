@@ -1,4 +1,5 @@
 import type { CardioType } from '../types'
+import type { DistanceUnit } from './units'
 
 /** Human label for a cardio modality. */
 export function cardioLabel(type: CardioType): string {
@@ -11,19 +12,21 @@ export function cardioLabel(type: CardioType): string {
   }
 }
 
-/** The unit the athlete enters distance in for a given modality. */
-export function distanceUnit(type: CardioType): 'km' | 'm' {
-  return type === 'row' || type === 'swim' ? 'm' : 'km'
+/** The unit the athlete enters distance in for a given modality: metres for row and swim, else km or mi. */
+export function distanceUnit(type: CardioType, d: DistanceUnit = 'km'): DistanceUnit | 'm' {
+  return type === 'row' || type === 'swim' ? 'm' : d
 }
 
+const METERS_PER: Record<DistanceUnit | 'm', number> = { m: 1, km: 1000, mi: 1609.344 }
+
 /** Convert a distance entered in the modality's input unit into metres. */
-export function distanceToMeters(type: CardioType, value: number): number {
-  return distanceUnit(type) === 'km' ? value * 1000 : value
+export function distanceToMeters(type: CardioType, value: number, d: DistanceUnit = 'km'): number {
+  return value * METERS_PER[distanceUnit(type, d)]
 }
 
 /** Convert metres back into the modality's input unit (for editing). */
-export function metersToDistance(type: CardioType, meters: number): number {
-  return distanceUnit(type) === 'km' ? meters / 1000 : meters
+export function metersToDistance(type: CardioType, meters: number, d: DistanceUnit = 'km'): number {
+  return meters / METERS_PER[distanceUnit(type, d)]
 }
 
 function fmtPace(secondsPer: number): string {
@@ -35,26 +38,28 @@ function fmtPace(secondsPer: number): string {
 
 /**
  * Compute a display split/pace for a piece, using the conventional unit for the
- * modality: run → /km, row → /500m, swim → /100m, bike → km/h.
+ * modality: run → /km (or /mi), row → /500m, swim → /100m, bike → km/h (or mph).
  * Returns null when inputs are missing or non-positive.
  */
 export function computeSplit(
   type: CardioType,
   meters: number | undefined,
   seconds: number | undefined,
+  d: DistanceUnit = 'km',
 ): string | null {
   if (!meters || !seconds || meters <= 0 || seconds <= 0) return null
+  const per = METERS_PER[d]
   switch (type) {
     case 'run':
     case 'other':
-      return `${fmtPace(seconds / (meters / 1000))}/km`
+      return `${fmtPace(seconds / (meters / per))}/${d}`
     case 'row':
       return `${fmtPace(seconds / (meters / 500))}/500m`
     case 'swim':
       return `${fmtPace(seconds / (meters / 100))}/100m`
     case 'bike': {
-      const kmh = (meters / 1000) / (seconds / 3600)
-      return `${kmh.toFixed(1)} km/h`
+      const speed = (meters / per) / (seconds / 3600)
+      return `${speed.toFixed(1)} ${d === 'mi' ? 'mph' : 'km/h'}`
     }
   }
 }

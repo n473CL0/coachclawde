@@ -15,6 +15,7 @@ import {
 import type { GoalProfile, ProgramConfig, RunsWith } from '../types'
 import { TimeInput } from '../components/shared/TimeInput'
 import { goalOrLegacy, resultSource, zonesLine } from '../lib/goalProfile'
+import { useUnits } from '../store/useSettingsStore'
 
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
@@ -23,6 +24,7 @@ function toggle<T>(list: T[], value: T): T[] {
 export function ProgramEdit() {
   const { profile, setProfile } = useAppStore()
   const { sync } = useAutoSync()
+  const units = useUnits()
 
   const program = profile.program ?? DEFAULT_PROFILE.program!
   const cardioOn = program.exerciseTypes.includes('cardio')
@@ -119,7 +121,7 @@ export function ProgramEdit() {
           </CardSection>
         </Card>
 
-        {cardioOn && <PacesCard goal={profile.goal} onChange={updateGoal} zonesText={zonesLine(profile)} source={resultSource(profile)} />}
+        {cardioOn && <PacesCard goal={profile.goal} onChange={updateGoal} zonesText={zonesLine(profile, units.distance)} source={resultSource(profile)} />}
       </div>
     </div>
   )

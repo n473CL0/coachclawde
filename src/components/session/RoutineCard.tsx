@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, CircleQuestionMark } from 'lucide-react'
 import type { RoutineItem } from '../../types'
 import { MovementGuide } from './MovementGuide'
+import { useUnits } from '../../store/useSettingsStore'
+import { localize } from '../../lib/units'
 
 interface RoutineCardProps {
   /** e.g. "Warmup" / "Cooldown" */
@@ -20,13 +22,14 @@ export function RoutineCard({ title, summary, items }: RoutineCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [guide, setGuide] = useState<RoutineItem | null>(null)
   const moves = items ?? []
+  const units = useUnits()
   if (!summary && moves.length === 0) return null
 
   return (
     <div className="bg-[#1a1a1a] rounded-3xl border border-[#2a2a2a] overflow-hidden [--nest-radius:1.5rem] [--nest-inset:0.75rem]">
       <div className="px-4 py-3">
         <p className="text-xs font-semibold text-[#6a6a6a] uppercase tracking-widest mb-1">{title}</p>
-        {summary && <p className="text-sm text-[#a8a29e]">{summary}</p>}
+        {summary && <p className="text-sm text-[#a8a29e]">{localize(summary, units)}</p>}
       </div>
 
       {moves.length > 0 && (
@@ -51,10 +54,10 @@ export function RoutineCard({ title, summary, items }: RoutineCardProps) {
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="text-sm font-medium text-[#f5f5f0] leading-snug">{item.name}</p>
                       {item.prescription && (
-                        <span className="text-xs text-[#a8a29e] shrink-0 tabular-nums">{item.prescription}</span>
+                        <span className="text-xs text-[#a8a29e] shrink-0 tabular-nums">{localize(item.prescription, units)}</span>
                       )}
                     </div>
-                    {item.notes && <p className="text-xs text-[#6a6a6a] mt-0.5 leading-relaxed">{item.notes}</p>}
+                    {item.notes && <p className="text-xs text-[#6a6a6a] mt-0.5 leading-relaxed">{localize(item.notes, units)}</p>}
                   </div>
                   <button
                     onClick={() => setGuide(item)}

@@ -4,6 +4,8 @@ import { Button } from '../shared/Button'
 import { Stepper } from '../shared/Stepper'
 import { DISTANCE_ACTIVITIES, QUICK_ACTIVITIES, type QuickLogInput } from '../../lib/quickLog'
 import { toLocalISODate } from '../../lib/weekUtils'
+import { useUnits } from '../../store/useSettingsStore'
+import { fromDistance } from '../../lib/units'
 
 const RPE_HINTS: Record<number, string> = {
   1: 'Very easy', 2: 'Easy', 3: 'Comfortable', 4: 'Steady', 5: 'Working',
@@ -51,6 +53,7 @@ export function QuickLogSheet({
   const [custom, setCustom] = useState('')
   const [minutes, setMinutes] = useState(defaultMinutes)
   const [distance, setDistance] = useState('')
+  const distanceUnit = useUnits().distance
   const [rpe, setRpe] = useState<number | undefined>()
   const [notes, setNotes] = useState('')
   const [date, setDate] = useState(toLocalISODate(new Date()))
@@ -61,7 +64,7 @@ export function QuickLogSheet({
 
   function save() {
     if (!name) return
-    const km = Number(distance)
+    const km = fromDistance(Number(distance), distanceUnit)
     onSave({
       activity: name,
       minutes,
@@ -124,7 +127,7 @@ export function QuickLogSheet({
                 placeholder="0"
                 className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50"
               />
-              <span className="text-xs text-[#6a6a6a]">km</span>
+              <span className="text-xs text-[#6a6a6a]">{distanceUnit}</span>
             </div>
           </div>
         )}

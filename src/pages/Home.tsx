@@ -19,6 +19,8 @@ import { useAutoSync } from '../hooks/useAutoSync'
 import { getWeekday, formatDuration } from '../lib/dateUtils'
 import { format } from 'date-fns'
 import type { Intensity, PlannedSession, SessionType } from '../types'
+import { useUnits } from '../store/useSettingsStore'
+import { localize } from '../lib/units'
 
 export function Home() {
   const navigate = useNavigate()
@@ -297,6 +299,7 @@ function ProgramCompleteBanner({ length, onRestart }: { length: number; onRestar
 }
 
 function NextSessionCard({ session, onClick }: { session: PlannedSession; onClick: () => void }) {
+  const units = useUnits()
   return (
     <Card accent glow onClick={onClick} className="fade-in">
       <div className="bg-gradient-to-br from-[#d97756]/8 to-transparent">
@@ -316,8 +319,8 @@ function NextSessionCard({ session, onClick }: { session: PlannedSession; onClic
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-[#f5f5f0] leading-tight">{session.title}</h2>
-          <p className="text-sm text-[#6a6a6a] mt-1">{session.focus}</p>
+          <h2 className="text-xl font-bold text-[#f5f5f0] leading-tight">{localize(session.title, units)}</h2>
+          <p className="text-sm text-[#6a6a6a] mt-1">{localize(session.focus, units)}</p>
 
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#2a2a2a]">
             <StatPill label={formatDuration(session.estimatedMinutes)} icon="⏱" />
@@ -331,6 +334,7 @@ function NextSessionCard({ session, onClick }: { session: PlannedSession; onClic
 }
 
 function UpcomingTile({ session, missed = false, onClick }: { session: PlannedSession; missed?: boolean; onClick: () => void }) {
+  const units = useUnits()
   return (
     <Card onClick={onClick}>
       <CardSection className="flex items-center gap-3 py-3">
@@ -340,7 +344,7 @@ function UpcomingTile({ session, missed = false, onClick }: { session: PlannedSe
           <SessionIcon type={session.type} size={18} className={missed ? 'text-amber-500' : 'text-[#6a6a6a]'} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#f5f5f0] truncate">{session.title}</p>
+          <p className="text-sm font-semibold text-[#f5f5f0] truncate">{localize(session.title, units)}</p>
           <p className="text-xs text-[#6a6a6a] mt-0.5">
             {missed && <span className="text-amber-500/80">Missed · </span>}
             {getWeekday(session.date)} · {formatDuration(session.estimatedMinutes)}

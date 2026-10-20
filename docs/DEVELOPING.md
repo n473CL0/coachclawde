@@ -46,7 +46,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.0.4**) and is injected
+The app version lives in `package.json` (currently **1.0.5**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -125,7 +125,7 @@ are marked as seen when they finish onboarding.
 - `src/lib/` — pure helpers: `promptBuilder` (builds the **self-contained** plan
   prompt — embeds profile + summarised history), `historySummary` (bounds that
   history so the prompt isn't overloaded), `supabase` (client) + `supabaseSync`
-  (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `export`, `nanoid`, `programOptions`
+  (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `units` (kg/lb and km/mi display conversion; data stays metric), `export`, `nanoid`, `programOptions`
   (shared labels for the program preference enums).
   `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
 - **Runners & athletes (v1.0.2):**

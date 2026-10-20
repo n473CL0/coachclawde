@@ -222,6 +222,7 @@ rather than assuming any particular injury.
 11. **APPLY THE LATEST CHECK-IN**: When the history includes a "Latest check-in", apply it: shorter sessions, a lighter week, intensity up or down, injury status (worse → lighter on the movements that load it; the app gives any referral advice), and next week's events. The athlete answered those questions for this plan.
 12. **PRESCRIBE ONLY WHAT CAN BE MEASURED**: The prompt's "Runs with" line says what the athlete measures with. With a phone only (or unknown), end reps by **time**, never by distance. Distance reps need a GPS watch or a track; on a treadmill give speeds in km/h as `target`. Cardio always goes in `workout`, not `intervals`.
 13. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
+14. **METRIC ONLY**: Weights in kg, distances in m or km, paces per km, speeds in km/h, even when the athlete's notes or pasted plan use lb or miles (convert them). In text, put the number right before its unit ("8 × 12kg", "5 km", "4:45/km"); numeric fields are plain numbers. The athlete picks kg/lb and km/mi in Settings and the app converts for display.
 
 ## Session Export
 

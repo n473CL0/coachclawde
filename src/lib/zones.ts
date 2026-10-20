@@ -1,6 +1,7 @@
 import type { CardioType, Effort, RecentResult } from '../types'
 import { DEFAULT_RUN_PACE_S_PER_KM, EFFORT_FEEL, MODALITY_SPEED_FACTOR, ZONE_VDOT_FRACTION } from './coachingConfig'
 import { formatClock } from './cardioUtils'
+import { M_PER_MI, type DistanceUnit } from './units'
 
 /**
  * Running effort zones from a recent result, using the Daniels–Gilbert
@@ -93,16 +94,18 @@ export function zonePace(z: RunZones, effort: Effort): number | null {
   }
 }
 
-export const formatPace = (secPerKm: number) => `${formatClock(secPerKm)}/km`
+const perUnit = (secPerKm: number, d: DistanceUnit) => formatClock(d === 'mi' ? (secPerKm * M_PER_MI) / 1000 : secPerKm)
+export const formatPace = (secPerKm: number, d: DistanceUnit = 'km') => `${perUnit(secPerKm, d)}/${d}`
 
-/** "easy 5:56–6:35/km · marathon 5:35 · threshold 5:10 · interval 4:45 · repetition 4:29" */
-export function describeZones(z: RunZones): string {
+/** "easy 5:56–6:35/km · marathon 5:35 · threshold 5:10 · interval 4:45 · repetition 4:29" (or per mile). */
+export function describeZones(z: RunZones, d: DistanceUnit = 'km'): string {
+  const p = (secPerKm: number) => perUnit(secPerKm, d)
   return [
-    `easy ${formatClock(z.easy[0])}–${formatPace(z.easy[1])}`,
-    `marathon ${formatClock(z.marathon)}`,
-    `threshold ${formatClock(z.threshold)}`,
-    `interval ${formatClock(z.interval)}`,
-    `repetition ${formatClock(z.repetition)}`,
+    `easy ${p(z.easy[0])}–${p(z.easy[1])}/${d}`,
+    `marathon ${p(z.marathon)}`,
+    `threshold ${p(z.threshold)}`,
+    `interval ${p(z.interval)}`,
+    `repetition ${p(z.repetition)}`,
   ].join(' · ')
 }
 
@@ -135,13 +138,14 @@ export function resolveTarget(
   modality: CardioType,
   zones: RunZones | undefined,
   meters?: number,
+  d: DistanceUnit = 'km',
 ): { primary: string; secondary?: string } {
   if (modality === 'run' && zones) {
-    if (effort === 'easy') return { primary: `${formatClock(zones.easy[0])}–${formatPace(zones.easy[1])}` }
+    if (effort === 'easy') return { primary: `${perUnit(zones.easy[0], d)}–${formatPace(zones.easy[1], d)}` }
     if (effort === 'recovery') return { primary: 'Very easy', secondary: EFFORT_FEEL.recovery.feel }
     const pace = zonePace(zones, effort)!
     return {
-      primary: formatPace(pace),
+      primary: formatPace(pace, d),
       secondary: meters ? `aim ≈ ${formatClock((meters / 1000) * pace)}` : undefined,
     }
   }

@@ -41,6 +41,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.0.5',
+    date: '2026-10-20',
+    headline: 'Pounds and miles, if that’s how you train.',
+    fromFeedback: [
+      'Pick kg or lb, and km or miles, separately in Settings → Units. Your plan, the weights you log, paces, splits and personal bests all switch over.',
+    ],
+    alsoNew: [
+      'Clawde still plans in metric behind the scenes, so you can switch back and forth at any time and nothing is lost.',
+    ],
+  },
+  {
     version: '1.0.4',
     date: '2026-10-20',
     headline: 'Opening Claude on iPhone works properly again.',
